@@ -307,13 +307,13 @@ void imgProcess::detectPrimaryVoid(){
             detected = false;
             statusMessage = alarm3;
         }
-        else if (voidSpace[voidIndex]->start.x() <10 || voidSpace[voidIndex]->start.x() > 310){
+        else if (voidSpace[voidIndex]->start.x() < errorEdgeLimit || voidSpace[voidIndex]->start.x() > (imageWidth - errorEdgeLimit)){
             cornersDetected = false;
             detected = false;
             statusMessage = alarm4;
         }
         else {
-            if (abs(angleAvg) <= 3)
+            if (abs(angleAvg) <= errorAngleLimit)
                 angleInLimit = true;
             else {
                 angleInLimit = false;

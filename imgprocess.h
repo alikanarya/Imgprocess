@@ -49,6 +49,8 @@ class imgProcess{
         int voidIndex;                      // index no of <void space list> holding primary void line data
         int trackCenterX, trackCenterY;     // coor. of center beteen corners
         QList<voidLine *> voidSpace;        // list to hold found void lines
+        int errorEdgeLimit;
+        int errorAngleLimit;
 
         int **valueMatrix;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
@@ -93,6 +95,9 @@ class imgProcess{
             voidIndex = 0;
             trackCenterX = -1;
             trackCenterY = -1;
+
+            errorEdgeLimit = 5;
+            errorAngleLimit = 5;
 
             statusMessage = message0;
             angleAvg = 0;
