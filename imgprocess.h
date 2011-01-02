@@ -60,6 +60,7 @@ class imgProcess{
         float **houghLines;                 // line data of max. voted lines; distance/angle/vote value
 
         int *histogram;                     // histogram array
+        bool histogramInitSwitch;           // to delete in destructor
 
         // user information
         QString statusMessage;              // general message var about processing
@@ -103,6 +104,7 @@ class imgProcess{
             angleAvg = 0;
             angleInLimit = false;
 
+            histogramInitSwitch = false;
         }
 
         void toMono();      // produce mono image

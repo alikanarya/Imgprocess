@@ -348,6 +348,7 @@ int imgProcess::getLineY(int x, float distance, float theta){
 
 int* imgProcess::edgeSobelHistogram(){
     histogram = new int[edgeHeight];
+    histogramInitSwitch = true;
 
     int sum;
 
@@ -361,6 +362,7 @@ int* imgProcess::edgeSobelHistogram(){
 
 int* imgProcess::valueHistogram(){
     histogram = new int[imageHeight];
+    histogramInitSwitch = true;
 
     int sum;
 
@@ -409,5 +411,5 @@ imgProcess::~imgProcess(){
     for (int y = 0; y < houghLineNo; y++) delete []houghLines[y];
     delete []houghLines;
 
-    delete []histogram;
+    if (histogramInitSwitch) delete []histogram;
 }
