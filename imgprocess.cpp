@@ -221,15 +221,20 @@ void imgProcess::detectVoidLines(){
         thetaAvg = thetaAvg / houghLineNo;
 
         voidSpace.clear();
-        int lineY = 0, voidCount = 0, fullX = 0, fullY = 0;
+        int lineY = 0, voidCount = 0;
+        int fullX = 0;
+        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
         int prevValue = 255, currentValue = 0, state = 0;
         voidLine *line;
 
-        for (int x = 0; x < imageWidth; x++){
+        for (int x = 0; x < imageWidth + 1; x++){   // +1 for last coordinate
             lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
 
             if (lineY >= 0 && lineY < imageHeight){
-                currentValue = valueMatrix[lineY][x];
+                if (x == imageWidth)
+                    currentValue = 255;
+                else
+                    currentValue = valueMatrix[lineY][x];
 
                 if (prevValue == 0 && currentValue == 255){
                     state = 1;  // void to full
@@ -298,9 +303,20 @@ void imgProcess::detectPrimaryVoid(){
                 max = voidSpace[i]->length;
                 voidIndex = i;
             }
+        leftMostCornerX = voidSpace[0]->end.x();
+        leftMostCornerY = voidSpace[0]->end.y();
 
-        trackCenterX = abs((voidSpace[voidIndex]->end.x() + voidSpace[voidIndex]->start.x())) / 2;
-        trackCenterY = abs((voidSpace[voidIndex]->end.y() + voidSpace[voidIndex]->start.y())) / 2;
+        rightMostCornerX = voidSpace[voidSpace.size()-1]->start.x();
+        rightMostCornerY = voidSpace[voidSpace.size()-1]->start.y();
+
+        leftCornerX = voidSpace[voidIndex]->start.x();
+        leftCornerY = voidSpace[voidIndex]->start.y();
+
+        rightCornerX = voidSpace[voidIndex]->end.x();
+        rightCornerY = voidSpace[voidIndex]->end.y();
+
+        trackCenterX = (leftCornerX + rightCornerX) / 2;
+        trackCenterY = (leftCornerY + rightCornerY) / 2;
 
         if (max < voidThreshold){
             cornersDetected = false;
@@ -376,21 +392,22 @@ int* imgProcess::valueHistogram(){
 
 QImage imgProcess::cornerImage(){
     imgCorner = imgOrginal.copy();
+
     if (cornersDetected){
         QRgb value;
         value = qRgb(0, 255, 0);        // green
+
         for (int x = -4; x <= 4; x++){
-            imgCorner.setPixel(voidSpace[voidIndex]->start.x()+x, voidSpace[voidIndex]->start.y(), value);
-            imgCorner.setPixel(voidSpace[voidIndex]->end.x()+x, voidSpace[voidIndex]->end.y(), value);
+            imgCorner.setPixel(leftCornerX + x, leftCornerY, value);
+            imgCorner.setPixel(rightCornerX + x, rightCornerY, value);
         }
+
         for (int y = -4; y <= 4; y++){
-            imgCorner.setPixel(voidSpace[voidIndex]->start.x(), voidSpace[voidIndex]->start.y()+y, value);
-            imgCorner.setPixel(voidSpace[voidIndex]->end.x(), voidSpace[voidIndex]->end.y()+y, value);
-            imgCorner.setPixel(trackCenterX, trackCenterY+y, value);
+            imgCorner.setPixel(leftCornerX, leftCornerY + y, value);
+            imgCorner.setPixel(rightCornerX, rightCornerY + y, value);
+            imgCorner.setPixel(trackCenterX, trackCenterY + y, value);
         }
-
     }
-
     return imgCorner;
 }
 

@@ -48,6 +48,10 @@ class imgProcess{
         bool cornersDetected;               // true: corners detected
         int voidIndex;                      // index no of <void space list> holding primary void line data
         int trackCenterX, trackCenterY;     // coor. of center beteen corners
+        int leftCornerX, leftCornerY;
+        int rightCornerX, rightCornerY;
+        int leftMostCornerX, leftMostCornerY;
+        int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
         int errorEdgeLimit;
         int errorAngleLimit;
