@@ -81,6 +81,8 @@ class imgProcess{
 
             edgeWidth = imageWidth - 2;
             edgeHeight = imageHeight - 2;
+            centerX = edgeWidth / 2;    // HT origin coor. X
+            centerY = edgeHeight - 1;   // HT origin coor. Y
 
             edgeMatrix = new int*[edgeHeight];
             for (int i = 0; i < edgeHeight; i++)   edgeMatrix[i] = new int[edgeWidth];

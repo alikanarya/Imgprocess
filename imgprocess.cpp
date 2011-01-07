@@ -116,8 +116,8 @@ void imgProcess::detectEdgeSobel(){
 
 void imgProcess::houghTransform(){
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    centerX = edgeWidth / 2;
-    centerY = edgeHeight - 1;
+    //centerX = edgeWidth / 2;
+    //centerY = edgeHeight - 1;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
