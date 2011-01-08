@@ -280,6 +280,76 @@ void imgProcess::detectVoidLines(){
     }
 }
 
+void imgProcess::detectVoidLinesEdge(){
+    if (primaryLineDetected){
+        float distanceAvg = 0, thetaAvg = 0;
+        for (int line = 0; line < houghLineNo; line++){
+            distanceAvg += houghLines[line][0];
+            thetaAvg += houghLines[line][1];
+        }
+        distanceAvg = distanceAvg / houghLineNo;
+        thetaAvg = thetaAvg / houghLineNo;
+
+        voidSpace.clear();
+        int lineY = 0, voidCount = 0;
+        int fullX = 0;
+        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
+        int prevValue = 255, currentValue = 0, state = 0;
+        voidLine *line;
+
+        for (int x = 0; x < edgeWidth + 1; x++){   // +1 for last coordinate
+            lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+
+            if (lineY >= 0 && lineY < edgeHeight){
+                if (x == edgeWidth)
+                    currentValue = 255;
+                else
+                    currentValue = edgeMatrix[lineY][x];
+
+                if (prevValue == 0 && currentValue == 255){
+                    state = 1;  // void to full
+                } else
+                if (prevValue == 255 && currentValue == 0){
+                    state = 0;  // full to void
+                } else
+                if (prevValue == 0 && currentValue == 0){
+                    state = 3;  // void unchanged
+                } else
+                if (prevValue == 255 && currentValue == 255){
+                    state = 4;  // full unchanged
+                } else
+                    state = 5;  // not recognized
+
+                if (state == 0){    // if void line is started get coor. with prev. coor (last full point coor)
+                    line = new voidLine();
+                    line->start.setX(fullX);
+                    line->start.setY(fullY);
+                    voidCount++;
+                }
+
+                if (state == 3){    // calc. void line length
+                    voidCount++;
+                }
+
+                if (state == 1){    // if void line is end get coor. of end point & append void line data to list
+                    line->end.setX(x);
+                    line->end.setY(lineY);
+                    line->length = voidCount;
+                    voidSpace.append(line);
+                    voidCount = 0;
+                }
+
+                if (currentValue == 255){   // to get last full point coor immediately before void line start
+                    fullX = x;
+                    fullY = lineY;
+                }
+
+                prevValue = currentValue;
+            }
+        }
+    }
+}
+
 // DETECTION FUNCTION
 void imgProcess::detectPrimaryVoid(){
     cornersDetected = true;

@@ -132,6 +132,7 @@ class imgProcess{
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
         bool checkPrimaryLine();                // check if primary line found is above <voteThreshold>
         void detectVoidLines();                 // detect void lines on max. voted lines imposed on mono image
+        void detectVoidLinesEdge();             // detect void lines on max. voted lines imposed on edge image
 
         void detectPrimaryVoid();               // detect primay void line using <voidThreshold>,
                                                 // finds index of primary void in <voidSpace>, calculates center point of corners
