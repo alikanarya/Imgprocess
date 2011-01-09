@@ -93,6 +93,20 @@ bool imgProcess::saveArray(int *array, int length, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveList(QList<int> array, QString fname){
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int i = 0; i < array.size(); i++) out << array[i] << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
+
 void imgProcess::detectEdgeSobel(){
 
     int G, Gx, Gy;
@@ -158,10 +172,15 @@ void imgProcess::calculateHoughMaxs(int number){
                     maxThetaIndex = i;
                 }
 
-        houghLines[line][0] = maxDistance;
-        houghLines[line][1] = thetaMin + maxThetaIndex * thetaStep;
-        houghLines[line][2] = max;
-
+        houghLines[line][0] = maxDistance;                              // distance
+        houghLines[line][1] = thetaMin + maxThetaIndex * thetaStep;     // angle
+        houghLines[line][2] = max;                                      // vote value
+/*
+        if (line == 0)                                                  // derivative
+            houghLines[line][3] = 0;
+        else
+            houghLines[line][3] = houghLines[line][0] - houghLines[line - 1][0];
+*/
         houghSpace[maxDistance][maxThetaIndex] = 0;
         // re construct hough space - necessary?
     }
@@ -184,6 +203,43 @@ void imgProcess::constructHoughMatrix(){
         }
 }
 
+void imgProcess::constructHoughMatrix2Lines(){
+
+    int lineY;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    for (int x = 0; x < edgeWidth; x++){
+        lineY = centerY - getLineY((x-centerX), houghLines[0][0], houghLines[0][1]);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+
+        lineY = centerY - getLineY((x-centerX),houghLines[secondLineIndex][0], houghLines[secondLineIndex][1]);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+    }
+}
+
+void imgProcess::constructHoughMatrixAvgLine(){
+
+    int lineY;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    for (int x = 0; x < edgeWidth; x++){
+        lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+    }
+}
+
 int imgProcess::calcVoteAvg(){
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
@@ -203,22 +259,173 @@ int imgProcess::calcAngleAvg(){
     return angleAvg;
 }
 
+void imgProcess::calcAvgDistAndAngle(int limit){
+    distanceAvg = 0;
+    thetaAvg = 0;
+
+    for (int line = 0; line < limit; line++){
+        distanceAvg += houghLines[line][0];
+        thetaAvg += houghLines[line][1];
+    }
+    distanceAvg = distanceAvg / limit;
+    thetaAvg = thetaAvg / limit;
+}
+
+// seperate hough lines into 2 piece; higher and lower than ave. distance
+// then find the ave. distance and angle of these majors
+void imgProcess::calcAvgDistAndAngleOfMajors(){
+
+    int _voteThreshold = (int) (houghLines[0][2] * 0.50);    // %x of first line (most voted)
+    int _voteThresholdIndex = houghLineNo - 1;               // last index
+
+    // find the index of less than vote threshold
+    for (int line = 1; line < houghLineNo; line++){
+        if ( houghLines[line][2] < _voteThreshold){
+            _voteThresholdIndex = line - 1;     // last index of higher than threshold
+            break;
+        }
+    }
+
+
+    // calc. ave. distance of lines in between max voted and higher than threshold
+    float _distanceAvg = 0;
+
+    for (int line = 0; line <= _voteThresholdIndex; line++)
+        _distanceAvg += houghLines[line][0];
+
+    _distanceAvg = (int) (_distanceAvg / (_voteThresholdIndex + 1));
+
+
+    // group lines in 2: higher and lower than ave. distance
+    lowLinesList.clear();
+    highLinesList.clear();
+
+    for (int line = 0; line <= _voteThresholdIndex; line++){
+        if (houghLines[line][0] >= _distanceAvg)
+            highLinesList.append(line);
+        else
+            lowLinesList.append(line);
+    }
+
+
+    // calc. ave. distance and angle of higher lines which have same max vote value
+    int distanceAvgHigh = 0;
+    int thetaAvgHigh = 0;
+    int countHigh = 0;
+
+    for (int i = 0; i < highLinesList.size(); i++)
+        if (houghLines[ highLinesList[i] ][2] == houghLines[ highLinesList[0] ][2]) {
+            countHigh++;
+            distanceAvgHigh += houghLines[ highLinesList[i] ][0];
+            thetaAvgHigh += houghLines[ highLinesList[i] ][1];
+        }
+
+    if (countHigh != 0) {
+        distanceAvgHigh = distanceAvgHigh / countHigh;
+        thetaAvgHigh = thetaAvgHigh / countHigh;
+    }
+    /*
+    distanceAvg = distanceAvgHigh;
+    thetaAvg = thetaAvgHigh;
+    constructHoughMatrixAvgLine();
+    getImage(houghMatrix, edgeWidth, edgeHeight)->save("_hi.jpg");
+    */
+
+    // calc. ave. distance and angle of lower lines which have same max vote value
+    int distanceAvgLo = 0;
+    int thetaAvgLo = 0;
+    int countLo = 0;
+
+    for (int i = 0; i < lowLinesList.size(); i++)
+        if (houghLines[ lowLinesList[i] ][2] == houghLines[ lowLinesList[0] ][2]) {
+            countLo++;
+            distanceAvgLo += houghLines[ lowLinesList[i] ][0];
+            thetaAvgLo += houghLines[ lowLinesList[i] ][1];
+        }
+
+    if (countLo != 0) {
+        distanceAvgLo = distanceAvgLo / countLo;
+        thetaAvgLo = thetaAvgLo / countLo;
+    } else {    // in case of finding only 1 major (it will be classified in higher profile)
+        distanceAvgLo = distanceAvgHigh;
+        thetaAvgLo = thetaAvgHigh;
+    }
+
+    /*
+    distanceAvg = distanceAvgLo;
+    thetaAvg = thetaAvgLo;
+    constructHoughMatrixAvgLine();
+    getImage(houghMatrix, edgeWidth, edgeHeight)->save("_lo.jpg");
+    */
+
+    // calc. ave distance and angle of higher and lower majors
+    distanceAvg = (distanceAvgHigh + distanceAvgLo ) / 2;
+    thetaAvg = (thetaAvgHigh + thetaAvgLo ) / 2;
+}
+
+
+// find second line beginning index in hough lines
+void imgProcess::findSecondLine(){
+
+    int _voteThreshold = (int) (houghLines[0][2] * 0.50);   // %x of first line
+    int _voteThresholdIndex = houghLineNo - 1;
+
+    // find the index of less than vote threshold
+    for (int line = 1; line < houghLineNo; line++){
+        if ( houghLines[line][2] < _voteThreshold){
+            _voteThresholdIndex = line - 1;
+            break;
+        }
+    }
+
+
+    // calc. ave. distance of lines in between max voted and higher than threshold
+    float _distanceAvg = 0;
+
+    for (int line = 0; line <= _voteThresholdIndex; line++)
+        _distanceAvg += houghLines[line][0];
+
+    _distanceAvg = (int) (_distanceAvg / (_voteThresholdIndex + 1));
+
+
+    // determine (1st major) first line (max voted) is higher or lower than ave. distance
+    bool isPrimaryLowLine = true;
+
+    if (houghLines[0][0] < _distanceAvg)
+        isPrimaryLowLine = true;
+    else
+        isPrimaryLowLine = false;
+
+
+    // find the 2nd major beginning index.
+    // it should has opposite profile
+    secondLineIndex = 0;
+
+    for (int line = 1; line <= _voteThresholdIndex; line++){
+        if (isPrimaryLowLine) {
+            if (houghLines[line][0] > _distanceAvg) {
+                secondLineIndex = line;
+                break;
+            }
+        } else {
+            if (houghLines[line][0] < _distanceAvg) {
+                secondLineIndex = line;
+                break;
+            }
+        }
+    }
+}
+
 bool imgProcess::checkPrimaryLine(){
     if (houghLines[0][2] >= voteThreshold)
         primaryLineDetected = true;
-    else primaryLineDetected = false;
+    else
+        primaryLineDetected = false;
     return primaryLineDetected;
 }
 
 void imgProcess::detectVoidLines(){
     if (primaryLineDetected){
-        float distanceAvg = 0, thetaAvg = 0;
-        for (int line = 0; line < houghLineNo; line++){
-            distanceAvg += houghLines[line][0];
-            thetaAvg += houghLines[line][1];
-        }
-        distanceAvg = distanceAvg / houghLineNo;
-        thetaAvg = thetaAvg / houghLineNo;
 
         voidSpace.clear();
         int lineY = 0, voidCount = 0;
@@ -282,13 +489,6 @@ void imgProcess::detectVoidLines(){
 
 void imgProcess::detectVoidLinesEdge(){
     if (primaryLineDetected){
-        float distanceAvg = 0, thetaAvg = 0;
-        for (int line = 0; line < houghLineNo; line++){
-            distanceAvg += houghLines[line][0];
-            thetaAvg += houghLines[line][1];
-        }
-        distanceAvg = distanceAvg / houghLineNo;
-        thetaAvg = thetaAvg / houghLineNo;
 
         voidSpace.clear();
         int lineY = 0, voidCount = 0;
@@ -352,16 +552,13 @@ void imgProcess::detectVoidLinesEdge(){
 
 // DETECTION FUNCTION
 void imgProcess::detectPrimaryVoid(){
-    cornersDetected = true;
     detected = true;
 
     if (!primaryLineDetected){
-        cornersDetected = false;
         detected = false;
         statusMessage = alarm1;
     }
     else if (voidSpace.size() == 0) {
-        cornersDetected = false;
         detected = false;
         statusMessage = alarm2;
     }
@@ -389,12 +586,10 @@ void imgProcess::detectPrimaryVoid(){
         trackCenterY = (leftCornerY + rightCornerY) / 2;
 
         if (max < voidThreshold){
-            cornersDetected = false;
             detected = false;
             statusMessage = alarm3;
         }
         else if (voidSpace[voidIndex]->start.x() < errorEdgeLimit || voidSpace[voidIndex]->start.x() > (imageWidth - errorEdgeLimit)){
-            cornersDetected = false;
             detected = false;
             statusMessage = alarm4;
         }
@@ -463,7 +658,7 @@ int* imgProcess::valueHistogram(){
 QImage imgProcess::cornerImage(){
     imgCorner = imgOrginal.copy();
 
-    if (cornersDetected){
+    if (detected){
         QRgb value;
         value = qRgb(0, 255, 0);        // green
 

@@ -39,20 +39,23 @@ class imgProcess{
         int thetaMin, thetaMax;             // search angles in between
         float thetaStep;                    // angle resolution
 
-        // corner detection parameters
+        // detection parameters
         int houghLineNo;                    // no. of max voted lines concerned
         int houghVoteAvg;                   // ave vote value of max. voted lines
         int voteThreshold;                  // vote threshold to accept primary line as concerned
         int voidThreshold;                  // void line length threhold in pixels to accept primary void line as concerned
+        float distanceAvg, thetaAvg;
         bool primaryLineDetected;           // true: primary line detected
-        bool cornersDetected;               // true: corners detected
+        bool detected;                      // false for any known un-matched criteria
         int voidIndex;                      // index no of <void space list> holding primary void line data
+        int secondLineIndex;
         int trackCenterX, trackCenterY;     // coor. of center beteen corners
         int leftCornerX, leftCornerY;
         int rightCornerX, rightCornerY;
         int leftMostCornerX, leftMostCornerY;
         int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
+        QList<int> lowLinesList, highLinesList;
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -68,7 +71,6 @@ class imgProcess{
 
         // user information
         QString statusMessage;              // general message var about processing
-        bool detected;                      // false for any known un-matched criteria
         int angleAvg;                       // average angle degree wrt center point (-90)
         bool angleInLimit;                  // true if <avgAngle> is within +/- 3 degree
 
@@ -97,8 +99,10 @@ class imgProcess{
             houghVoteAvg = 0;
             voteThreshold = 200;
             voidThreshold = 30;
+            distanceAvg = 0;
+            thetaAvg = 0;
+
             primaryLineDetected = false;
-            cornersDetected = false;
             voidIndex = 0;
             trackCenterX = -1;
             trackCenterY = -1;
@@ -123,13 +127,19 @@ class imgProcess{
 
         bool saveMatrix(float **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
         bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
+        bool saveList(QList<int> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void houghTransform();                  // conduct hough transform & construct hough space matrix
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it
+        void constructHoughMatrix2Lines();      // construct hough matrix base on edge matrix with 2 lines coded on it
+        void constructHoughMatrixAvgLine();
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
+        void calcAvgDistAndAngle(int limit);    // calc. ave. distance anf angle of <no> hough lines ; eg houghLineNo
+        void calcAvgDistAndAngleOfMajors();     // seperate hough lines into 2 piece; hi and lo, then find the ave. distance and angle of these majors
+        void findSecondLine();                  // find second line beginning index in hough lines
         bool checkPrimaryLine();                // check if primary line found is above <voteThreshold>
         void detectVoidLines();                 // detect void lines on max. voted lines imposed on mono image
         void detectVoidLinesEdge();             // detect void lines on max. voted lines imposed on edge image
