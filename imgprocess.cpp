@@ -694,4 +694,11 @@ imgProcess::~imgProcess(){
     delete []houghLines;
 
     if (histogramInitSwitch) delete []histogram;
+
+    if (voidSpace.size() > 0) {
+        for (int i = 0; i < voidSpace.size(); i++) {
+            delete voidSpace[i];
+            voidSpace.clear();
+        }
+    }
 }
