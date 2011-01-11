@@ -589,7 +589,7 @@ void imgProcess::detectPrimaryVoid(){
             detected = false;
             statusMessage = alarm3;
         }
-        else if (voidSpace[voidIndex]->start.x() < errorEdgeLimit || voidSpace[voidIndex]->start.x() > (imageWidth - errorEdgeLimit)){
+        else if (voidSpace[voidIndex]->end.x() < errorEdgeLimit || voidSpace[voidIndex]->start.x() > (imageWidth - errorEdgeLimit)){
             detected = false;
             statusMessage = alarm4;
         }
