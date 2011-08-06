@@ -13,13 +13,27 @@ const int sobelY[3][3] = {{1,2,1},{0,0,0},{-1,-2,-1}};
 
 // class for the void(empty) line data
 class voidLine{
-    public:
+
+public:
         QPoint start;
         QPoint end;
         int length;
 
         voidLine(){}
 };
+
+
+// class for the solid(full) line data
+class solidLine{
+
+public:
+        QPoint start;
+        QPoint end;
+        int length;
+
+        solidLine(){}
+};
+
 
 // image processing class
 class imgProcess{
@@ -56,6 +70,7 @@ class imgProcess{
         int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
         QList<int> lowLinesList, highLinesList;
+        QList<solidLine *> solidSpace;        // list to hold found solid lines
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -128,6 +143,7 @@ class imgProcess{
         bool saveMatrix(float **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
         bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
         bool saveList(QList<int> array, QString fname);
+        bool saveList(QList<solidLine *> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void houghTransform();                  // conduct hough transform & construct hough space matrix
@@ -148,6 +164,8 @@ class imgProcess{
                                                 // finds index of primary void in <voidSpace>, calculates center point of corners
                                                 // LASER LINE MUST BE ALIGN TO WHOLE IMAGE AND VOID SPACE IN INTEREST
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
+
+        void detectLongestSolidLine(float distance, float angle);  // detect longest solid(continuous) line from hough space via given distance angle&distance
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

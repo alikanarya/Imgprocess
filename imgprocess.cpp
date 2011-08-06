@@ -94,6 +94,7 @@ bool imgProcess::saveArray(int *array, int length, QString fname){
 }
 
 bool imgProcess::saveList(QList<int> array, QString fname){
+
     QFile file(fname);
     bool saveStatus = true;
 
@@ -101,6 +102,24 @@ bool imgProcess::saveList(QList<int> array, QString fname){
         QTextStream out(&file);
 
         for(int i = 0; i < array.size(); i++) out << array[i] << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
+
+bool imgProcess::saveList(QList<solidLine *> array, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        out << "startX startY endX endY length\n";
+
+        for(int i = 0; i < array.size(); i++)
+            out << array[i]->start.x() << " " << array[i]->start.y() << " " << array[i]->end.x() << " " << array[i]->end.y() << " " << array[i]->length << "\n";
         file.close();
     } else saveStatus = false;
 
@@ -603,6 +622,74 @@ void imgProcess::detectPrimaryVoid(){
             }
         }
     }
+}
+
+void imgProcess::detectLongestSolidLine(float distance, float angle) {
+
+    solidSpace.clear();
+
+    int lineY = 0, lineLength = 0;
+    //int fullX = 0;    int fullY = centerY - getLineY((fullX - centerX), distance, angle);;
+    int prevValue = 0,    // begin with empty
+        prevX = 0, prevY = 0,
+        currentValue = 0, state = 0;
+    solidLine *line;
+
+    for (int x = 0; x < imageWidth + 1; x++){   // +1 for last coordinate to catch last line shape
+
+        lineY = centerY - getLineY((x - centerX), distance, angle);
+
+        if (lineY >= 0 && lineY < imageHeight){
+
+            if (x == imageWidth)
+                currentValue = 0;   // end with empty
+            else
+                currentValue = valueMatrix[lineY][x];
+
+            if (prevValue == 0 && currentValue == 255){
+                state = 1;  // void to full
+            } else
+            if (prevValue == 255 && currentValue == 0){
+                state = 0;  // full to void
+            } else
+            if (prevValue == 0 && currentValue == 0){
+                state = 3;  // void unchanged
+            } else
+            if (prevValue == 255 && currentValue == 255){
+                state = 4;  // full unchanged
+            } else
+                state = 5;  // not recognized
+
+            if (state == 1){    // if solid line is STARTED get coor. with prev. coor (last full point coor)
+                line = new solidLine();
+                line->start.setX(x);
+                line->start.setY(lineY);
+                lineLength++;
+            }
+
+            if (state == 4){    // calc. solid line length - SOLID CONTINUES
+                lineLength++;
+            }
+
+            if (state == 0){    // if solid line is END get coor. of end point & append solid line data to list
+                line->end.setX(prevX);
+                line->end.setY(prevY);
+                line->length = lineLength;
+                solidSpace.append(line);
+                lineLength = 0;
+            }
+
+            prevValue = currentValue;
+            prevX = x;
+            prevY = lineY;
+        }
+    }
+
+
+    //saveList(solidSpace, "data/solidspace.csv");
+
+    //solidLine xl;    return xl;
+
 }
 
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){
