@@ -126,6 +126,24 @@ bool imgProcess::saveList(QList<solidLine *> array, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveList(QList<solidLine> array, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        out << "startX startY endX endY length\n";
+
+        for(int i = 0; i < array.size(); i++)
+            out << array[i].start.x() << " " << array[i].start.y() << " " << array[i].end.x() << " " << array[i].end.y() << " " << array[i].length << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
+
 void imgProcess::detectEdgeSobel(){
 
     int G, Gx, Gy;
@@ -294,7 +312,7 @@ void imgProcess::calcAvgDistAndAngle(int limit){
 // then find the ave. distance and angle of these majors
 void imgProcess::calcAvgDistAndAngleOfMajors(){
 
-    int _voteThreshold = (int) (houghLines[0][2] * 0.50);    // %x of first line (most voted)
+    int _voteThreshold = (int) (houghLines[0][2] * 0.80);    // %x of first line (most voted)
     int _voteThresholdIndex = houghLineNo - 1;               // last index
 
     // find the index of less than vote threshold
@@ -624,7 +642,7 @@ void imgProcess::detectPrimaryVoid(){
     }
 }
 
-void imgProcess::detectLongestSolidLine(float distance, float angle) {
+solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
 
     solidSpace.clear();
 
@@ -686,10 +704,29 @@ void imgProcess::detectLongestSolidLine(float distance, float angle) {
     }
 
 
-    //saveList(solidSpace, "data/solidspace.csv");
+    solidLine longestLine;
+    longestLine.length = -1;    // no solid line
+    int index = 0, maxLength = 0;
 
-    //solidLine xl;    return xl;
+    if (solidSpace.size() != 0){
 
+        for (int i = 0; i < solidSpace.size(); i++){
+            if (solidSpace[i]->length > maxLength){
+                index = i;
+                maxLength = solidSpace[i]->length;
+            }
+        }
+
+        if (maxLength != 0){
+            longestLine.start.setX( solidSpace[index]->start.x() );
+            longestLine.start.setY( solidSpace[index]->start.y() );
+            longestLine.end.setX( solidSpace[index]->end.x() );
+            longestLine.end.setY( solidSpace[index]->end.y() );
+            longestLine.length = solidSpace[index]->length;
+        }
+    }
+
+    return longestLine;
 }
 
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){

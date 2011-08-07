@@ -144,6 +144,7 @@ class imgProcess{
         bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
         bool saveList(QList<int> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
+        bool saveList(QList<solidLine> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void houghTransform();                  // conduct hough transform & construct hough space matrix
@@ -165,7 +166,7 @@ class imgProcess{
                                                 // LASER LINE MUST BE ALIGN TO WHOLE IMAGE AND VOID SPACE IN INTEREST
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
-        void detectLongestSolidLine(float distance, float angle);  // detect longest solid(continuous) line from hough space via given distance angle&distance
+        solidLine detectLongestSolidLine(float distance, float angle);  // detect longest solid(continuous) line from hough space via given distance angle&distance
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);
