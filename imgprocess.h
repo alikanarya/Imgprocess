@@ -70,7 +70,8 @@ class imgProcess{
         int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
         QList<int> lowLinesList, highLinesList;
-        QList<solidLine *> solidSpace;        // list to hold found solid lines
+        QList<solidLine *> solidSpace;      // list to hold found solid lines in single line
+        QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough-lines
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -167,6 +168,7 @@ class imgProcess{
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
         solidLine detectLongestSolidLine(float distance, float angle);  // detect longest solid(continuous) line from hough space via given distance angle&distance
+        void detectLongestSolidLines();         // detect longest solid(continuous) lines from hough-lines array
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

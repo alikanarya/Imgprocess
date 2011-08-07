@@ -653,16 +653,16 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
         currentValue = 0, state = 0;
     solidLine *line;
 
-    for (int x = 0; x < imageWidth + 1; x++){   // +1 for last coordinate to catch last line shape
+    for (int x = 0; x < edgeWidth + 1; x++){   // +1 for last coordinate to catch last line shape
 
         lineY = centerY - getLineY((x - centerX), distance, angle);
 
-        if (lineY >= 0 && lineY < imageHeight){
+        if (lineY >= 0 && lineY < edgeHeight){
 
-            if (x == imageWidth)
+            if (x == edgeWidth)
                 currentValue = 0;   // end with empty
             else
-                currentValue = valueMatrix[lineY][x];
+                currentValue = edgeMatrix[lineY][x];
 
             if (prevValue == 0 && currentValue == 255){
                 state = 1;  // void to full
@@ -727,6 +727,16 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
     }
 
     return longestLine;
+}
+
+void imgProcess::detectLongestSolidLines(){
+
+    solidSpaceMain.clear();
+
+    for (int i = 0; i < houghLineNo; i++){
+        solidSpaceMain.append( detectLongestSolidLine( houghLines[i][0], houghLines[i][1] ) );
+    }
+
 }
 
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){
