@@ -77,6 +77,7 @@ class imgProcess{
 
         int **valueMatrix;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
+        int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded
 
         int **houghSpace;                   // line votes: line search matrix, depends max. distance & angle scale
@@ -104,6 +105,9 @@ class imgProcess{
 
             edgeMatrix = new int*[edgeHeight];
             for (int i = 0; i < edgeHeight; i++)   edgeMatrix[i] = new int[edgeWidth];
+
+            edgeThickenedMatrix = new int*[edgeHeight];
+            for (int i = 0; i < edgeHeight; i++)   edgeThickenedMatrix[i] = new int[edgeWidth];
 
             houghMatrix = new int*[edgeHeight];
             for (int i = 0; i < edgeHeight; i++) houghMatrix[i] = new int[edgeWidth];
@@ -148,6 +152,7 @@ class imgProcess{
         bool saveList(QList<solidLine> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
+        void thickenEdges();                    // thicken edges
         void houghTransform();                  // conduct hough transform & construct hough space matrix
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it

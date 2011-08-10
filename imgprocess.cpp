@@ -165,6 +165,40 @@ void imgProcess::detectEdgeSobel(){
         }
 }
 
+void imgProcess::thickenEdges(){
+
+    int xnStart = -1, xnEnd = 1, ynStart = -1, ynEnd = 1;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++){
+
+            if (y == 0) {
+                ynStart = 0; ynEnd = 1;
+            } else
+            if (y == (edgeHeight - 1)) {
+                ynStart = -1; ynEnd = 0;
+            } else {
+                ynStart = -1; ynEnd = 1;
+            }
+
+            if (x == 0) {
+                xnStart = 0; xnEnd = 1;
+            } else
+            if (x == (edgeWidth - 1)) {
+                xnStart = -1; xnEnd = 0;
+            } else {
+                xnStart = -1; xnEnd = 1;
+            }
+
+            if ( edgeMatrix[y][x] == 255 )
+                for (int xn = xnStart; xn <= xnEnd; xn++)
+                    for (int yn = ynStart; yn <= ynEnd; yn++)
+                       edgeThickenedMatrix[y + yn][x + xn] = 255;
+            else
+                edgeThickenedMatrix[y][x] = 0;
+        }
+}
+
 void imgProcess::houghTransform(){
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
     //centerX = edgeWidth / 2;
@@ -662,7 +696,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
             if (x == edgeWidth)
                 currentValue = 0;   // end with empty
             else
-                currentValue = edgeMatrix[lineY][x];
+                currentValue = edgeThickenedMatrix[lineY][x];
 
             if (prevValue == 0 && currentValue == 255){
                 state = 1;  // void to full
@@ -704,6 +738,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
     }
 
 
+    // find longest line in solid space
     solidLine longestLine;
     longestLine.length = -1;    // no solid line
     int index = 0, maxLength = 0;
@@ -817,6 +852,9 @@ imgProcess::~imgProcess(){
 
     for (int y = 0; y < edgeHeight; y++) delete []edgeMatrix[y];
     delete []edgeMatrix;
+
+    for (int y = 0; y < edgeHeight; y++) delete []edgeThickenedMatrix[y];
+    delete []edgeThickenedMatrix;
 
     for (int y = 0; y < edgeHeight; y++) delete []houghMatrix[y];
     delete []houghMatrix;
