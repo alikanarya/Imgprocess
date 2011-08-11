@@ -134,10 +134,10 @@ bool imgProcess::saveList(QList<solidLine> array, QString fname){
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
         QTextStream out(&file);
 
-        out << "startX startY endX endY length\n";
+        out << "distance angle startX startY endX endY length\n";
 
         for(int i = 0; i < array.size(); i++)
-            out << array[i].start.x() << " " << array[i].start.y() << " " << array[i].end.x() << " " << array[i].end.y() << " " << array[i].length << "\n";
+            out << array[i].distance << " " << array[i].angle << " " << array[i].start.x() << " " << array[i].start.y() << " " << array[i].end.x() << " " << array[i].end.y() << " " << array[i].length << "\n";
         file.close();
     } else saveStatus = false;
 
@@ -727,6 +727,8 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
                 line->end.setX(prevX);
                 line->end.setY(prevY);
                 line->length = lineLength;
+                line->angle = angle;
+                line->distance = distance;
                 solidSpace.append(line);
                 lineLength = 0;
             }
@@ -758,6 +760,8 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
             longestLine.end.setX( solidSpace[index]->end.x() );
             longestLine.end.setY( solidSpace[index]->end.y() );
             longestLine.length = solidSpace[index]->length;
+            longestLine.distance = solidSpace[index]->distance;
+            longestLine.angle = solidSpace[index]->angle;
         }
     }
 
@@ -768,8 +772,30 @@ void imgProcess::detectLongestSolidLines(){
 
     solidSpaceMain.clear();
 
-    for (int i = 0; i < houghLineNo; i++){
-        solidSpaceMain.append( detectLongestSolidLine( houghLines[i][0], houghLines[i][1] ) );
+    //for (int i = 0; i < houghLineNo; i++) solidSpaceMain.append( detectLongestSolidLine( houghLines[i][0], houghLines[i][1] ) );
+    float angle = 0;
+
+    for (int distance = 0; distance < houghDistanceMax; distance++)
+        for (int angleIndex = 0; angleIndex < houghThetaSize; angleIndex++){
+            angle = thetaMin + angleIndex * thetaStep;
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle ) );
+        }
+
+    solidSpaceMainOrdered.clear();
+
+    int maxLength = 0, maxIndex = 0;
+
+    for (int i = 0; i < solidSpaceMain.size(); i++){
+        for (int j = 0; j < solidSpaceMain.size(); j++){
+            if ( solidSpaceMain[j].length > maxLength ){
+                maxIndex = j;
+                maxLength = solidSpaceMain[j].length;
+            }
+        }
+        solidSpaceMainOrdered.append( solidSpaceMain[maxIndex] );
+        solidSpaceMain[maxIndex].length = 0;
+        maxLength = 0;
+
     }
 
 }

@@ -30,6 +30,8 @@ public:
         QPoint start;
         QPoint end;
         int length;
+        int distance;
+        float angle;
 
         solidLine(){}
 };
@@ -71,7 +73,8 @@ class imgProcess{
         QList<voidLine *> voidSpace;        // list to hold found void lines
         QList<int> lowLinesList, highLinesList;
         QList<solidLine *> solidSpace;      // list to hold found solid lines in single line
-        QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough-lines
+        QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough space
+        QList<solidLine> solidSpaceMainOrdered; // line length ordered list of solidSpaceMain
         int errorEdgeLimit;
         int errorAngleLimit;
 
