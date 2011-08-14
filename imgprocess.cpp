@@ -742,7 +742,16 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
 
     // find longest line in solid space
     solidLine longestLine;
-    longestLine.length = -1;    // no solid line
+
+    // no solid line
+    longestLine.start.setX( -1 );
+    longestLine.start.setY( -1 );
+    longestLine.end.setX( -1 );
+    longestLine.end.setY( -1 );
+    longestLine.length = -1;
+    longestLine.distance = distance;
+    longestLine.angle = angle;
+
     int index = 0, maxLength = 0;
 
     if (solidSpace.size() != 0){
@@ -760,8 +769,6 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
             longestLine.end.setX( solidSpace[index]->end.x() );
             longestLine.end.setY( solidSpace[index]->end.y() );
             longestLine.length = solidSpace[index]->length;
-            longestLine.distance = solidSpace[index]->distance;
-            longestLine.angle = solidSpace[index]->angle;
         }
     }
 
@@ -772,7 +779,6 @@ void imgProcess::detectLongestSolidLines(){
 
     solidSpaceMain.clear();
 
-    //for (int i = 0; i < houghLineNo; i++) solidSpaceMain.append( detectLongestSolidLine( houghLines[i][0], houghLines[i][1] ) );
     float angle = 0;
 
     for (int distance = 0; distance < houghDistanceMax; distance++)
@@ -781,6 +787,101 @@ void imgProcess::detectLongestSolidLines(){
             solidSpaceMain.append( detectLongestSolidLine( distance, angle ) );
         }
 
+
+    // remove no lines
+    solidSpaceMainTrimmed.clear();
+
+    for (int i = 0; i < solidSpaceMain.size(); i++)
+        if ( solidSpaceMain[i].length != -1 )
+            solidSpaceMainTrimmed.append( solidSpaceMain[i] );
+
+
+    // take maximums of each distance value
+
+    int size = solidSpaceMainTrimmed.size();
+
+    if ( size != 0){
+
+        solidSpaceMainMaximums.clear();
+
+        int currentDistance = solidSpaceMainTrimmed[0].distance;
+        int currentStart = 0, index;
+        bool loopEnd = true;
+        QList<solidLine> buffer;    // equal distance list
+        QList<int> bufferEquals;    // eqaul maximums indexes
+
+        while (loopEnd){
+
+            buffer.clear();
+
+            // get same distances
+            for (index = currentStart; index < size; index++){
+                if (solidSpaceMainTrimmed[index].distance == currentDistance)
+                    buffer.append( solidSpaceMainTrimmed[index] );
+                else
+                    break;
+            }
+
+            // loop end or next iteration assignments
+            if ( index == size )
+                loopEnd = false;
+            else {
+                currentStart = index;
+                currentDistance = solidSpaceMainTrimmed[currentStart].distance;
+            }
+
+
+            if ( buffer.size() != 0 ){
+
+                int maxLength = 0, maxIndex = 0;
+
+                // detect maximum length of buffer
+                for (int i = 0; i < buffer.size(); i++)
+                    if (buffer[i].length > maxLength) {
+                        maxIndex = i;
+                        maxLength = buffer[i].length;
+                    }
+
+                bufferEquals.clear();
+
+                // detect indexes of equal maximum points
+                for (int i = 0; i < buffer.size(); i++)
+                    if (buffer[i].length == maxLength)
+                        bufferEquals.append( i );
+
+                // calculate avg distance & angle of maximum length points
+                solidLine avgLine;
+                float avgDistance = 0, avgAngle = 0;
+
+                for (int i = 0; i < bufferEquals.size(); i++){
+                    avgDistance += buffer[ bufferEquals[i] ].distance;
+                    avgAngle += buffer[ bufferEquals[i] ].angle;
+                }
+
+                if ( bufferEquals.size() != 0) {
+                    avgDistance /= bufferEquals.size();
+                    avgAngle /= bufferEquals.size();
+                }
+
+                // x & y assignments are just for occupation, first occurance of maximum in buffer list
+                avgLine.start.setX( buffer[maxIndex].start.x() );
+                avgLine.start.setY( buffer[maxIndex].start.y() );
+                avgLine.end.setX( buffer[maxIndex].end.x() );
+                avgLine.end.setY( buffer[maxIndex].end.y() );
+                avgLine.length = maxLength;
+                avgLine.distance = avgDistance;
+                avgLine.angle = avgAngle;
+
+                solidSpaceMainMaximums.append( avgLine );
+            }
+        } // while
+
+    }
+
+
+
+    /*
+    // order according to line length descending
     solidSpaceMainOrdered.clear();
 
     int maxLength = 0, maxIndex = 0;
@@ -797,7 +898,7 @@ void imgProcess::detectLongestSolidLines(){
         maxLength = 0;
 
     }
-
+*/
 }
 
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){

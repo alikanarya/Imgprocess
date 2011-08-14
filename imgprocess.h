@@ -74,6 +74,8 @@ class imgProcess{
         QList<int> lowLinesList, highLinesList;
         QList<solidLine *> solidSpace;      // list to hold found solid lines in single line
         QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough space
+        QList<solidLine> solidSpaceMainTrimmed; // solidSpaceMain: no lines (length -1) excluded
+        QList<solidLine> solidSpaceMainMaximums;// solidSpaceTrimmed: maximums of each distance value
         QList<solidLine> solidSpaceMainOrdered; // line length ordered list of solidSpaceMain
         int errorEdgeLimit;
         int errorAngleLimit;
