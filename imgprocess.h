@@ -37,6 +37,17 @@ public:
 };
 
 
+// class for major area indexes
+class majorArea{
+
+public:
+    int startIndex;
+    int endIndex;
+
+    majorArea(){}
+};
+
+
 // image processing class
 class imgProcess{
 
@@ -72,11 +83,16 @@ class imgProcess{
         int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
         QList<int> lowLinesList, highLinesList;
+
         QList<solidLine *> solidSpace;      // list to hold found solid lines in single line
         QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough space
         QList<solidLine> solidSpaceMainTrimmed; // solidSpaceMain: no lines (length -1) excluded
         QList<solidLine> solidSpaceMainMaximums;// solidSpaceTrimmed: maximums of each distance value
         QList<solidLine> solidSpaceMainOrdered; // line length ordered list of solidSpaceMain
+        QList<majorArea *> majorList;
+        float majorThresholdPercent;
+        int maxSolidLineLength;
+
         int errorEdgeLimit;
         int errorAngleLimit;
 

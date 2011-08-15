@@ -789,11 +789,13 @@ void imgProcess::detectLongestSolidLines(){
 
 
     // remove no lines
+
     solidSpaceMainTrimmed.clear();
 
     for (int i = 0; i < solidSpaceMain.size(); i++)
         if ( solidSpaceMain[i].length != -1 )
             solidSpaceMainTrimmed.append( solidSpaceMain[i] );
+
 
 
     // take maximums of each distance value
@@ -835,7 +837,7 @@ void imgProcess::detectLongestSolidLines(){
 
                 int maxLength = 0, maxIndex = 0;
 
-                // detect maximum length of buffer
+                // detect maximum length in buffer
                 for (int i = 0; i < buffer.size(); i++)
                     if (buffer[i].length > maxLength) {
                         maxIndex = i;
@@ -875,8 +877,45 @@ void imgProcess::detectLongestSolidLines(){
                 solidSpaceMainMaximums.append( avgLine );
             }
         } // while
-
     }
+
+
+
+    // find major areas
+    majorThresholdPercent = 0.8;   // %80
+
+    int maxIndex = 0;
+    maxSolidLineLength = 0;
+
+    // detect maximum length in solidSpaceMainMaximums
+    for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
+        if (solidSpaceMainMaximums[i].length > maxSolidLineLength) {
+            maxIndex = i;
+            maxSolidLineLength = solidSpaceMainMaximums[i].length;
+        }
+
+    float majorThreshold = maxSolidLineLength * majorThresholdPercent;
+    majorArea *area;
+    bool areaStartFlag = false;
+    majorList.clear();
+
+    for (int i = 0; i < solidSpaceMainMaximums.size(); i++) {
+
+        if (solidSpaceMainMaximums[i].length > majorThreshold && !areaStartFlag) {
+            areaStartFlag = true;
+            area = new majorArea();
+            area->startIndex = i;
+        }
+
+        if (solidSpaceMainMaximums[i].length < majorThreshold && areaStartFlag) {
+            areaStartFlag = false;
+            area->endIndex = i - 1;
+            majorList.append( area );
+        }
+    }
+
+
+
 
 
 
