@@ -916,6 +916,92 @@ void imgProcess::detectLongestSolidLines(){
 
 
 
+    // find major lines from areas
+
+    int _max = 0, _index = 0;
+    majorLines.clear();
+    solidLine avgLine;
+    float avgDistance, avgAngle, equalCount;
+
+    for (int i = 0; i < majorList.size(); i++){
+        _max = 0;
+        _index = 0;
+
+        // detect max of area
+        for (int j = majorList[i]->startIndex; j <= majorList[i]->endIndex; j++)
+            if (solidSpaceMainMaximums[j].length > _max) {
+                _index = j;
+                _max = solidSpaceMainMaximums[j].length;
+            }
+
+
+        // average equal maxs
+        avgDistance = 0, avgAngle = 0, equalCount = 0;
+
+        for (int j = majorList[i]->startIndex; j <= majorList[i]->endIndex; j++)
+            if (solidSpaceMainMaximums[j].length == _max) {
+                equalCount++;
+                avgDistance += solidSpaceMainMaximums[j].distance;
+                avgAngle += solidSpaceMainMaximums[j].angle;
+            }
+
+        if (equalCount != 0){
+            avgDistance /= equalCount;
+            avgAngle /= equalCount;
+
+            // x & y assignments are just for occupation, first occurance of maximum in area list
+            avgLine.start.setX( solidSpaceMainMaximums[_index].start.x() );
+            avgLine.start.setY( solidSpaceMainMaximums[_index].start.y() );
+            avgLine.end.setX( solidSpaceMainMaximums[_index].end.x() );
+            avgLine.end.setY( solidSpaceMainMaximums[_index].end.y() );
+            avgLine.length = _max;
+            avgLine.distance = avgDistance;
+            avgLine.angle = avgAngle;
+
+            majorLines.append( avgLine );
+        }
+    }
+
+
+
+    // obtain 2 major lines
+    major2Lines.clear();
+    majorLinesFound = true;
+
+    if (majorLines.size() == 2){
+        major2Lines.append(majorLines[0]);
+        major2Lines.append(majorLines[1]);
+    } else
+    if (majorLines.size() == 1){
+        major2Lines.append(majorLines[0]);
+        major2Lines.append(majorLines[0]);
+    } else
+    if (majorLines.size() == 0){
+        majorLinesFound = false;
+    } else {
+        // detect max 2
+
+        int maxValue = 0, indexValue = 0;
+
+        for (int j = 0; j < majorLines.size(); j++)
+            if (majorLines[j].length > maxValue) {
+                indexValue = j;
+                maxValue = majorLines[j].length;
+            }
+        major2Lines.append( majorLines[indexValue] );
+
+        majorLines[indexValue].length = 0;
+        maxValue = 0, indexValue = 0;
+
+        for (int j = 0; j < majorLines.size(); j++)
+            if (majorLines[j].length > maxValue) {
+                indexValue = j;
+                maxValue = majorLines[j].length;
+            }
+        major2Lines.append( majorLines[indexValue] );
+    }
+
+
 
 
 

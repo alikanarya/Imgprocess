@@ -30,7 +30,7 @@ public:
         QPoint start;
         QPoint end;
         int length;
-        int distance;
+        float distance;
         float angle;
 
         solidLine(){}
@@ -92,6 +92,9 @@ class imgProcess{
         QList<majorArea *> majorList;
         float majorThresholdPercent;
         int maxSolidLineLength;
+        QList<solidLine> majorLines;    // list that hold major lines data from major areas
+        QList<solidLine> major2Lines;   // list that hold 2 major lines
+        bool majorLinesFound;
 
         int errorEdgeLimit;
         int errorAngleLimit;
