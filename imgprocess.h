@@ -95,6 +95,7 @@ class imgProcess{
         QList<solidLine> majorLines;    // list that hold major lines data from major areas
         QList<solidLine> major2Lines;   // list that hold 2 major lines
         bool majorLinesFound;
+        solidLine primaryLine;
 
         int errorEdgeLimit;
         int errorAngleLimit;
@@ -182,6 +183,7 @@ class imgProcess{
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it
         void constructHoughMatrix2Lines();      // construct hough matrix base on edge matrix with 2 lines coded on it
         void constructHoughMatrixAvgLine();
+        void constructHoughMatrixPrimaryLine(int startX, int endX);
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
         void calcAvgDistAndAngle(int limit);    // calc. ave. distance anf angle of <no> hough lines ; eg houghLineNo
@@ -196,7 +198,7 @@ class imgProcess{
                                                 // LASER LINE MUST BE ALIGN TO WHOLE IMAGE AND VOID SPACE IN INTEREST
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
-        solidLine detectLongestSolidLine(float distance, float angle);  // detect longest solid(continuous) line from hough space via given distance angle&distance
+        solidLine detectLongestSolidLine(float distance, float angle, bool flag);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
         void detectLongestSolidLines();         // detect longest solid(continuous) lines from hough-lines array
 
         // produces image from matrix. if hough line code is included in, dras lines with RED

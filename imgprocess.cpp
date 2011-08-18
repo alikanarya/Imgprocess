@@ -311,6 +311,22 @@ void imgProcess::constructHoughMatrixAvgLine(){
     }
 }
 
+void imgProcess::constructHoughMatrixPrimaryLine(int startX, int endX){
+
+    int lineY;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    for (int x = startX; x <= endX; x++){
+        lineY = centerY - getLineY((x - centerX), distanceAvg, thetaAvg);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+    }
+}
+
 int imgProcess::calcVoteAvg(){
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
@@ -676,27 +692,40 @@ void imgProcess::detectPrimaryVoid(){
     }
 }
 
-solidLine imgProcess::detectLongestSolidLine(float distance, float angle) {
+solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag) {
 
     solidSpace.clear();
 
+    int width, height;
+
+    if (flag){
+        width = imageWidth;
+        height = imageHeight;
+    } else {
+        width = edgeWidth;
+        height = edgeHeight;
+    }
+
     int lineY = 0, lineLength = 0;
-    //int fullX = 0;    int fullY = centerY - getLineY((fullX - centerX), distance, angle);;
     int prevValue = 0,    // begin with empty
         prevX = 0, prevY = 0,
         currentValue = 0, state = 0;
     solidLine *line;
 
-    for (int x = 0; x < edgeWidth + 1; x++){   // +1 for last coordinate to catch last line shape
+    for (int x = 0; x < width + 1; x++){   // +1 for last coordinate to catch last line shape
 
         lineY = centerY - getLineY((x - centerX), distance, angle);
 
-        if (lineY >= 0 && lineY < edgeHeight){
+        if (lineY >= 0 && lineY < height){
 
-            if (x == edgeWidth)
+            if (x == width)
                 currentValue = 0;   // end with empty
-            else
-                currentValue = edgeThickenedMatrix[lineY][x];
+            else {
+                if (flag)
+                    currentValue = valueMatrix[lineY][x];
+                else
+                    currentValue = edgeThickenedMatrix[lineY][x];
+            }
 
             if (prevValue == 0 && currentValue == 255){
                 state = 1;  // void to full
@@ -784,7 +813,7 @@ void imgProcess::detectLongestSolidLines(){
     for (int distance = 0; distance < houghDistanceMax; distance++)
         for (int angleIndex = 0; angleIndex < houghThetaSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
-            solidSpaceMain.append( detectLongestSolidLine( distance, angle ) );
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );
         }
 
 
@@ -1002,6 +1031,15 @@ void imgProcess::detectLongestSolidLines(){
     }
 
 
+    // calculate average distance and angle value of 2 major line
+    if (majorLinesFound) {
+        distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
+        thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
+        primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);
+    } else {
+        distanceAvg = -1;
+        thetaAvg = -1;
+    }
 
 
 
