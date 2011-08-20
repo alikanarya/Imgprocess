@@ -1142,10 +1142,10 @@ imgProcess::~imgProcess(){
 
     for (int y = 0; y < edgeHeight; y++) delete []edgeMatrix[y];
     delete []edgeMatrix;
-
+/*
     for (int y = 0; y < edgeHeight; y++) delete []edgeThickenedMatrix[y];
     delete []edgeThickenedMatrix;
-
+*/
     for (int y = 0; y < edgeHeight; y++) delete []houghMatrix[y];
     delete []houghMatrix;
 
@@ -1161,4 +1161,22 @@ imgProcess::~imgProcess(){
         for (int i = 0; i < voidSpace.size(); i++) delete voidSpace[i];
         voidSpace.clear();
     }
+/*
+    if (solidSpace.size() > 0) {
+        for (int i = 0; i < solidSpace.size(); i++) delete solidSpace[i];
+        solidSpace.clear();
+    }
+
+    if (majorList.size() > 0) {
+        for (int i = 0; i < majorList.size(); i++) delete majorList[i];
+        majorList.clear();
+    }
+
+    if ( solidSpaceMain.size() > 0 ) solidSpaceMain.clear();
+    if ( solidSpaceMainTrimmed.size() > 0 ) solidSpaceMainTrimmed.clear();
+    if ( solidSpaceMainMaximums.size() > 0 ) solidSpaceMainMaximums.clear();
+    if ( solidSpaceMainOrdered.size() > 0 ) solidSpaceMainOrdered.clear();
+    if ( majorLines.size() > 0 ) majorLines.clear();
+    if ( major2Lines.size() > 0 ) major2Lines.clear();
+    */
 }
