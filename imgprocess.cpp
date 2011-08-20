@@ -224,10 +224,12 @@ void imgProcess::houghTransform(){
 }
 
 void imgProcess::calculateHoughMaxs(int number){
+
     houghLineNo = number;
 
     houghLines = new float*[houghLineNo];
     for (int i = 0; i < houghLineNo; i++)   houghLines[i] = new float[3];
+    houghLinesInitSwitch = true;
 
     int max, maxDistance, maxThetaIndex;
     for (int line = 0; line < houghLineNo; line++){
@@ -1142,18 +1144,20 @@ imgProcess::~imgProcess(){
 
     for (int y = 0; y < edgeHeight; y++) delete []edgeMatrix[y];
     delete []edgeMatrix;
-/*
+
     for (int y = 0; y < edgeHeight; y++) delete []edgeThickenedMatrix[y];
     delete []edgeThickenedMatrix;
-*/
+
     for (int y = 0; y < edgeHeight; y++) delete []houghMatrix[y];
     delete []houghMatrix;
 
     for (int y = 0; y < houghDistanceMax; y++) delete []houghSpace[y];
     delete []houghSpace;
 
-    for (int y = 0; y < houghLineNo; y++) delete []houghLines[y];
-    delete []houghLines;
+    if (houghLinesInitSwitch) {
+        for (int y = 0; y < houghLineNo; y++) delete []houghLines[y];
+        delete []houghLines;
+    }
 
     if (histogramInitSwitch) delete []histogram;
 
@@ -1161,7 +1165,7 @@ imgProcess::~imgProcess(){
         for (int i = 0; i < voidSpace.size(); i++) delete voidSpace[i];
         voidSpace.clear();
     }
-/*
+
     if (solidSpace.size() > 0) {
         for (int i = 0; i < solidSpace.size(); i++) delete solidSpace[i];
         solidSpace.clear();
@@ -1178,5 +1182,4 @@ imgProcess::~imgProcess(){
     if ( solidSpaceMainOrdered.size() > 0 ) solidSpaceMainOrdered.clear();
     if ( majorLines.size() > 0 ) majorLines.clear();
     if ( major2Lines.size() > 0 ) major2Lines.clear();
-    */
 }
