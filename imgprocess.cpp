@@ -355,6 +355,32 @@ void imgProcess::constructHoughMatrixPrimaryLines(solidLine line1, solidLine lin
     }
 }
 
+void imgProcess::constructHoughMatrixMajor2Lines(){
+
+    int lineY;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    if (majorLines.size() == 2){
+
+        for (int x = majorLines[0].start.x(); x <= majorLines[0].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
+
+            if (lineY >= 0 && lineY < edgeHeight)
+                if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+        }
+
+        for (int x = majorLines[1].start.x(); x <= majorLines[1].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
+
+            if (lineY >= 0 && lineY < edgeHeight)
+                if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+        }
+    }
+}
+
 int imgProcess::calcVoteAvg(){
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
@@ -665,7 +691,7 @@ void imgProcess::detectVoidLinesEdge(){
     }
 }
 
-// DETECTION FUNCTION
+// DETECTION FUNCTION BASED ON VOID SPACES
 void imgProcess::detectPrimaryVoid(){
     detected = true;
 
@@ -832,6 +858,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
     return longestLine;
 }
 
+// DETECTION FUNCTION BASED ON SOLID LINES
 void imgProcess::detectLongestSolidLines(){
 
     solidSpaceMain.clear();
@@ -1059,12 +1086,22 @@ void imgProcess::detectLongestSolidLines(){
     }
 
 
-    // calculate average distance and angle value of 2 major line
+    // calculate average distance and angle value of 2 major line = PRIMARY LINE
+
     if (majorLinesFound) {
         distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
         thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
         primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);
     } else {
+        // no solid line
+        primaryLine.start.setX( -1 );
+        primaryLine.start.setY( -1 );
+        primaryLine.end.setX( -1 );
+        primaryLine.end.setY( -1 );
+        primaryLine.length = -1;
+        primaryLine.distance = -1;
+        primaryLine.angle = -1;
+
         distanceAvg = -1;
         thetaAvg = -1;
     }
@@ -1149,15 +1186,37 @@ QImage imgProcess::cornerImage(){
         QRgb value;
         value = qRgb(0, 255, 0);        // green
 
+        int X, Y;
+
         for (int x = -4; x <= 4; x++){
-            imgCorner.setPixel(leftCornerX + x, leftCornerY, value);
-            imgCorner.setPixel(rightCornerX + x, rightCornerY, value);
+
+            X = leftCornerX + x;
+            Y = leftCornerY;
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                imgCorner.setPixel( X, Y, value);
+
+            X = rightCornerX + x;
+            Y = rightCornerY;
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                imgCorner.setPixel( X, Y, value);
         }
 
         for (int y = -4; y <= 4; y++){
-            imgCorner.setPixel(leftCornerX, leftCornerY + y, value);
-            imgCorner.setPixel(rightCornerX, rightCornerY + y, value);
-            imgCorner.setPixel(trackCenterX, trackCenterY + y, value);
+
+            X = leftCornerX;
+            Y = leftCornerY + y;
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                imgCorner.setPixel( X, Y, value);
+
+            X = rightCornerX;
+            Y = rightCornerY + y;
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                imgCorner.setPixel( X, Y, value);
+
+            X = trackCenterX;
+            Y = trackCenterY + y;
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                imgCorner.setPixel( X, Y, value);
         }
     }
     return imgCorner;

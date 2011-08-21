@@ -187,6 +187,7 @@ class imgProcess{
         void constructHoughMatrixAvgLine();
         void constructHoughMatrixPrimaryLine(int startX, int endX);
         void constructHoughMatrixPrimaryLines(solidLine line1, solidLine line2, int line2offset);
+        void constructHoughMatrixMajor2Lines();
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
         void calcAvgDistAndAngle(int limit);    // calc. ave. distance anf angle of <no> hough lines ; eg houghLineNo
