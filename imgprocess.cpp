@@ -329,6 +329,32 @@ void imgProcess::constructHoughMatrixPrimaryLine(int startX, int endX){
     }
 }
 
+void imgProcess::constructHoughMatrixPrimaryLines(solidLine line1, solidLine line2, int line2offset){
+
+    int lineY;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    for (int x = line1.start.x(); x <= line1.end.x(); x++){
+        lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+    }
+
+    int startX = line2offset + line2.start.x();
+    int endX = line2offset + line2.end.x();
+
+    for (int x = startX; x <= endX; x++){
+        lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle);
+
+        if (lineY >= 0 && lineY < edgeHeight)
+            if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+    }
+}
+
 int imgProcess::calcVoteAvg(){
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
