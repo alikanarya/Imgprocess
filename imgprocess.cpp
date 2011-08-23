@@ -159,8 +159,10 @@ void imgProcess::detectEdgeSobel(){
 
             G = (int)(sqrt(pow(Gx, 2) + pow(Gy, 2)));
 
-            if (G > 255) G = 255;
-            else if (G < 0) G = 0;
+            if (G > 255)
+                G = 255;
+            else if (G < 0)
+                G = 0;
             edgeMatrix[y-1][x-1] = G;
         }
 }
@@ -169,9 +171,13 @@ void imgProcess::thickenEdges(){
 
     int xnStart = -1, xnEnd = 1, ynStart = -1, ynEnd = 1;
 
-    for (int y = 0; y < edgeHeight; y++)
-        for (int x = 0; x < edgeWidth; x++){
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            edgeThickenedMatrix[y][x] = 0;
 
+    for (int y = 1; y < (imageHeight - 1); y++)
+        for (int x = 1; x < (imageWidth - 1); x++){
+            /* boundaries for edge -> edge matrix
             if (y == 0) {
                 ynStart = 0; ynEnd = 1;
             } else
@@ -189,17 +195,17 @@ void imgProcess::thickenEdges(){
             } else {
                 xnStart = -1; xnEnd = 1;
             }
-
-            if ( edgeMatrix[y][x] == 255 )
+            */
+            if ( edgeMatrix[y - 1][x - 1] == 255 )
                 for (int xn = xnStart; xn <= xnEnd; xn++)
                     for (int yn = ynStart; yn <= ynEnd; yn++)
                        edgeThickenedMatrix[y + yn][x + xn] = 255;
-            else
-                edgeThickenedMatrix[y][x] = 0;
+            //else edgeThickenedMatrix[y][x] = 0;
         }
 }
 
 void imgProcess::houghTransform(){
+
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
     //centerX = edgeWidth / 2;
     //centerY = edgeHeight - 1;
@@ -216,6 +222,31 @@ void imgProcess::houghTransform(){
     for (int y = 0; y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             if (edgeMatrix[y][x] != 0)
+                for (int i = 0; i < houghThetaSize; i++){
+                    theta = thetaMin + i * thetaStep;
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    if (distance >= 0) houghSpace[distance][i]++;
+                }
+}
+
+void imgProcess::houghTransformExtended(){
+
+    houghDistanceMax = (int) (sqrt(pow(imageWidth, 2) + pow(imageHeight, 2)));
+    centerX = imageWidth / 2;
+    centerY = imageHeight - 1;
+
+    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+
+    houghSpace = new int*[houghDistanceMax];
+    for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+
+    for (int y = 0; y < houghDistanceMax; y++)
+        for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
+
+    int distance, theta;
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            if (edgeThickenedMatrix[y][x] != 0)
                 for (int i = 0; i < houghThetaSize; i++){
                     theta = thetaMin + i * thetaStep;
                     distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
@@ -752,6 +783,9 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
 
     int width, height;
 
+    width = imageWidth;
+    height = imageHeight;
+/*
     if (flag){
         width = imageWidth;
         height = imageHeight;
@@ -759,7 +793,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
         width = edgeWidth;
         height = edgeHeight;
     }
-
+*/
     int lineY = 0, lineLength = 0;
     int prevValue = 0,    // begin with empty
         prevX = 0, prevY = 0,
@@ -870,6 +904,7 @@ void imgProcess::detectLongestSolidLines(){
             angle = thetaMin + angleIndex * thetaStep;
             solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );
         }
+
 
 
     // remove no lines
@@ -1089,8 +1124,24 @@ void imgProcess::detectLongestSolidLines(){
     // calculate average distance and angle value of 2 major line = PRIMARY LINE
 
     if (majorLinesFound) {
+
+        /*
+        // weighted average
+        int sum = major2Lines[0].length + major2Lines[1].length;
+
+        if ( sum != 0 ){
+            distanceAvg = (major2Lines[0].distance * major2Lines[0].length + major2Lines[1].distance * major2Lines[1].length) / sum;
+            thetaAvg = (major2Lines[0].angle * major2Lines[0].length + major2Lines[1].angle * major2Lines[1].length ) / sum;
+        } else {
+            distanceAvg  = 0;
+            thetaAvg = 0;
+        }
+        */
+
+        // classical average
         distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
         thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
+
         primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);
     } else {
         // no solid line
@@ -1180,6 +1231,7 @@ int* imgProcess::valueHistogram(){
 }
 
 QImage imgProcess::cornerImage(){
+
     imgCorner = imgOrginal.copy();
 
     if (detected){
@@ -1222,19 +1274,97 @@ QImage imgProcess::cornerImage(){
     return imgCorner;
 }
 
+QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, int line2offset ){
+
+    imgCornerAndPrimaryLines = imgOrginal.copy();
+
+    if (detected){
+        QRgb valueCorner, valuePrimary;
+
+
+        valuePrimary = qRgb(255, 0, 0);     // red
+        int lineY;
+
+        if ( line1.distance > 0 ) {
+
+            for (int x = line1.start.x(); x <= line1.end.x(); x++){
+                lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle);
+
+                if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
+                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary);
+            }
+        }
+
+        if ( line2.distance > 0 ) {
+
+            int startX = line2offset + line2.start.x();
+            int endX = line2offset + line2.end.x();
+
+            for (int x = startX; x <= endX; x++){
+                lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle);
+
+                if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
+                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary);
+            }
+        }
+
+        /*
+        valueCorner = qRgb(0, 255, 0);        // green
+
+        int X, Y;
+
+        for (int x = -4; x <= 4; x++){
+
+            X = leftCornerX + x;
+            Y = leftCornerY;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+
+            X = rightCornerX + x;
+            Y = rightCornerY;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+        }
+
+        for (int y = -4; y <= 4; y++){
+
+            X = leftCornerX;
+            Y = leftCornerY + y;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCorner.setPixel( X, Y, valueCorner);
+
+            X = rightCornerX;
+            Y = rightCornerY + y;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+
+            X = trackCenterX;
+            Y = trackCenterY + y;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+        }
+    */
+
+    }
+    return imgCornerAndPrimaryLines;
+}
 
 imgProcess::~imgProcess(){
+
     for (int y = 0; y < imageHeight; y++) delete []valueMatrix[y];
     delete []valueMatrix;
 
     for (int y = 0; y < edgeHeight; y++) delete []edgeMatrix[y];
     delete []edgeMatrix;
 
-    for (int y = 0; y < edgeHeight; y++) delete []edgeThickenedMatrix[y];
+    for (int y = 0; y < imageHeight; y++) delete []edgeThickenedMatrix[y];
     delete []edgeThickenedMatrix;
 
     for (int y = 0; y < edgeHeight; y++) delete []houghMatrix[y];
     delete []houghMatrix;
+
+    for (int y = 0; y < imageHeight; y++) delete []houghExtendedMatrix[y];
+    delete []houghExtendedMatrix;
 
     for (int y = 0; y < houghDistanceMax; y++) delete []houghSpace[y];
     delete []houghSpace;

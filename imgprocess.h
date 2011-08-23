@@ -54,7 +54,8 @@ class imgProcess{
     public:
         QImage imgOrginal;      // orginal image
         QImage imgMono;         // mono image
-        QImage imgCorner;       // otginal image with detected corners shown
+        QImage imgCorner;       // orginal image with detected corners shown
+        QImage imgCornerAndPrimaryLines;    // orginal image with detected corners and primary lines shown
 
         const int imageWidth, imageHeight;  // org. image
         int edgeWidth, edgeHeight;          // edge detected image
@@ -103,7 +104,8 @@ class imgProcess{
         int **valueMatrix;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
         int **edgeThickenedMatrix;          // thickened edge image data matrix
-        int **houghMatrix;                  // hough image data matrix with max. voted lines coded
+        int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
+        int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
 
         int **houghSpace;                   // line votes: line search matrix, depends max. distance & angle scale
         float **houghLines;                 // line data of max. voted lines; distance/angle/vote value
@@ -132,11 +134,15 @@ class imgProcess{
             edgeMatrix = new int*[edgeHeight];
             for (int i = 0; i < edgeHeight; i++)   edgeMatrix[i] = new int[edgeWidth];
 
-            edgeThickenedMatrix = new int*[edgeHeight];
-            for (int i = 0; i < edgeHeight; i++)   edgeThickenedMatrix[i] = new int[edgeWidth];
+            // edge extended to orginal matrix
+            edgeThickenedMatrix = new int*[height];
+            for (int i = 0; i < height; i++)   edgeThickenedMatrix[i] = new int[width];
 
             houghMatrix = new int*[edgeHeight];
             for (int i = 0; i < edgeHeight; i++) houghMatrix[i] = new int[edgeWidth];
+
+            houghExtendedMatrix = new int*[height];
+            for (int i = 0; i < height; i++) houghExtendedMatrix[i] = new int[width];
 
             thetaMin = 80;
             thetaMax = 100;
@@ -180,7 +186,8 @@ class imgProcess{
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void thickenEdges();                    // thicken edges
-        void houghTransform();                  // conduct hough transform & construct hough space matrix
+        void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
+        void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it
         void constructHoughMatrix2Lines();      // construct hough matrix base on edge matrix with 2 lines coded on it
@@ -212,6 +219,7 @@ class imgProcess{
         int* edgeSobelHistogram();                          // produce edge matrix Y histogram accor. X values
         int* valueHistogram();                              // produce value matrix Y histogram accor. X values
         QImage cornerImage();                               // produce detected corner image based on org. image
+        QImage cornerAndPrimaryLineImage(solidLine line1, solidLine line2, int line2offset);    // produce detected corner and primary lines image based on org. image
 
         ~imgProcess();                                      // destructor
 };
