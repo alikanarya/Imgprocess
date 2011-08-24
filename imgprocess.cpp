@@ -412,6 +412,30 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
     }
 }
 
+void imgProcess::constructHoughExtendedMatrixMajor2Lines(){
+
+    int lineY;
+
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            houghExtendedMatrix[y][x] = edgeThickenedMatrix[y][x];
+
+    if (majorLines.size() == 2){
+
+        for (int x = majorLines[0].start.x(); x <= majorLines[0].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
+
+            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+        }
+
+        for (int x = majorLines[1].start.x(); x <= majorLines[1].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
+
+            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+        }
+    }
+}
+
 int imgProcess::calcVoteAvg(){
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
@@ -1001,7 +1025,7 @@ void imgProcess::detectLongestSolidLines(){
 
 
     // find major areas
-    majorThresholdPercent = 0.8;   // %80
+    majorThresholdPercent = 0.9;   // %90
 
     int maxIndex = 0;
     maxSolidLineLength = 0;
