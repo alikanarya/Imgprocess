@@ -621,6 +621,7 @@ bool imgProcess::checkPrimaryLine(){
 }
 
 void imgProcess::detectVoidLines(){
+
     if (primaryLineDetected){
 
         voidSpace.clear();
@@ -665,10 +666,14 @@ void imgProcess::detectVoidLines(){
                 }
 
                 if (state == 1){    // if void line is end get coor. of end point & append void line data to list
-                    line->end.setX(x);
-                    line->end.setY(lineY);
+                    if (x == imageWidth)
+                        line->end.setX( x - 1 );  // last void is at rightmost border
+                    else
+                        line->end.setX( x );
+
+                    line->end.setY( lineY );
                     line->length = voidCount;
-                    voidSpace.append(line);
+                    voidSpace.append( line );
                     voidCount = 0;
                 }
 
@@ -684,6 +689,7 @@ void imgProcess::detectVoidLines(){
 }
 
 void imgProcess::detectVoidLinesEdge(){
+
     if (primaryLineDetected){
 
         voidSpace.clear();
@@ -728,7 +734,11 @@ void imgProcess::detectVoidLinesEdge(){
                 }
 
                 if (state == 1){    // if void line is end get coor. of end point & append void line data to list
-                    line->end.setX(x);
+                    if (x == edgeWidth)
+                        line->end.setX( x - 1 );  // last void is at rightmost border
+                    else
+                        line->end.setX(x);
+
                     line->end.setY(lineY);
                     line->length = voidCount;
                     voidSpace.append(line);
@@ -785,10 +795,12 @@ void imgProcess::detectPrimaryVoid(){
             detected = false;
             statusMessage = alarm3;
         }
+        /*
         else if (voidSpace[voidIndex]->end.x() < errorEdgeLimit || voidSpace[voidIndex]->start.x() > (imageWidth - errorEdgeLimit)){
             detected = false;
             statusMessage = alarm4;
         }
+        */
         else {
             if (abs(angleAvg) <= errorAngleLimit)
                 angleInLimit = true;
@@ -1166,6 +1178,7 @@ void imgProcess::detectLongestSolidLines(){
         distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
         thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
 
+        // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
         primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);
     } else {
         // no solid line
@@ -1269,12 +1282,12 @@ QImage imgProcess::cornerImage(){
             X = leftCornerX + x;
             Y = leftCornerY;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value);
+                imgCorner.setPixel( X, Y, value );
 
             X = rightCornerX + x;
             Y = rightCornerY;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value);
+                imgCorner.setPixel( X, Y, value );
         }
 
         for (int y = -4; y <= 4; y++){
@@ -1305,7 +1318,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
     if (detected){
         QRgb valueCorner, valuePrimary;
 
-
+        // draw primary lines
         valuePrimary = qRgb(255, 0, 0);     // red
         int lineY;
 
@@ -1315,7 +1328,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
                 lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle);
 
                 if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
-                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary);
+                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary );
             }
         }
 
@@ -1328,13 +1341,13 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
                 lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle);
 
                 if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
-                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary);
+                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary );
             }
         }
 
-        /*
-        valueCorner = qRgb(0, 255, 0);        // green
 
+        // draw corners and center
+        valueCorner = qRgb(0, 255, 0);        // green
         int X, Y;
 
         for (int x = -4; x <= 4; x++){
@@ -1342,12 +1355,12 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
             X = leftCornerX + x;
             Y = leftCornerY;
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
             X = rightCornerX + x;
             Y = rightCornerY;
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
         }
 
         for (int y = -4; y <= 4; y++){
@@ -1355,19 +1368,18 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
             X = leftCornerX;
             Y = leftCornerY + y;
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCorner.setPixel( X, Y, valueCorner);
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
             X = rightCornerX;
             Y = rightCornerY + y;
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
             X = trackCenterX;
             Y = trackCenterY + y;
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner);
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
         }
-    */
 
     }
     return imgCornerAndPrimaryLines;
