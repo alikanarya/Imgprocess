@@ -168,6 +168,16 @@ class imgProcess{
 
             houghLinesInitSwitch = false;
             histogramInitSwitch = false;
+
+            // no solid line
+            primaryLine.start.setX( -1 );
+            primaryLine.start.setY( -1 );
+            primaryLine.end.setX( -1 );
+            primaryLine.end.setY( -1 );
+            primaryLine.length = -1;
+            primaryLine.distance = -1;
+            primaryLine.angle = -1;
+
         }
 
         void toMono();      // produce mono image
