@@ -8,10 +8,13 @@
 #include "imgprocess_msg.h"
 
 void imgProcess::toMono(){
+
     imgMono = imgOrginal.convertToFormat(QImage::Format_Mono,Qt::ThresholdDither);
 }
 
+
 void imgProcess::constructValueMatrix(QImage image){
+
     QRgb rgbValue;
     QColor *color;
     int colorValue;
@@ -30,12 +33,16 @@ void imgProcess::constructValueMatrix(QImage image){
         }
 }
 
+
 int imgProcess::getMatrixPoint(int *matrix, int width, int x, int y){
+
     int (*ptr)[width] = (int (*)[width])matrix;
     return (int)ptr[y][x];
 }
 
+
 bool imgProcess::saveMatrix(int **matrix, int width, int height, QString fname, int threshold, bool xSwitch){
+
     QFile file(fname);
     bool saveStatus = true;
 
@@ -60,7 +67,9 @@ bool imgProcess::saveMatrix(int **matrix, int width, int height, QString fname, 
     return saveStatus;
 }
 
+
 bool imgProcess::saveMatrix(float **matrix, int width, int height, QString fname){
+
     QFile file(fname);
     bool saveStatus = true;
 
@@ -79,7 +88,9 @@ bool imgProcess::saveMatrix(float **matrix, int width, int height, QString fname
     return saveStatus;
 }
 
+
 bool imgProcess::saveArray(int *array, int length, QString fname){
+
     QFile file(fname);
     bool saveStatus = true;
 
@@ -92,6 +103,7 @@ bool imgProcess::saveArray(int *array, int length, QString fname){
 
     return saveStatus;
 }
+
 
 bool imgProcess::saveList(QList<int> array, QString fname){
 
@@ -107,6 +119,7 @@ bool imgProcess::saveList(QList<int> array, QString fname){
 
     return saveStatus;
 }
+
 
 bool imgProcess::saveList(QList<solidLine *> array, QString fname){
 
@@ -126,6 +139,7 @@ bool imgProcess::saveList(QList<solidLine *> array, QString fname){
     return saveStatus;
 }
 
+
 bool imgProcess::saveList(QList<solidLine> array, QString fname){
 
     QFile file(fname);
@@ -143,6 +157,7 @@ bool imgProcess::saveList(QList<solidLine> array, QString fname){
 
     return saveStatus;
 }
+
 
 void imgProcess::detectEdgeSobel(){
 
@@ -166,6 +181,7 @@ void imgProcess::detectEdgeSobel(){
             edgeMatrix[y-1][x-1] = G;
         }
 }
+
 
 void imgProcess::thickenEdges(){
 
@@ -204,6 +220,7 @@ void imgProcess::thickenEdges(){
         }
 }
 
+
 void imgProcess::houghTransform(){
 
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
@@ -229,6 +246,7 @@ void imgProcess::houghTransform(){
                 }
 }
 
+
 void imgProcess::houghTransformExtended(){
 
     houghDistanceMax = (int) (sqrt(pow(imageWidth, 2) + pow(imageHeight, 2)));
@@ -253,6 +271,7 @@ void imgProcess::houghTransformExtended(){
                     if (distance >= 0) houghSpace[distance][i]++;
                 }
 }
+
 
 void imgProcess::calculateHoughMaxs(int number){
 
@@ -290,6 +309,7 @@ void imgProcess::calculateHoughMaxs(int number){
     }
 }
 
+
 void imgProcess::constructHoughMatrix(){
 
     int lineY;
@@ -306,6 +326,7 @@ void imgProcess::constructHoughMatrix(){
                 if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
 }
+
 
 void imgProcess::constructHoughMatrix2Lines(){
 
@@ -328,6 +349,7 @@ void imgProcess::constructHoughMatrix2Lines(){
     }
 }
 
+
 void imgProcess::constructHoughMatrixAvgLine(){
 
     int lineY;
@@ -344,6 +366,7 @@ void imgProcess::constructHoughMatrixAvgLine(){
     }
 }
 
+
 void imgProcess::constructHoughMatrixPrimaryLine(int startX, int endX){
 
     int lineY;
@@ -359,6 +382,7 @@ void imgProcess::constructHoughMatrixPrimaryLine(int startX, int endX){
             if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
     }
 }
+
 
 void imgProcess::constructHoughMatrixPrimaryLines(solidLine line1, solidLine line2, int line2offset){
 
@@ -386,6 +410,7 @@ void imgProcess::constructHoughMatrixPrimaryLines(solidLine line1, solidLine lin
     }
 }
 
+
 void imgProcess::constructHoughMatrixMajor2Lines(){
 
     int lineY;
@@ -412,6 +437,7 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
     }
 }
 
+
 void imgProcess::constructHoughExtendedMatrixMajor2Lines(){
 
     int lineY;
@@ -420,23 +446,25 @@ void imgProcess::constructHoughExtendedMatrixMajor2Lines(){
         for (int x = 0; x < imageWidth; x++)
             houghExtendedMatrix[y][x] = edgeThickenedMatrix[y][x];
 
-    if (majorLines.size() == 2){
+    if (major2Lines.size() == 2){
 
-        for (int x = majorLines[0].start.x(); x <= majorLines[0].end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
+        for (int x = major2Lines[0].start.x(); x <= major2Lines[0].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), major2Lines[0].distance, major2Lines[0].angle);
 
             if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
 
-        for (int x = majorLines[1].start.x(); x <= majorLines[1].end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
+        for (int x = major2Lines[1].start.x(); x <= major2Lines[1].end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), major2Lines[1].distance, major2Lines[1].angle);
 
             if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
     }
 }
 
+
 int imgProcess::calcVoteAvg(){
+
     houghVoteAvg = 0;
     for (int line = 0; line < houghLineNo; line++) houghVoteAvg += houghLines[line][2];
 
@@ -444,18 +472,25 @@ int imgProcess::calcVoteAvg(){
     return houghVoteAvg;
 }
 
+
 int imgProcess::calcAngleAvg(){
+
     angleAvg = 0;
 
     if (primaryLineDetected) {
-        for (int line = 0; line < houghLineNo; line++) angleAvg += houghLines[line][1];
+
+        for (int line = 0; line < houghLineNo; line++)
+            angleAvg += houghLines[line][1];
+
         angleAvg = (angleAvg / houghLineNo) - 90;
     }
 
     return angleAvg;
 }
 
+
 void imgProcess::calcAvgDistAndAngle(int limit){
+
     distanceAvg = 0;
     thetaAvg = 0;
 
@@ -466,6 +501,7 @@ void imgProcess::calcAvgDistAndAngle(int limit){
     distanceAvg = distanceAvg / limit;
     thetaAvg = thetaAvg / limit;
 }
+
 
 // seperate hough lines into 2 piece; higher and lower than ave. distance
 // then find the ave. distance and angle of these majors
@@ -612,13 +648,16 @@ void imgProcess::findSecondLine(){
     }
 }
 
+
 bool imgProcess::checkPrimaryLine(){
+
     if (houghLines[0][2] >= voteThreshold)
         primaryLineDetected = true;
     else
         primaryLineDetected = false;
     return primaryLineDetected;
 }
+
 
 void imgProcess::detectVoidLines(){
 
@@ -688,6 +727,7 @@ void imgProcess::detectVoidLines(){
     }
 }
 
+
 void imgProcess::detectVoidLinesEdge(){
 
     if (primaryLineDetected){
@@ -756,19 +796,23 @@ void imgProcess::detectVoidLinesEdge(){
     }
 }
 
+
 // DETECTION FUNCTION BASED ON VOID SPACES
 void imgProcess::detectPrimaryVoid(){
+
     detected = true;
 
-    if (!primaryLineDetected){
+    if (!primaryLineDetected){  // no primary line found
         detected = false;
         statusMessage = alarm1;
     }
-    else if (voidSpace.size() == 0) {
+    else if (voidSpace.size() == 0) {   // no void space found
         detected = false;
         statusMessage = alarm2;
     }
     else {
+
+        // find maximum void area
         int max = 0;
         voidIndex = 0;
         for (int i=0; i<voidSpace.size(); i++)
@@ -791,7 +835,7 @@ void imgProcess::detectPrimaryVoid(){
         trackCenterX = (leftCornerX + rightCornerX) / 2;
         trackCenterY = (leftCornerY + rightCornerY) / 2;
 
-        if (max < voidThreshold){
+        if (max < voidThreshold){   // not acceptable void area length
             detected = false;
             statusMessage = alarm3;
         }
@@ -802,16 +846,17 @@ void imgProcess::detectPrimaryVoid(){
         }
         */
         else {
-            if (abs(angleAvg) <= errorAngleLimit)
+            if (abs(angleAvg) <= errorAngleLimit)   // calcAngleAvg() or bypass by default
                 angleInLimit = true;
             else {
                 angleInLimit = false;
-                detected = false;       // do not accecpt this cam setup
+                detected = false;       // do not accecpt this cam setup, line angle is not in tolerance
                 statusMessage = alarm5;
             }
         }
     }
 }
+
 
 solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag) {
 
@@ -928,6 +973,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
     return longestLine;
 }
 
+
 // DETECTION FUNCTION BASED ON SOLID LINES
 void imgProcess::detectLongestSolidLines(){
 
@@ -938,7 +984,7 @@ void imgProcess::detectLongestSolidLines(){
     for (int distance = 0; distance < houghDistanceMax; distance++)
         for (int angleIndex = 0; angleIndex < houghThetaSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
-            solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );  // in edge thickened matrix
         }
 
 
@@ -1179,7 +1225,7 @@ void imgProcess::detectLongestSolidLines(){
         thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
 
         // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
-        primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);
+        primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);    // in value matrix
     } else {
         // no solid line
         primaryLine.start.setX( -1 );
@@ -1193,8 +1239,6 @@ void imgProcess::detectLongestSolidLines(){
         distanceAvg = -1;
         thetaAvg = -1;
     }
-
-
 
     /*
     // order according to line length descending
@@ -1217,7 +1261,9 @@ void imgProcess::detectLongestSolidLines(){
 */
 }
 
+
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){
+
     QImage *image = new QImage(width, height, format);
     QRgb value;
 
@@ -1232,14 +1278,18 @@ QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format
     return image;
 }
 
+
 int imgProcess::getLineY(int x, float distance, float theta){
+
     int y = -1;
     if (theta >= 0.1)
         y = (int) ( (distance - x*cos(theta*R2D)) / sin(theta*R2D) );
     return y;
 }
 
+
 int* imgProcess::edgeSobelHistogram(){
+
     histogram = new int[edgeHeight];
     histogramInitSwitch = true;
 
@@ -1253,7 +1303,9 @@ int* imgProcess::edgeSobelHistogram(){
     return histogram;
 }
 
+
 int* imgProcess::valueHistogram(){
+
     histogram = new int[imageHeight];
     histogramInitSwitch = true;
 
@@ -1266,6 +1318,7 @@ int* imgProcess::valueHistogram(){
     }
     return histogram;
 }
+
 
 QImage imgProcess::cornerImage(){
 
@@ -1310,6 +1363,7 @@ QImage imgProcess::cornerImage(){
     }
     return imgCorner;
 }
+
 
 QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, int line2offset ){
 
@@ -1384,6 +1438,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
     }
     return imgCornerAndPrimaryLines;
 }
+
 
 imgProcess::~imgProcess(){
 
