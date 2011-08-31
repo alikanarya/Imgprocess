@@ -20,6 +20,7 @@ public:
         int length;
 
         voidLine(){}
+        ~voidLine(){}
 };
 
 
@@ -34,6 +35,7 @@ public:
         float angle;
 
         solidLine(){}
+        ~solidLine(){}
 };
 
 
@@ -45,6 +47,7 @@ public:
     int endIndex;
 
     majorArea(){}
+    ~majorArea(){}
 };
 
 
@@ -122,6 +125,7 @@ class imgProcess{
 
         // constructor
         imgProcess(QImage &image, const int width, const int height) : imageWidth(width), imageHeight(height) {
+
             imgOrginal = image;     // passes image to class not copy of it
             valueMatrix = new int*[height];
             for (int i = 0; i < height; i++) valueMatrix[i] = new int[width];
