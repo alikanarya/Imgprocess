@@ -970,6 +970,8 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
         }
     }
 
+    for (int i = 0; i < solidSpace.size(); i++) delete solidSpace[i];
+
     return longestLine;
 }
 
@@ -1460,24 +1462,21 @@ imgProcess::~imgProcess(){
     for (int y = 0; y < houghDistanceMax; y++) delete []houghSpace[y];
     delete []houghSpace;
 
-    if (houghLinesInitSwitch) {
+    if ( houghLinesInitSwitch ) {
         for (int y = 0; y < houghLineNo; y++) delete []houghLines[y];
         delete []houghLines;
     }
 
-    if (histogramInitSwitch) delete []histogram;
+    if ( histogramInitSwitch ) {
+        delete []histogram;
+    }
 
-    if (voidSpace.size() > 0) {
+    if ( voidSpace.size() > 0 ) {
         for (int i = 0; i < voidSpace.size(); i++) delete voidSpace[i];
         voidSpace.clear();
     }
 
-    if (solidSpace.size() > 0) {
-        for (int i = 0; i < solidSpace.size(); i++) delete solidSpace[i];
-        solidSpace.clear();
-    }
-
-    if (majorList.size() > 0) {
+    if ( majorList.size() > 0 ) {
         for (int i = 0; i < majorList.size(); i++) delete majorList[i];
         majorList.clear();
     }
