@@ -231,6 +231,7 @@ void imgProcess::houghTransform(){
 
     houghSpace = new int*[houghDistanceMax];
     for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+    houghSpaceInitSwitch = true;
 
     for (int y = 0; y < houghDistanceMax; y++)
         for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
@@ -257,6 +258,7 @@ void imgProcess::houghTransformExtended(){
 
     houghSpace = new int*[houghDistanceMax];
     for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+    houghSpaceInitSwitch = true;
 
     for (int y = 0; y < houghDistanceMax; y++)
         for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
@@ -983,14 +985,19 @@ void imgProcess::detectLongestSolidLines(){
 
     float angle = 0;
 
+    houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
+    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+//------------------------------------------------------------------------------------
     for (int distance = 0; distance < houghDistanceMax; distance++)
         for (int angleIndex = 0; angleIndex < houghThetaSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
             solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );  // in edge thickened matrix
         }
+//------------------------------------------------------------------------------------
 
 
 
+//------------------------------------------------------------------------------------
     // remove no lines
 
     solidSpaceMainTrimmed.clear();
@@ -998,9 +1005,11 @@ void imgProcess::detectLongestSolidLines(){
     for (int i = 0; i < solidSpaceMain.size(); i++)
         if ( solidSpaceMain[i].length != -1 )
             solidSpaceMainTrimmed.append( solidSpaceMain[i] );
+//------------------------------------------------------------------------------------
 
 
 
+//------------------------------------------------------------------------------------
     // take maximums of each distance value
 
     int size = solidSpaceMainTrimmed.size();
@@ -1019,7 +1028,7 @@ void imgProcess::detectLongestSolidLines(){
 
             buffer.clear();
 
-            // get same distances
+            // group equal distances in same group (buffer)
             for (index = currentStart; index < size; index++){
                 if (solidSpaceMainTrimmed[index].distance == currentDistance)
                     buffer.append( solidSpaceMainTrimmed[index] );
@@ -1028,6 +1037,8 @@ void imgProcess::detectLongestSolidLines(){
             }
 
             // loop end or next iteration assignments
+            // solidSpaceMain is ordered by ascending distance values, so the solidSpaceMainTrimmed
+            // therefore, currentDistance change will be executed in next iteration
             if ( index == size )
                 loopEnd = false;
             else {
@@ -1049,7 +1060,7 @@ void imgProcess::detectLongestSolidLines(){
 
                 bufferEquals.clear();
 
-                // detect indexes of equal maximum points
+                // detect indexes of equal maximum points, in case of more than 1 max. point
                 for (int i = 0; i < buffer.size(); i++)
                     if (buffer[i].length == maxLength)
                         bufferEquals.append( i );
@@ -1081,11 +1092,13 @@ void imgProcess::detectLongestSolidLines(){
             }
         } // while
     }
+//------------------------------------------------------------------------------------
 
 
 
+//------------------------------------------------------------------------------------
     // find major areas
-    majorThresholdPercent = 0.9;   // %90
+    majorThresholdPercent = 0.5;   // %50
 
     int maxIndex = 0;
     maxSolidLineLength = 0;
@@ -1116,10 +1129,12 @@ void imgProcess::detectLongestSolidLines(){
             majorList.append( area );
         }
     }
+//------------------------------------------------------------------------------------
 
 
 
-    // find major lines from areas
+//------------------------------------------------------------------------------------
+    // find major lines (max length, avg if more than 1 equal max) of areas
 
     int _max = 0, _index = 0;
     majorLines.clear();
@@ -1164,10 +1179,13 @@ void imgProcess::detectLongestSolidLines(){
             majorLines.append( avgLine );
         }
     }
+//------------------------------------------------------------------------------------
 
 
 
+//------------------------------------------------------------------------------------
     // obtain 2 major lines
+
     major2Lines.clear();
     majorLinesFound = true;
 
@@ -1182,7 +1200,7 @@ void imgProcess::detectLongestSolidLines(){
     if (majorLines.size() == 0){
         majorLinesFound = false;
     } else {
-        // detect max 2
+        // detect max 2 of more
 
         int maxValue = 0, indexValue = 0;
 
@@ -1203,9 +1221,13 @@ void imgProcess::detectLongestSolidLines(){
             }
         major2Lines.append( majorLines[indexValue] );
     }
+//------------------------------------------------------------------------------------
 
 
+
+//------------------------------------------------------------------------------------
     // calculate average distance and angle value of 2 major line = PRIMARY LINE
+    // construct primary line object to find coordinates
 
     if (majorLinesFound) {
 
@@ -1241,6 +1263,7 @@ void imgProcess::detectLongestSolidLines(){
         distanceAvg = -1;
         thetaAvg = -1;
     }
+//------------------------------------------------------------------------------------
 
     /*
     // order according to line length descending
@@ -1459,8 +1482,10 @@ imgProcess::~imgProcess(){
     for (int y = 0; y < imageHeight; y++) delete []houghExtendedMatrix[y];
     delete []houghExtendedMatrix;
 
-    for (int y = 0; y < houghDistanceMax; y++) delete []houghSpace[y];
-    delete []houghSpace;
+    if ( houghSpaceInitSwitch ) {
+        for (int y = 0; y < houghDistanceMax; y++) delete []houghSpace[y];
+        delete []houghSpace;
+    }
 
     if ( houghLinesInitSwitch ) {
         for (int y = 0; y < houghLineNo; y++) delete []houghLines[y];

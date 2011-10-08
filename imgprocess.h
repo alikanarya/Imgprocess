@@ -111,6 +111,8 @@ class imgProcess{
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
 
         int **houghSpace;                   // line votes: line search matrix, depends max. distance & angle scale
+        bool houghSpaceInitSwitch;          // to delete in destructor
+
         float **houghLines;                 // line data of max. voted lines; distance/angle/vote value
         bool houghLinesInitSwitch;          // to delete in destructor
 
@@ -170,6 +172,7 @@ class imgProcess{
             angleAvg = 0;
             angleInLimit = false;
 
+            houghSpaceInitSwitch = false;
             houghLinesInitSwitch = false;
             histogramInitSwitch = false;
 
