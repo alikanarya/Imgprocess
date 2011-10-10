@@ -998,12 +998,25 @@ void imgProcess::detectLongestSolidLines(){
 
 
 //------------------------------------------------------------------------------------
-    // remove no lines
+    // find max length
+
+    float globalMaxLength = 0;
+    for (int x = 0; x < solidSpaceMain.size(); x++)
+        if ( solidSpaceMain[x].length > globalMaxLength )
+            globalMaxLength = solidSpaceMain[x].length;
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // remove lines w/ length behind threshold      //remove no lines
 
     solidSpaceMainTrimmed.clear();
+    float thresholdLength = globalMaxLength * 0.5;  // % 50 of global maximum
 
     for (int i = 0; i < solidSpaceMain.size(); i++)
-        if ( solidSpaceMain[i].length != -1 )
+        //if ( solidSpaceMain[i].length != -1 )
+        if ( solidSpaceMain[i].length > thresholdLength )
             solidSpaceMainTrimmed.append( solidSpaceMain[i] );
 //------------------------------------------------------------------------------------
 
@@ -1098,7 +1111,7 @@ void imgProcess::detectLongestSolidLines(){
 
 //------------------------------------------------------------------------------------
     // find major areas
-    majorThresholdPercent = 0.5;   // %50
+    majorThresholdPercent = 0.8;   // %50
 
     int maxIndex = 0;
     maxSolidLineLength = 0;
@@ -1117,13 +1130,13 @@ void imgProcess::detectLongestSolidLines(){
 
     for (int i = 0; i < solidSpaceMainMaximums.size(); i++) {
 
-        if (solidSpaceMainMaximums[i].length > majorThreshold && !areaStartFlag) {
+        if ( solidSpaceMainMaximums[i].length > majorThreshold && !areaStartFlag ) {
             areaStartFlag = true;
             area = new majorArea();
             area->startIndex = i;
         }
 
-        if (solidSpaceMainMaximums[i].length < majorThreshold && areaStartFlag) {
+        if ( (solidSpaceMainMaximums[i].length < majorThreshold || (i == solidSpaceMainMaximums.size() - 1 )) && areaStartFlag ) {
             areaStartFlag = false;
             area->endIndex = i - 1;
             majorList.append( area );
