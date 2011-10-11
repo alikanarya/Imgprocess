@@ -981,15 +981,15 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
 // DETECTION FUNCTION BASED ON SOLID LINES
 void imgProcess::detectLongestSolidLines(){
 
+
+//-----
     solidSpaceMain.clear();
-
     float angle = 0;
+//    houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
+    float angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
-    houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
-//------------------------------------------------------------------------------------
-    for (int distance = 0; distance < houghDistanceMax; distance++)
-        for (int angleIndex = 0; angleIndex < houghThetaSize; angleIndex++){
+    for (int distance = 0; distance < edgeHeight; distance++)
+        for (int angleIndex = 0; angleIndex < angleSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
             solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );  // in edge thickened matrix
         }
@@ -997,9 +997,7 @@ void imgProcess::detectLongestSolidLines(){
 
 
 
-//------------------------------------------------------------------------------------
-    // find max length
-
+//----- find max length
     float globalMaxLength = 0;
     for (int x = 0; x < solidSpaceMain.size(); x++)
         if ( solidSpaceMain[x].length > globalMaxLength )
@@ -1007,105 +1005,136 @@ void imgProcess::detectLongestSolidLines(){
 //------------------------------------------------------------------------------------
 
 
+    if ( globalMaxLength != 0 ) {
 
+//----- remove lines w/ length behind threshold      //remove no lines
+       solidSpaceMainTrimmed.clear();
+       float thresholdLength = globalMaxLength * 0.5;  // % 50 of global maximum
+
+       for (int i = 0; i < solidSpaceMain.size(); i++)
+           //if ( solidSpaceMain[i].length != -1 )
+           if ( solidSpaceMain[i].length > thresholdLength )
+               solidSpaceMainTrimmed.append( solidSpaceMain[i] );
 //------------------------------------------------------------------------------------
-    // remove lines w/ length behind threshold      //remove no lines
-
-    solidSpaceMainTrimmed.clear();
-    float thresholdLength = globalMaxLength * 0.5;  // % 50 of global maximum
-
-    for (int i = 0; i < solidSpaceMain.size(); i++)
-        //if ( solidSpaceMain[i].length != -1 )
-        if ( solidSpaceMain[i].length > thresholdLength )
-            solidSpaceMainTrimmed.append( solidSpaceMain[i] );
-//------------------------------------------------------------------------------------
 
 
 
-//------------------------------------------------------------------------------------
-    // take maximums of each distance value
+//----- take maximums of each distance value
+        int size = solidSpaceMainTrimmed.size();
 
-    int size = solidSpaceMainTrimmed.size();
+        if ( size != 0){
+            solidSpaceMainMaximums.clear();
 
-    if ( size != 0){
+            int currentDistance = solidSpaceMainTrimmed[0].distance;
+            int currentStart = 0, index;
+            bool loopEnd = true;
+            QList<solidLine> buffer;    // equal distance list
+            QList<int> bufferEquals;    // eqaul maximums indexes
 
-        solidSpaceMainMaximums.clear();
+            while (loopEnd){
 
-        int currentDistance = solidSpaceMainTrimmed[0].distance;
-        int currentStart = 0, index;
-        bool loopEnd = true;
-        QList<solidLine> buffer;    // equal distance list
-        QList<int> bufferEquals;    // eqaul maximums indexes
+                buffer.clear();
 
-        while (loopEnd){
+                // group equal distances in same group (buffer)
+                for (index = currentStart; index < size; index++){
+                    if (solidSpaceMainTrimmed[index].distance == currentDistance)
+                        buffer.append( solidSpaceMainTrimmed[index] );
+                    else
+                        break;
+                }
 
-            buffer.clear();
-
-            // group equal distances in same group (buffer)
-            for (index = currentStart; index < size; index++){
-                if (solidSpaceMainTrimmed[index].distance == currentDistance)
-                    buffer.append( solidSpaceMainTrimmed[index] );
-                else
-                    break;
-            }
-
-            // loop end or next iteration assignments
-            // solidSpaceMain is ordered by ascending distance values, so the solidSpaceMainTrimmed
-            // therefore, currentDistance change will be executed in next iteration
-            if ( index == size )
-                loopEnd = false;
-            else {
-                currentStart = index;
-                currentDistance = solidSpaceMainTrimmed[currentStart].distance;
-            }
+                // loop end or next iteration assignments
+                // solidSpaceMain is ordered by ascending distance values, so the solidSpaceMainTrimmed
+                // therefore, currentDistance change will be executed in next iteration
+                if ( index == size )
+                    loopEnd = false;
+                else {
+                    currentStart = index;
+                    currentDistance = solidSpaceMainTrimmed[currentStart].distance;
+                }
 
 
-            if ( buffer.size() != 0 ){
+                if ( buffer.size() != 0 ){
 
-                int maxLength = 0, maxIndex = 0;
+                    int maxLength = 0, maxIndex = 0;
 
-                // detect maximum length in buffer
-                for (int i = 0; i < buffer.size(); i++)
-                    if (buffer[i].length > maxLength) {
-                        maxIndex = i;
-                        maxLength = buffer[i].length;
+                    // detect maximum length in buffer
+                    for (int i = 0; i < buffer.size(); i++)
+                        if (buffer[i].length > maxLength) {
+                            maxIndex = i;
+                            maxLength = buffer[i].length;
+                        }
+
+                    bufferEquals.clear();
+
+                    // detect indexes of equal maximum points, in case of more than 1 max. point
+                    for (int i = 0; i < buffer.size(); i++)
+                        if (buffer[i].length == maxLength)
+                            bufferEquals.append( i );
+
+                        // calculate avg distance & angle of maximum length points
+                    solidLine avgLine;
+                    float avgDistance = 0, avgAngle = 0;
+
+                    for (int i = 0; i < bufferEquals.size(); i++){
+                        avgDistance += buffer[ bufferEquals[i] ].distance;
+                        avgAngle += buffer[ bufferEquals[i] ].angle;
                     }
 
-                bufferEquals.clear();
+                    if ( bufferEquals.size() != 0) {
+                        avgDistance /= bufferEquals.size();
+                        avgAngle /= bufferEquals.size();
+                    }
 
-                // detect indexes of equal maximum points, in case of more than 1 max. point
-                for (int i = 0; i < buffer.size(); i++)
-                    if (buffer[i].length == maxLength)
-                        bufferEquals.append( i );
+                    // x & y assignments are just for occupation, first occurance of maximum in buffer list
+                    avgLine.start.setX( buffer[maxIndex].start.x() );
+                    avgLine.start.setY( buffer[maxIndex].start.y() );
+                    avgLine.end.setX( buffer[maxIndex].end.x() );
+                    avgLine.end.setY( buffer[maxIndex].end.y() );
+                    avgLine.length = maxLength;
+                    avgLine.distance = avgDistance;
+                    avgLine.angle = avgAngle;
 
-                // calculate avg distance & angle of maximum length points
-                solidLine avgLine;
-                float avgDistance = 0, avgAngle = 0;
-
-                for (int i = 0; i < bufferEquals.size(); i++){
-                    avgDistance += buffer[ bufferEquals[i] ].distance;
-                    avgAngle += buffer[ bufferEquals[i] ].angle;
+                    solidSpaceMainMaximums.append( avgLine );
                 }
+            } // while
+        }
 
-                if ( bufferEquals.size() != 0) {
-                    avgDistance /= bufferEquals.size();
-                    avgAngle /= bufferEquals.size();
-                }
 
-                // x & y assignments are just for occupation, first occurance of maximum in buffer list
-                avgLine.start.setX( buffer[maxIndex].start.x() );
-                avgLine.start.setY( buffer[maxIndex].start.y() );
-                avgLine.end.setX( buffer[maxIndex].end.x() );
-                avgLine.end.setY( buffer[maxIndex].end.y() );
-                avgLine.length = maxLength;
-                avgLine.distance = avgDistance;
-                avgLine.angle = avgAngle;
 
-                solidSpaceMainMaximums.append( avgLine );
+        // detect maximum length in solidSpaceMainMaximums
+        maxSolidLineLength = 0;
+        for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
+            if ( solidSpaceMainMaximums[i].length > maxSolidLineLength )
+                maxSolidLineLength = solidSpaceMainMaximums[i].length;
+
+
+        float avgAngle = 0;
+        int count = 0;
+        for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
+            if (solidSpaceMainMaximums[i].length == maxSolidLineLength) {
+                avgAngle += solidSpaceMainMaximums[i].angle;
+                count++;
             }
-        } // while
+
+        if ( count != 0 )
+            avgAngle = avgAngle / count;
+
     }
 //------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1526,3 +1555,333 @@ imgProcess::~imgProcess(){
     if ( majorLines.size() > 0 ) majorLines.clear();
     if ( major2Lines.size() > 0 ) major2Lines.clear();
 }
+
+
+
+
+
+
+/*
+// DETECTION FUNCTION BASED ON SOLID LINES
+void imgProcess::detectLongestSolidLines(){
+
+    solidSpaceMain.clear();
+
+    float angle = 0;
+
+//    houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
+    float angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+//------------------------------------------------------------------------------------
+    for (int distance = 0; distance < edgeHeight; distance++)
+        for (int angleIndex = 0; angleIndex < angleSize; angleIndex++){
+            angle = thetaMin + angleIndex * thetaStep;
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );  // in edge thickened matrix
+        }
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // find max length
+
+    float globalMaxLength = 0;
+    for (int x = 0; x < solidSpaceMain.size(); x++)
+        if ( solidSpaceMain[x].length > globalMaxLength )
+            globalMaxLength = solidSpaceMain[x].length;
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // remove lines w/ length behind threshold      //remove no lines
+
+    solidSpaceMainTrimmed.clear();
+    float thresholdLength = globalMaxLength * 0.5;  // % 50 of global maximum
+
+    for (int i = 0; i < solidSpaceMain.size(); i++)
+        //if ( solidSpaceMain[i].length != -1 )
+        if ( solidSpaceMain[i].length > thresholdLength )
+            solidSpaceMainTrimmed.append( solidSpaceMain[i] );
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // take maximums of each distance value
+
+    int size = solidSpaceMainTrimmed.size();
+
+    if ( size != 0){
+
+        solidSpaceMainMaximums.clear();
+
+        int currentDistance = solidSpaceMainTrimmed[0].distance;
+        int currentStart = 0, index;
+        bool loopEnd = true;
+        QList<solidLine> buffer;    // equal distance list
+        QList<int> bufferEquals;    // eqaul maximums indexes
+
+        while (loopEnd){
+
+            buffer.clear();
+
+            // group equal distances in same group (buffer)
+            for (index = currentStart; index < size; index++){
+                if (solidSpaceMainTrimmed[index].distance == currentDistance)
+                    buffer.append( solidSpaceMainTrimmed[index] );
+                else
+                    break;
+            }
+
+            // loop end or next iteration assignments
+            // solidSpaceMain is ordered by ascending distance values, so the solidSpaceMainTrimmed
+            // therefore, currentDistance change will be executed in next iteration
+            if ( index == size )
+                loopEnd = false;
+            else {
+                currentStart = index;
+                currentDistance = solidSpaceMainTrimmed[currentStart].distance;
+            }
+
+
+            if ( buffer.size() != 0 ){
+
+                int maxLength = 0, maxIndex = 0;
+
+                // detect maximum length in buffer
+                for (int i = 0; i < buffer.size(); i++)
+                    if (buffer[i].length > maxLength) {
+                        maxIndex = i;
+                        maxLength = buffer[i].length;
+                    }
+
+                bufferEquals.clear();
+
+                // detect indexes of equal maximum points, in case of more than 1 max. point
+                for (int i = 0; i < buffer.size(); i++)
+                    if (buffer[i].length == maxLength)
+                        bufferEquals.append( i );
+
+                // calculate avg distance & angle of maximum length points
+                solidLine avgLine;
+                float avgDistance = 0, avgAngle = 0;
+
+                for (int i = 0; i < bufferEquals.size(); i++){
+                    avgDistance += buffer[ bufferEquals[i] ].distance;
+                    avgAngle += buffer[ bufferEquals[i] ].angle;
+                }
+
+                if ( bufferEquals.size() != 0) {
+                    avgDistance /= bufferEquals.size();
+                    avgAngle /= bufferEquals.size();
+                }
+
+                // x & y assignments are just for occupation, first occurance of maximum in buffer list
+                avgLine.start.setX( buffer[maxIndex].start.x() );
+                avgLine.start.setY( buffer[maxIndex].start.y() );
+                avgLine.end.setX( buffer[maxIndex].end.x() );
+                avgLine.end.setY( buffer[maxIndex].end.y() );
+                avgLine.length = maxLength;
+                avgLine.distance = avgDistance;
+                avgLine.angle = avgAngle;
+
+                solidSpaceMainMaximums.append( avgLine );
+            }
+        } // while
+    }
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // find major areas
+    majorThresholdPercent = 0.8;   // %50
+
+    int maxIndex = 0;
+    maxSolidLineLength = 0;
+
+    // detect maximum length in solidSpaceMainMaximums
+    for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
+        if (solidSpaceMainMaximums[i].length > maxSolidLineLength) {
+            maxIndex = i;
+            maxSolidLineLength = solidSpaceMainMaximums[i].length;
+        }
+
+    float majorThreshold = maxSolidLineLength * majorThresholdPercent;
+    majorArea *area;
+    bool areaStartFlag = false;
+    majorList.clear();
+
+    for (int i = 0; i < solidSpaceMainMaximums.size(); i++) {
+
+        if ( solidSpaceMainMaximums[i].length > majorThreshold && !areaStartFlag ) {
+            areaStartFlag = true;
+            area = new majorArea();
+            area->startIndex = i;
+        }
+
+        if ( (solidSpaceMainMaximums[i].length < majorThreshold || (i == solidSpaceMainMaximums.size() - 1 )) && areaStartFlag ) {
+            areaStartFlag = false;
+            area->endIndex = i - 1;
+            majorList.append( area );
+        }
+    }
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // find major lines (max length, avg if more than 1 equal max) of areas
+
+    int _max = 0, _index = 0;
+    majorLines.clear();
+    solidLine avgLine;
+    float avgDistance, avgAngle, equalCount;
+
+    for (int i = 0; i < majorList.size(); i++){
+        _max = 0;
+        _index = 0;
+
+        // detect max of area
+        for (int j = majorList[i]->startIndex; j <= majorList[i]->endIndex; j++)
+            if (solidSpaceMainMaximums[j].length > _max) {
+                _index = j;
+                _max = solidSpaceMainMaximums[j].length;
+            }
+
+
+        // average equal maxs
+        avgDistance = 0, avgAngle = 0, equalCount = 0;
+
+        for (int j = majorList[i]->startIndex; j <= majorList[i]->endIndex; j++)
+            if (solidSpaceMainMaximums[j].length == _max) {
+                equalCount++;
+                avgDistance += solidSpaceMainMaximums[j].distance;
+                avgAngle += solidSpaceMainMaximums[j].angle;
+            }
+
+        if (equalCount != 0){
+            avgDistance /= equalCount;
+            avgAngle /= equalCount;
+
+            // x & y assignments are just for occupation, first occurance of maximum in area list
+            avgLine.start.setX( solidSpaceMainMaximums[_index].start.x() );
+            avgLine.start.setY( solidSpaceMainMaximums[_index].start.y() );
+            avgLine.end.setX( solidSpaceMainMaximums[_index].end.x() );
+            avgLine.end.setY( solidSpaceMainMaximums[_index].end.y() );
+            avgLine.length = _max;
+            avgLine.distance = avgDistance;
+            avgLine.angle = avgAngle;
+
+            majorLines.append( avgLine );
+        }
+    }
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // obtain 2 major lines
+
+    major2Lines.clear();
+    majorLinesFound = true;
+
+    if (majorLines.size() == 2){
+        major2Lines.append(majorLines[0]);
+        major2Lines.append(majorLines[1]);
+    } else
+    if (majorLines.size() == 1){
+        major2Lines.append(majorLines[0]);
+        major2Lines.append(majorLines[0]);
+    } else
+    if (majorLines.size() == 0){
+        majorLinesFound = false;
+    } else {
+        // detect max 2 of more
+
+        int maxValue = 0, indexValue = 0;
+
+        for (int j = 0; j < majorLines.size(); j++)
+            if (majorLines[j].length > maxValue) {
+                indexValue = j;
+                maxValue = majorLines[j].length;
+            }
+        major2Lines.append( majorLines[indexValue] );
+
+        majorLines[indexValue].length = 0;
+        maxValue = 0, indexValue = 0;
+
+        for (int j = 0; j < majorLines.size(); j++)
+            if (majorLines[j].length > maxValue) {
+                indexValue = j;
+                maxValue = majorLines[j].length;
+            }
+        major2Lines.append( majorLines[indexValue] );
+    }
+//------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------------
+    // calculate average distance and angle value of 2 major line = PRIMARY LINE
+    // construct primary line object to find coordinates
+
+    if (majorLinesFound) {
+
+        // *
+        // weighted average
+        int sum = major2Lines[0].length + major2Lines[1].length;
+
+        if ( sum != 0 ){
+            distanceAvg = (major2Lines[0].distance * major2Lines[0].length + major2Lines[1].distance * major2Lines[1].length) / sum;
+            thetaAvg = (major2Lines[0].angle * major2Lines[0].length + major2Lines[1].angle * major2Lines[1].length ) / sum;
+        } else {
+            distanceAvg  = 0;
+            thetaAvg = 0;
+        }
+        * /
+
+        // classical average
+        distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
+        thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
+
+        // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
+        primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);    // in value matrix
+    } else {
+        // no solid line
+        primaryLine.start.setX( -1 );
+        primaryLine.start.setY( -1 );
+        primaryLine.end.setX( -1 );
+        primaryLine.end.setY( -1 );
+        primaryLine.length = -1;
+        primaryLine.distance = -1;
+        primaryLine.angle = -1;
+
+        distanceAvg = -1;
+        thetaAvg = -1;
+    }
+//------------------------------------------------------------------------------------
+
+
+}
+*/
+
+/*
+// order according to line length descending
+solidSpaceMainOrdered.clear();
+
+int maxLength = 0, maxIndex = 0;
+
+for (int i = 0; i < solidSpaceMain.size(); i++){
+    for (int j = 0; j < solidSpaceMain.size(); j++){
+        if ( solidSpaceMain[j].length > maxLength ){
+            maxIndex = j;
+            maxLength = solidSpaceMain[j].length;
+        }
+    }
+    solidSpaceMainOrdered.append( solidSpaceMain[maxIndex] );
+    solidSpaceMain[maxIndex].length = 0;
+    maxLength = 0;
+
+}
+*/
