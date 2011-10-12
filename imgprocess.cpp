@@ -1007,12 +1007,12 @@ void imgProcess::detectLongestSolidLines(){
 
     if ( globalMaxLength != 0 ) {
 
-//----- remove lines w/ length behind threshold      //remove no lines
+//----- remove lines w/ length behind threshold
        solidSpaceMainTrimmed.clear();
        float thresholdLength = globalMaxLength * 0.5;  // % 50 of global maximum
 
        for (int i = 0; i < solidSpaceMain.size(); i++)
-           //if ( solidSpaceMain[i].length != -1 )
+           //if ( solidSpaceMain[i].length != -1 )  //remove no lines
            if ( solidSpaceMain[i].length > thresholdLength )
                solidSpaceMainTrimmed.append( solidSpaceMain[i] );
 //------------------------------------------------------------------------------------
@@ -1022,7 +1022,8 @@ void imgProcess::detectLongestSolidLines(){
 //----- take maximums of each distance value
         int size = solidSpaceMainTrimmed.size();
 
-        if ( size != 0){
+        if ( size != 0 ){
+
             solidSpaceMainMaximums.clear();
 
             int currentDistance = solidSpaceMainTrimmed[0].distance;
@@ -1099,27 +1100,87 @@ void imgProcess::detectLongestSolidLines(){
                 }
             } // while
         }
+//------------------------------------------------------------------------------------
 
 
-
-        // detect maximum length in solidSpaceMainMaximums
+//----- detect maximum length in solidSpaceMainMaximums
         maxSolidLineLength = 0;
+        int endX = 0;
+        float angle = 0;
+
         for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
-            if ( solidSpaceMainMaximums[i].length > maxSolidLineLength )
+            if ( solidSpaceMainMaximums[i].length > maxSolidLineLength ) {
                 maxSolidLineLength = solidSpaceMainMaximums[i].length;
+                endX = solidSpaceMainMaximums[i].end.x();
+                angle = solidSpaceMainMaximums[i].angle;
+        }
+//------------------------------------------------------------------------------------
 
 
-        float avgAngle = 0;
+//----- average angle and distance within the same angle of max. lenght vicinity
         int count = 0;
+
+        float avgAngleUp = angle + 0.5;      // +0.5C for deadband
+        float avgAngleDown = angle - 0.5;    // -0.5C for deadband
+        distanceAvg = 0;
+        thetaAvg = 0;
+
         for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
-            if (solidSpaceMainMaximums[i].length == maxSolidLineLength) {
-                avgAngle += solidSpaceMainMaximums[i].angle;
+
+            if (solidSpaceMainMaximums[i].angle >= avgAngleDown &&
+                solidSpaceMainMaximums[i].angle <= avgAngleUp &&
+                solidSpaceMainMaximums[i].start.x() < endX) {
+
+                thetaAvg += solidSpaceMainMaximums[i].angle;
+                distanceAvg += solidSpaceMainMaximums[i].distance;
                 count++;
             }
 
-        if ( count != 0 )
-            avgAngle = avgAngle / count;
+        if ( count != 0 ) {
+            /* / weighted average
+            int sum = major2Lines[0].length + major2Lines[1].length;
 
+            if ( sum != 0 ){
+                distanceAvg = (major2Lines[0].distance * major2Lines[0].length + major2Lines[1].distance * major2Lines[1].length) / sum;
+                thetaAvg = (major2Lines[0].angle * major2Lines[0].length + major2Lines[1].angle * major2Lines[1].length ) / sum;
+            } else {
+                distanceAvg  = 0;
+                thetaAvg = 0;
+            }
+            */
+
+            // classical average
+            thetaAvg /= count;
+            distanceAvg /= count;
+
+            majorLinesFound = true;
+        } else {
+            majorLinesFound = false;
+        }
+//------------------------------------------------------------------------------------
+
+
+//----- construct primary line object to find coordinates
+
+        if (majorLinesFound) {
+
+
+            // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
+            primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);    // in value matrix
+
+        } else {
+            // no solid line
+            primaryLine.start.setX( -1 );
+            primaryLine.start.setY( -1 );
+            primaryLine.end.setX( -1 );
+            primaryLine.end.setY( -1 );
+            primaryLine.length = -1;
+            primaryLine.distance = -1;
+            primaryLine.angle = -1;
+
+            distanceAvg = -1;
+            thetaAvg = -1;
+        }
     }
 //------------------------------------------------------------------------------------
 
@@ -1268,43 +1329,7 @@ void imgProcess::detectLongestSolidLines(){
 
 
 //------------------------------------------------------------------------------------
-    // calculate average distance and angle value of 2 major line = PRIMARY LINE
-    // construct primary line object to find coordinates
 
-    if (majorLinesFound) {
-
-        /*
-        // weighted average
-        int sum = major2Lines[0].length + major2Lines[1].length;
-
-        if ( sum != 0 ){
-            distanceAvg = (major2Lines[0].distance * major2Lines[0].length + major2Lines[1].distance * major2Lines[1].length) / sum;
-            thetaAvg = (major2Lines[0].angle * major2Lines[0].length + major2Lines[1].angle * major2Lines[1].length ) / sum;
-        } else {
-            distanceAvg  = 0;
-            thetaAvg = 0;
-        }
-        */
-
-        // classical average
-        distanceAvg = (major2Lines[0].distance + major2Lines[1].distance ) / 2;
-        thetaAvg = (major2Lines[0].angle + major2Lines[1].angle ) / 2;
-
-        // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
-        primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);    // in value matrix
-    } else {
-        // no solid line
-        primaryLine.start.setX( -1 );
-        primaryLine.start.setY( -1 );
-        primaryLine.end.setX( -1 );
-        primaryLine.end.setY( -1 );
-        primaryLine.length = -1;
-        primaryLine.distance = -1;
-        primaryLine.angle = -1;
-
-        distanceAvg = -1;
-        thetaAvg = -1;
-    }
 //------------------------------------------------------------------------------------
 
     /*
