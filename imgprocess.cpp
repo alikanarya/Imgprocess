@@ -1105,7 +1105,7 @@ void imgProcess::detectLongestSolidLines(){
 
 //----- detect maximum length in solidSpaceMainMaximums
         maxSolidLineLength = 0;
-        int endX = 0;
+        int endX = 0, index = 0;
         float angle = 0;
 
         for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
@@ -1113,8 +1113,26 @@ void imgProcess::detectLongestSolidLines(){
                 maxSolidLineLength = solidSpaceMainMaximums[i].length;
                 endX = solidSpaceMainMaximums[i].end.x();
                 angle = solidSpaceMainMaximums[i].angle;
-        }
+                index = i;
+            }
 //------------------------------------------------------------------------------------
+
+
+        QList<solidLine> primaryGroup;
+        QList<solidLine> secondaryGroup;
+        primaryGroup.clear();
+        secondaryGroup.clear();
+
+        primaryGroup.append( solidSpaceMainMaximums[index] );
+
+        for (int i = 0; i < solidSpaceMainMaximums.size(); i++)
+            if ( i != index )
+                if ( solidSpaceMainMaximums[index].start.x() > solidSpaceMainMaximums[i].end.x() ||
+                     solidSpaceMainMaximums[index].end.x() < solidSpaceMainMaximums[i].start.x()
+                    )
+                    secondaryGroup.append( solidSpaceMainMaximums[i] );
+                else
+                    primaryGroup.append( solidSpaceMainMaximums[i] );
 
 
 //----- average angle and distance within the same angle of max. lenght vicinity
