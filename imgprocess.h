@@ -76,6 +76,8 @@ class imgProcess{
         int voteThreshold;                  // vote threshold to accept primary line as concerned
         int voidThreshold;                  // void line length threhold in pixels to accept primary void line as concerned
         float distanceAvg, thetaAvg;
+        float distanceAvgPrimary, thetaAvgPrimary;
+        float distanceAvgSecondary, thetaAvgSecondary;
         bool primaryLineDetected;           // true: primary line detected
         bool detected;                      // false for any known un-matched criteria
         int voidIndex;                      // index no of <void space list> holding primary void line data
@@ -90,16 +92,21 @@ class imgProcess{
 
         QList<solidLine *> solidSpace;      // list to hold found solid lines in single line
         QList<solidLine> solidSpaceMain;    // list to hold found solid lines in all hough space
-        QList<solidLine> solidSpaceMainTrimmed; // solidSpaceMain: no lines (length -1) excluded
-        QList<solidLine> solidSpaceMainMaximums;// solidSpaceTrimmed: maximums of each distance value
-        QList<solidLine> solidSpaceMainOrdered; // line length ordered list of solidSpaceMain
-        QList<majorArea *> majorList;
-        float majorThresholdPercent;
+        QList<solidLine> solidSpaceMainTrimmed; // solidSpaceMain: lines with length above threshold
+        QList<solidLine> solidSpaceMainMaximums;// solidSpaceTrimmed: maximums of each distance value   NOT USED
+        QList<solidLine> solidSpaceMainOrdered; // line length ordered list of solidSpaceMain   NOT USED
+        QList<majorArea *> majorList;   // NOT USED
+        float majorThresholdPercent;    // NOT USED
         int maxSolidLineLength;
-        QList<solidLine> majorLines;    // list that hold major lines data from major areas
+        QList<solidLine> majorLines;    // list that hold major lines data from major areas NOT USED
         QList<solidLine> major2Lines;   // list that hold 2 major lines
         bool majorLinesFound;
         solidLine primaryLine;
+        QList<solidLine> primaryGroup;
+        QList<solidLine> secondaryGroup;
+        bool primaryLineFound;
+        bool secondaryLineFound;
+        bool centerDetermined;
 
         int errorEdgeLimit;
         int errorAngleLimit;
