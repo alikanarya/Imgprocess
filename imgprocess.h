@@ -235,7 +235,7 @@ class imgProcess{
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
         solidLine detectLongestSolidLine(float distance, float angle, bool flag);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
-        void detectLongestSolidLines();         // detect longest solid(continuous) lines from hough-lines array
+        void detectLongestSolidLines();         // detect longest solid(continuous) lines from value matrix
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

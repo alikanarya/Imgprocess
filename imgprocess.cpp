@@ -984,7 +984,7 @@ void imgProcess::detectLongestSolidLines(){
     primaryLineFound = false;
     secondaryLineFound = false;
 
-    //----- find all solid lines in edge thickened matrix
+    //----- find all solid lines in value matrix
     solidSpaceMain.clear();
     float angle = 0;
     float angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
@@ -992,7 +992,7 @@ void imgProcess::detectLongestSolidLines(){
     for (int distance = 0; distance < imageHeight; distance++)
         for (int angleIndex = 0; angleIndex < angleSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
-            solidSpaceMain.append( detectLongestSolidLine( distance, angle, false ) );  // in edge thickened matrix
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle, true ) );  // in value matrix
         }
     //------------------------------------------------------------------------------------
 
@@ -1009,10 +1009,9 @@ void imgProcess::detectLongestSolidLines(){
 
         //----- remove lines w/ length behind threshold
         solidSpaceMainTrimmed.clear();
-        float thresholdLength = globalMaxLength * 0.25;  // % 50 of global maximum
+        float thresholdLength = globalMaxLength * 0.20;  // % 20 of global maximum
 
         for (int i = 0; i < solidSpaceMain.size(); i++)
-            //if ( solidSpaceMain[i].length != -1 )  //remove no lines
             if ( solidSpaceMain[i].length > thresholdLength )
                 solidSpaceMainTrimmed.append( solidSpaceMain[i] );
         //------------------------------------------------------------------------------------
@@ -1060,6 +1059,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < primaryGroup.size(); i++)
                 if ( primaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = primaryGroup[i].length;
+            float primaryLengthThreshold = maxSolidLineLength * 0.75;
             //------------------------------------------------------------------------------------
 
 
@@ -1084,6 +1084,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < secondaryGroup.size(); i++)
                 if ( secondaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = secondaryGroup[i].length;
+            float secondaryLengthThreshold = maxSolidLineLength * 0.75;
             //------------------------------------------------------------------------------------
 
 
@@ -1111,24 +1112,48 @@ void imgProcess::detectLongestSolidLines(){
             thetaAvgPrimary = 0;
             count = 0;
 
+            // * for weighted average
+            QList<solidLine> buffer;
+            buffer.clear();
+            int sum = 0;
+
             for (int i = 0; i < primaryGroup.size(); i++)
-                if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
+                if ( primaryGroup[i].length > primaryLengthThreshold ) {
+//                if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
                     distanceAvgPrimary += primaryGroup[i].distance;
                     thetaAvgPrimary += primaryGroup[i].angle;
                     count++;
+
+                    // * for weighted average
+                    buffer.append( primaryGroup[i] );
+                    sum += primaryGroup[i].length;
                 }
 
             major2Lines.clear();
 
             if ( count != 0 ) {
-                distanceAvgPrimary /= count;
-                thetaAvgPrimary /= count;
+                // * weighted average
+                distanceAvgPrimary = 0;
+                thetaAvgPrimary = 0;
+                if ( sum != 0 ){
+                    for (int i = 0; i < count; i++ ) {
+                        distanceAvgPrimary += buffer[i].length * buffer[i].distance;
+                        thetaAvgPrimary += buffer[i].length * buffer[i].angle;
+                    }
+
+                    distanceAvgPrimary /= sum;
+                    thetaAvgPrimary /= sum;
+                } else {
+                    distanceAvgPrimary  = imageHeight/2;
+                    thetaAvgPrimary = 90;
+                }
+
+                //distanceAvgPrimary /= count;
+                //thetaAvgPrimary /= count;
 
                 primaryLineFound = true;
                 major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , true) );  // in value matrix
 
-            } else {
-                //majorLinesFound = false;
             }
             //------------------------------------------------------------------------------------
 
@@ -1141,67 +1166,62 @@ void imgProcess::detectLongestSolidLines(){
             thetaAvgSecondary = 0;
             count = 0;
 
-            /* for weighted average
-            QList<solidLine> buffer;
+            // * for weighted average
             buffer.clear();
-            int sum = 0;
-            */
+            sum = 0;
 
             for (int i = 0; i < secondaryGroup.size(); i++)
-                if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
+                if ( secondaryGroup[i].length > secondaryLengthThreshold ) {
+//                if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
                     distanceAvgSecondary += secondaryGroup[i].distance;
                     thetaAvgSecondary += secondaryGroup[i].angle;
                     count++;
 
-                    /* for weighted average
+                    // * for weighted average
                     buffer.append( secondaryGroup[i] );
-                    sum += pow(secondaryGroup[i].length, 2);
-                    */
+                    sum += secondaryGroup[i].length;
                 }
 
             if ( count != 0 ) {
 
-                /* weighted average
+                // * weighted average
                 distanceAvgSecondary = 0;
                 thetaAvgSecondary = 0;
                 if ( sum != 0 ){
                     for (int i = 0; i < count; i++ ) {
-                        distanceAvgSecondary += pow(buffer[i].length, 2) * buffer[i].distance;
-                        thetaAvgSecondary += pow(buffer[i].length, 2) * buffer[i].angle;
+                        distanceAvgSecondary += buffer[i].length * buffer[i].distance;
+                        thetaAvgSecondary += buffer[i].length * buffer[i].angle;
                     }
 
                     distanceAvgSecondary /= sum;
                     thetaAvgSecondary /= sum;
                 } else {
-                    distanceAvgSecondary  = 0;
-                    thetaAvgSecondary = 0;
+                    distanceAvgSecondary  = imageHeight/2;
+                    thetaAvgSecondary = 90;
                 }
-                */
 
-                distanceAvgSecondary /= count;
-                thetaAvgSecondary /= count;
+                //distanceAvgSecondary /= count;
+                //thetaAvgSecondary /= count;
 
                 secondaryLineFound = true;
                 major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , true) );  // in value matrix
 
                 if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
                     secondaryLineFound = false;
-            } else {
-                //majorLinesFound = false;
             }
-
+            //------------------------------------------------------------------------------------
         }
-
     }
 
 
-
+    //----- calculate corners & center
     leftCornerX = 0;
     leftCornerY = imageHeight/2;
     rightCornerX = imageWidth - 1;
     rightCornerY = imageHeight/2;
 
     centerDetermined = false;
+    angleAvg = 0;
 
     if ( primaryLineFound && secondaryLineFound ) {
 
@@ -1225,6 +1245,8 @@ void imgProcess::detectLongestSolidLines(){
 
             centerDetermined = true;
         }
+
+        angleAvg = ( major2Lines[0].angle + major2Lines[1].angle ) / 2 - 90;  // to check laser setup
     }
     else
         if ( primaryLineFound ) {
@@ -1244,43 +1266,34 @@ void imgProcess::detectLongestSolidLines(){
 
                     centerDetermined = true;
                 }
+            angleAvg = major2Lines[0].angle - 90;     // to check laser setup
         }
 
 
     trackCenterX = ( leftCornerX + rightCornerX ) / 2;
     trackCenterY = ( leftCornerY + rightCornerY ) / 2;
-
-//------------------------------------------------------------------------------------
-
+    //------------------------------------------------------------------------------------
 
 
-/*
+    //----- alarms
+    detected = true;
 
-//----- construct primary line object to find coordinates
+    if ( !primaryLineFound ) {  // no primary line found
+        detected = false;
+        statusMessage = alarm1;
+    }
 
-        if (majorLinesFound) {
+    if ( abs(angleAvg) <= errorAngleLimit )
+        angleInLimit = true;
+    else {
+        angleInLimit = false;
+        detected = false;       // do not accecpt this cam setup, line angle is not in tolerance
+        statusMessage = alarm5;
+    }
 
-
-            // MAIN DETECTION OF JUNCTION; true; value, false: edge thickened
-            primaryLine = detectLongestSolidLine( distanceAvg, thetaAvg , true);    // in value matrix
-
-        } else {
-            // no solid line
-            primaryLine.start.setX( -1 );
-            primaryLine.start.setY( -1 );
-            primaryLine.end.setX( -1 );
-            primaryLine.end.setY( -1 );
-            primaryLine.length = -1;
-            primaryLine.distance = -1;
-            primaryLine.angle = -1;
-
-            distanceAvg = -1;
-            thetaAvg = -1;
-        }
-
-        */
-//------------------------------------------------------------------------------------
-
+    if ( !centerDetermined )
+        detected = false;
+    //------------------------------------------------------------------------------------
 }
 
 
