@@ -860,7 +860,7 @@ void imgProcess::detectPrimaryVoid(){
 }
 
 
-solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag) {
+solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag, int xOffset) {
 
     solidSpace.clear();
 
@@ -883,7 +883,7 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
         currentValue = 0, state = 0;
     solidLine *line;
 
-    for (int x = 0; x < width + 1; x++){   // +1 for last coordinate to catch last line shape
+    for (int x = xOffset; x < width + 1; x++){   // +1 for last coordinate to catch last line shape
 
         lineY = centerY - getLineY((x - centerX), distance, angle);
 
@@ -1062,9 +1062,11 @@ void imgProcess::detectLongestSolidLines(){
             float primaryLengthThreshold = maxSolidLineLength * 0.75;
             //------------------------------------------------------------------------------------
 
-
-            //----- primaryGroup: calculate average angle of max lines if more than 1 max
             int count = 0;
+
+            /* for angle band program
+            //----- primaryGroup: calculate average angle of max lines if more than 1 max
+            count = 0;
             thetaAvgPrimary = 0;
 
             for (int i = 0; i < primaryGroup.size(); i++)
@@ -1076,7 +1078,8 @@ void imgProcess::detectLongestSolidLines(){
             if ( count != 0 ) {
                 thetaAvgPrimary /= count;
             }
-
+            //------------------------------------------------------------------------------------
+            */
 
             //----- detect maximum length in secondaryGroup
             maxSolidLineLength = 0;
@@ -1088,6 +1091,7 @@ void imgProcess::detectLongestSolidLines(){
             //------------------------------------------------------------------------------------
 
 
+            /* for angle band program
             //----- secondaryGroup: calculate average angle of max lines if more than 1 max
             count = 0;
             thetaAvgSecondary = 0;
@@ -1102,27 +1106,29 @@ void imgProcess::detectLongestSolidLines(){
                 thetaAvgSecondary /= count;
             }
             //------------------------------------------------------------------------------------
-
+            */
 
             //----- primaryGroup:
-            //----- average angle and distance within the same angle band of max. lenght and obtain major line
-            float avgAngleUp = thetaAvgPrimary + 0.5;      // +0.5C for deadband
-            float avgAngleDown = thetaAvgPrimary - 0.5;    // -0.5C for deadband
-            distanceAvgPrimary = 0;
-            thetaAvgPrimary = 0;
-            count = 0;
+            //----- average above lenght threshold and obtain major line
+            //      //----- average angle and distance within the same angle band of max. lenght and obtain major line
+            //float avgAngleUp = thetaAvgPrimary + 0.5;      // +0.5C for deadband
+            //float avgAngleDown = thetaAvgPrimary - 0.5;    // -0.5C for deadband
 
             // * for weighted average
             QList<solidLine> buffer;
             buffer.clear();
-            int sum = 0;
 
+            //distanceAvgPrimary = 0;
+            //thetaAvgPrimary = 0;
+            count = 0;
+            int sum = 0;
             for (int i = 0; i < primaryGroup.size(); i++)
                 if ( primaryGroup[i].length > primaryLengthThreshold ) {
-//                if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
-                    distanceAvgPrimary += primaryGroup[i].distance;
-                    thetaAvgPrimary += primaryGroup[i].angle;
+                //if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
                     count++;
+
+                    //distanceAvgPrimary += primaryGroup[i].distance;
+                    //thetaAvgPrimary += primaryGroup[i].angle;
 
                     // * for weighted average
                     buffer.append( primaryGroup[i] );
@@ -1159,23 +1165,25 @@ void imgProcess::detectLongestSolidLines(){
 
 
             //----- secondaryGroup:
-            //----- average angle and distance within the same angle band of max. lenght and obtain major line
-            avgAngleUp = thetaAvgSecondary + 0.5;      // +0.5C for deadband
-            avgAngleDown = thetaAvgSecondary - 0.5;    // -0.5C for deadband
-            distanceAvgSecondary = 0;
-            thetaAvgSecondary = 0;
-            count = 0;
+            //----- average above lenght threshold and obtain major line
+            //      //----- average angle and distance within the same angle band of max. lenght and obtain major line
+            //avgAngleUp = thetaAvgSecondary + 0.5;      // +0.5C for deadband
+            //avgAngleDown = thetaAvgSecondary - 0.5;    // -0.5C for deadband
 
             // * for weighted average
             buffer.clear();
-            sum = 0;
 
+            //distanceAvgSecondary = 0;
+            //thetaAvgSecondary = 0;
+            count = 0;
+            sum = 0;
             for (int i = 0; i < secondaryGroup.size(); i++)
                 if ( secondaryGroup[i].length > secondaryLengthThreshold ) {
-//                if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
-                    distanceAvgSecondary += secondaryGroup[i].distance;
-                    thetaAvgSecondary += secondaryGroup[i].angle;
+                //if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
                     count++;
+
+                    //distanceAvgSecondary += secondaryGroup[i].distance;
+                    //thetaAvgSecondary += secondaryGroup[i].angle;
 
                     // * for weighted average
                     buffer.append( secondaryGroup[i] );
@@ -1203,8 +1211,15 @@ void imgProcess::detectLongestSolidLines(){
                 //distanceAvgSecondary /= count;
                 //thetaAvgSecondary /= count;
 
+                int secXOffset = imageWidth - 1;
+                for (int i = 0; i < buffer.size(); i++ ) {
+
+                    if ( buffer[i].start.x() < secXOffset )
+                        secXOffset = buffer[i].start.x();
+                }
+
                 secondaryLineFound = true;
-                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , true) );  // in value matrix
+                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , true, secXOffset ) );  // in value matrix
 
                 if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
                     secondaryLineFound = false;
@@ -1404,7 +1419,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
 
     imgCornerAndPrimaryLines = imgOrginal.copy();
 
-    if (detected){
+//    if (detected){
         QRgb valueCorner, valuePrimary;
 
         // draw primary lines
@@ -1469,8 +1484,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
             if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
                 imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
         }
-
-    }
+//    }
     return imgCornerAndPrimaryLines;
 }
 
