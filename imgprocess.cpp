@@ -860,14 +860,12 @@ void imgProcess::detectPrimaryVoid(){
 }
 
 
-solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag, int xOffset) {
+solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag, int xOffset, int xEndOffset) {
 
     solidSpace.clear();
 
-    int width, height;
-
-    width = imageWidth;
-    height = imageHeight;
+    //int width = imageWidth;
+    int height = imageHeight;
 /*
     if (flag){
         width = imageWidth;
@@ -883,13 +881,13 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
         currentValue = 0, state = 0;
     solidLine *line;
 
-    for (int x = xOffset; x < width + 1; x++){   // +1 for last coordinate to catch last line shape
+    for (int x = xOffset; x <= (xEndOffset + 1); x++){   // +1 for last coordinate to catch last line shape
 
         lineY = centerY - getLineY((x - centerX), distance, angle);
 
         if (lineY >= 0 && lineY < height){
 
-            if (x == width)
+            if (x == (xEndOffset+1) )
                 currentValue = 0;   // end with empty
             else {
                 if (flag)
@@ -992,7 +990,7 @@ void imgProcess::detectLongestSolidLines(){
     for (int distance = 0; distance < imageHeight; distance++)
         for (int angleIndex = 0; angleIndex < angleSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
-            solidSpaceMain.append( detectLongestSolidLine( distance, angle, true ) );  // in value matrix
+            solidSpaceMain.append( detectLongestSolidLine( distance, angle, true, 0, (imageWidth-1) ) );  // in value matrix
         }
     //------------------------------------------------------------------------------------
 
@@ -1157,8 +1155,22 @@ void imgProcess::detectLongestSolidLines(){
                 //distanceAvgPrimary /= count;
                 //thetaAvgPrimary /= count;
 
+                int priXStartOffset = imageWidth - 1;
+                for (int i = 0; i < buffer.size(); i++ ) {
+
+                    if ( buffer[i].start.x() < priXStartOffset )
+                        priXStartOffset = buffer[i].start.x();
+                }
+
+                int priXEndOffset = 0;
+                for (int i = 0; i < buffer.size(); i++ ) {
+
+                    if ( buffer[i].end.x() > priXEndOffset )
+                        priXEndOffset = buffer[i].end.x();
+                }
+
                 primaryLineFound = true;
-                major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , true) );  // in value matrix
+                major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , true, priXStartOffset, priXEndOffset ) );  // in value matrix
 
             }
             //------------------------------------------------------------------------------------
@@ -1211,15 +1223,22 @@ void imgProcess::detectLongestSolidLines(){
                 //distanceAvgSecondary /= count;
                 //thetaAvgSecondary /= count;
 
-                int secXOffset = imageWidth - 1;
+                int secXStartOffset = imageWidth - 1;
                 for (int i = 0; i < buffer.size(); i++ ) {
 
-                    if ( buffer[i].start.x() < secXOffset )
-                        secXOffset = buffer[i].start.x();
+                    if ( buffer[i].start.x() < secXStartOffset )
+                        secXStartOffset = buffer[i].start.x();
+                }
+
+                int secXEndOffset = 0;
+                for (int i = 0; i < buffer.size(); i++ ) {
+
+                    if ( buffer[i].end.x() > secXEndOffset )
+                        secXEndOffset = buffer[i].end.x();
                 }
 
                 secondaryLineFound = true;
-                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , true, secXOffset ) );  // in value matrix
+                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , true, secXStartOffset, secXEndOffset ) );  // in value matrix
 
                 if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
                     secondaryLineFound = false;
@@ -1267,7 +1286,7 @@ void imgProcess::detectLongestSolidLines(){
         if ( primaryLineFound ) {
 
             int distance2Left = major2Lines[0].start.x();
-            int distance2Right = imageWidth - major2Lines[0].end.x();
+            int distance2Right = (imageWidth - 1) - major2Lines[0].end.x();
 
             if ( distance2Left > distance2Right ) {                     // primary = RIGHT
                 rightCornerX = major2Lines[0].start.x();

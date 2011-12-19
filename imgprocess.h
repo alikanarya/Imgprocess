@@ -234,7 +234,7 @@ class imgProcess{
                                                 // LASER LINE MUST BE ALIGN TO WHOLE IMAGE AND VOID SPACE IN INTEREST
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
-        solidLine detectLongestSolidLine(float distance, float angle, bool flag, int xOffset = 0);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
+        solidLine detectLongestSolidLine(float distance, float angle, bool flag, int xStartOffset, int xEndOffset);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
         void detectLongestSolidLines();         // detect longest solid(continuous) lines from value matrix
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
