@@ -50,6 +50,10 @@ public:
     ~majorArea(){}
 };
 
+struct minCostedLines {
+    int c;
+    int cost;
+};
 
 // image processing class
 class imgProcess{
