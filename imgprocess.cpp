@@ -1508,6 +1508,33 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
 }
 
 
+QImage imgProcess::drawLines(minCostedLines *lineArray, int size){
+
+    QImage image = imgOrginal.copy();
+
+    QRgb rgbRed;
+
+    rgbRed = qRgb(255, 0, 0);     // red
+    int x;
+
+    for (int m = 0; m < size; m++){
+
+        for (int y = 0; y < imageHeight; y++){
+            if (m != 10)
+                x = lineArray[m].c - (y - lineArray[m].c) / tan ( R2D * (90+(m-11)/2.0) );
+            else
+                x = lineArray[m].c;
+
+            if (x >= 0 && x < imageWidth)
+                image.setPixel(x, y, rgbRed);
+        }
+
+    }
+
+    return image;
+}
+
+
 imgProcess::~imgProcess(){
 
     for (int y = 0; y < imageHeight; y++) delete []valueMatrix[y];
