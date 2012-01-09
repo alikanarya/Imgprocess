@@ -1521,7 +1521,7 @@ QImage imgProcess::drawLines(minCostedLines *lineArray, int size){
 
         for (int y = 0; y < imageHeight; y++){
             if (m != 10)
-                x = lineArray[m].c - (y - lineArray[m].c) / tan ( R2D * (90+(m-11)/2.0) );
+                x = lineArray[m].c - round ( (y - lineArray[m].c) / tan ( R2D * (90+(m-10)/4.0) ) );
             else
                 x = lineArray[m].c;
 
@@ -1529,6 +1529,30 @@ QImage imgProcess::drawLines(minCostedLines *lineArray, int size){
                 image.setPixel(x, y, rgbRed);
         }
 
+    }
+
+    return image;
+}
+
+
+QImage imgProcess::drawLine(minCostedLines *line, float tangent){
+
+    QImage image = imgOrginal.copy();
+
+    QRgb rgbRed;
+
+    rgbRed = qRgb(255, 0, 0);     // red
+    int x;
+
+
+    for (int y = 0; y < imageHeight; y++){
+        if (tangent != 0)
+            x = round ( (float)( y + tangent * line->c) / tangent );
+        else
+            x = line->c;
+
+        if (x >= 0 && x < imageWidth)
+            image.setPixel(x, y, rgbRed);
     }
 
     return image;
