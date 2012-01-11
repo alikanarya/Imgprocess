@@ -112,6 +112,13 @@ class imgProcess{
         bool secondaryLineFound;
         bool centerDetermined;
 
+        float *slope;
+        QList<minCostedLines> lineList;
+        minCostedLines *bestLines;
+        float slopeBest;
+        QList<minCostedLines> deepLines;
+        int centerC;
+
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -240,6 +247,8 @@ class imgProcess{
 
         solidLine detectLongestSolidLine(float distance, float angle, bool flag, int xStartOffset, int xEndOffset);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
         void detectLongestSolidLines();         // detect longest solid(continuous) lines from value matrix
+
+        void detectThinJointCenter(int refAngle, int precisionSize);
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

@@ -1331,6 +1331,182 @@ void imgProcess::detectLongestSolidLines(){
 }
 
 
+void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
+
+    // prepare slope array
+    slope = new float[precisionSize];
+    int tangent;
+    float minusAngle = -1 * refAngle;
+    float plusAngle = refAngle;
+    float step = 2 * plusAngle / (precisionSize - 1);
+    int count = 0;
+
+    for ( float f = minusAngle; f <= plusAngle; f += step ) {
+        tangent = tan ( R2D * ( 90 + f ) );
+
+        if (tangent < 573)     //89.9
+            slope[count] = tangent;
+        else
+            slope[count] = 573;
+
+        count++;
+
+        //for (int i=0;i<precisionSize;i++)
+        //  ui->plainTextEdit->appendPlainText(QString::number(i) + ": "+QString::number(slope[i],'f',3));
+    }
+
+
+
+    int sum, x, min, index;
+    bool accept;
+    bestLines = new minCostedLines[precisionSize];
+
+    for (int m = 0; m < precisionSize; m++) {
+
+        lineList.clear();
+
+        for (int c = 0; c < imageWidth; c++){
+            sum = 0;
+
+            accept = true;
+            for (int y = 0; y < imageHeight; y++){
+
+                //y = slope[m] * x + c;
+                if (slope[m] < 573)
+                    x = round ( (float)( y + slope[m] * c ) / slope[m] );
+                else
+                    x = c;
+
+                if (x < 0 || x >= imageWidth) {
+                    accept = false;
+                } else {
+                    sum += valueMatrix[y][x];
+                }
+
+            }
+
+            if (accept) {
+
+                minCostedLines z;
+                z.c = c;
+                z.cost = sum;
+                lineList.append(z);
+            }
+
+        }
+
+        min = 255 * imageHeight;
+
+        for (int i = 0; i < lineList.size(); i++) {
+
+            if (lineList[i].cost < min){
+                index = i;
+                min = lineList[i].cost;
+            }
+        }
+
+        if (lineList.size() != 0){
+            bestLines[m].c = lineList[index].c;
+            bestLines[m].cost = lineList[index].cost;
+        } else {
+            bestLines[m].c = 0;
+            bestLines[m].cost = min;
+        }
+
+
+    }
+
+    min = 255 * imageHeight;
+    index = 0;
+    for (int m = 0; m < precisionSize; m++){
+        if (bestLines[m].cost < min){
+            index = m;
+            min = bestLines[m].cost;
+        }
+    }
+
+
+    slopeBest = slope[index];
+    lineList.clear();
+
+    for (int c = 0; c < imageWidth; c++){
+        sum = 0;
+
+        accept = true;
+        for (int y = 0; y < imageHeight; y++){
+
+            //y = slope[m] * x + c;
+            if (slopeBest < 573)
+                x = round ( (float)( y + slopeBest * c ) / slopeBest );
+            else
+                x = c;
+
+            if (x < 0 || x >= imageWidth) {
+                accept = false;
+            } else {
+                sum += valueMatrix[y][x];
+            }
+
+        }
+
+        if (accept) {
+
+            minCostedLines z;
+            z.c = c;
+            z.cost = sum;
+            lineList.append(z);
+        }
+    }
+
+    deepLines.clear();
+
+    int threshold = bestLines[index].cost * 1.5;
+
+    for(int i = 0; i < lineList.size(); i++)
+        if (lineList[i].cost <= threshold)
+            deepLines.append(lineList[i]);
+
+    int minX = imageWidth;
+    int maxX = 0;
+    for(int i = 0; i < deepLines.size(); i++){
+
+        if (deepLines[i].c < minX)
+            minX = deepLines[i].c;
+
+        if (deepLines[i].c > maxX)
+            maxX = deepLines[i].c;
+    }
+
+    centerC = (minX + maxX)/2;
+
+    trackCenterY = imageHeight / 2;
+
+    if (slopeBest < 573)
+        trackCenterX = round ( (float)( trackCenterY + slopeBest * centerC ) / slopeBest );
+    else
+        trackCenterX = centerC;
+
+    //------------------------------------------------------------------------------------
+
+
+    //----- alarms
+    primaryLineFound = detected = centerDetermined = true;
+
+
+    angleAvg = 90 + minusAngle + index * step;
+    if ( abs(angleAvg) <= (90 + errorAngleLimit) )
+        angleInLimit = true;
+    else {
+        angleInLimit = false;
+        detected = false;       // do not accecpt this cam setup, line angle is not in tolerance
+        statusMessage = alarm5;
+    }
+
+    //------------------------------------------------------------------------------------
+
+}
+
+
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){
 
     QImage *image = new QImage(width, height, format);
