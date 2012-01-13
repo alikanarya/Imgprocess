@@ -112,6 +112,7 @@ class imgProcess{
         bool secondaryLineFound;
         bool centerDetermined;
 
+        bool thinJointInitSwitch;
         float *slope;
         QList<minCostedLines> lineList;
         minCostedLines *bestLines;
@@ -193,6 +194,7 @@ class imgProcess{
             houghSpaceInitSwitch = false;
             houghLinesInitSwitch = false;
             histogramInitSwitch = false;
+            thinJointInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );

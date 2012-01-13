@@ -1333,27 +1333,25 @@ void imgProcess::detectLongestSolidLines(){
 
 void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
-    // prepare slope array
+    thinJointInitSwitch = true;
+
+    //----- prepare slope array
     slope = new float[precisionSize];
-    int tangent;
+    float tangent;
     float minusAngle = -1 * refAngle;
     float plusAngle = refAngle;
     float step = 2 * plusAngle / (precisionSize - 1);
-    int count = 0;
 
-    for ( float f = minusAngle; f <= plusAngle; f += step ) {
-        tangent = tan ( R2D * ( 90 + f ) );
+    for ( int i = 0; i < precisionSize; i++ ) {
 
-        if (tangent < 573)     //89.9
-            slope[count] = tangent;
+        tangent = tan ( R2D * ( 90 + minusAngle + i * step ) );
+
+        if (tangent < 573.0 && tangent > -573.0)     //89.9-90.1 degree
+            slope[i] = tangent;
         else
-            slope[count] = 573;
-
-        count++;
-
-        //for (int i=0;i<precisionSize;i++)
-        //  ui->plainTextEdit->appendPlainText(QString::number(i) + ": "+QString::number(slope[i],'f',3));
+            slope[i] = 573.0;
     }
+    //------------------------------------------------------------------------------------
 
 
 
@@ -1361,6 +1359,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     bool accept;
     bestLines = new minCostedLines[precisionSize];
 
+    //----- scan all angles and all constants
     for (int m = 0; m < precisionSize; m++) {
 
         lineList.clear();
@@ -1395,6 +1394,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
         }
 
+
+        // find minimum brightness of the angle in interest
         min = 255 * imageHeight;
 
         for (int i = 0; i < lineList.size(); i++) {
@@ -1412,10 +1413,10 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             bestLines[m].c = 0;
             bestLines[m].cost = min;
         }
-
-
     }
+    //------------------------------------------------------------------------------------
 
+    //----- find gloabal minimum
     min = 255 * imageHeight;
     index = 0;
     for (int m = 0; m < precisionSize; m++){
@@ -1425,8 +1426,11 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         }
     }
 
-
     slopeBest = slope[index];
+    //------------------------------------------------------------------------------------
+
+
+    //----- scan all image using best angle
     lineList.clear();
 
     for (int c = 0; c < imageWidth; c++){
@@ -1457,7 +1461,10 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             lineList.append(z);
         }
     }
+    //------------------------------------------------------------------------------------
 
+
+    //----- calculate center of the valley
     deepLines.clear();
 
     int threshold = bestLines[index].cost * 1.5;
@@ -1478,13 +1485,21 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     }
 
     centerC = (minX + maxX)/2;
+    //------------------------------------------------------------------------------------
 
-    trackCenterY = imageHeight / 2;
 
-    if (slopeBest < 573)
+    //----- calculate track center and corner points
+    leftCornerY = rightCornerY = trackCenterY = imageHeight / 2;
+
+    if (slopeBest < 573) {
         trackCenterX = round ( (float)( trackCenterY + slopeBest * centerC ) / slopeBest );
-    else
+        leftCornerX  = round ( (float)( leftCornerY + slopeBest * minX ) / slopeBest );
+        rightCornerX  = round ( (float)( rightCornerY + slopeBest * maxX ) / slopeBest );
+    } else {
         trackCenterX = centerC;
+        leftCornerX = minX;
+        rightCornerX = maxX;
+    }
 
     //------------------------------------------------------------------------------------
 
@@ -1494,6 +1509,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
 
     angleAvg = 90 + minusAngle + index * step;
+    angleAvg = 180 - angleAvg;  // since image is mirrored
     if ( abs(angleAvg) <= (90 + errorAngleLimit) )
         angleInLimit = true;
     else {
@@ -1501,7 +1517,6 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         detected = false;       // do not accecpt this cam setup, line angle is not in tolerance
         statusMessage = alarm5;
     }
-
     //------------------------------------------------------------------------------------
 
 }
@@ -1782,6 +1797,13 @@ imgProcess::~imgProcess(){
     if ( solidSpaceMainOrdered.size() > 0 ) solidSpaceMainOrdered.clear();
     if ( majorLines.size() > 0 ) majorLines.clear();
     if ( major2Lines.size() > 0 ) major2Lines.clear();
+
+    if ( thinJointInitSwitch ) {
+        delete []slope;
+        delete []bestLines;
+        lineList.clear();
+        deepLines.clear();
+    }
 }
 
 
