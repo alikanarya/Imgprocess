@@ -1348,6 +1348,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
         if (tangent < 573.0 && tangent > -573.0)     //89.9-90.1 degree
             slope[i] = tangent;
+        else if ( tangent <= -573)
+            slope[i] = -573;
         else
             slope[i] = 573.0;
     }
@@ -1355,11 +1357,12 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
 
 
-    int sum, x, min, index;
+    // scan image for all angles with c parameters,
+    // find the c parameters of each angle according to minimum cost: bestLines array
+    int sum, x, min, index=0;
     bool accept;
     bestLines = new minCostedLines[precisionSize];
 
-    //----- scan all angles and all constants
     for (int m = 0; m < precisionSize; m++) {
 
         lineList.clear();
@@ -1371,7 +1374,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             for (int y = 0; y < imageHeight; y++){
 
                 //y = slope[m] * x + c;
-                if (slope[m] < 573)
+                if (slope[m] > -573 && slope[m] < 573)
                     x = round ( (float)( y + slope[m] * c ) / slope[m] );
                 else
                     x = c;
@@ -1416,7 +1419,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     }
     //------------------------------------------------------------------------------------
 
-    //----- find gloabal minimum
+    // find global minimum with angle & c
     min = 255 * imageHeight;
     index = 0;
     for (int m = 0; m < precisionSize; m++){
@@ -1430,7 +1433,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     //------------------------------------------------------------------------------------
 
 
-    //----- scan all image using best angle
+    // re-scan image with best angle&c combination,
+    // get lineList with c && const information
     lineList.clear();
 
     for (int c = 0; c < imageWidth; c++){
@@ -1440,7 +1444,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         for (int y = 0; y < imageHeight; y++){
 
             //y = slope[m] * x + c;
-            if (slopeBest < 573)
+            if (slopeBest > -573 && slopeBest < 573)
                 x = round ( (float)( y + slopeBest * c ) / slopeBest );
             else
                 x = c;
@@ -1464,7 +1468,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     //------------------------------------------------------------------------------------
 
 
-    //----- calculate center of the valley
+    // find the valley among lineList, cost below some threshold
     deepLines.clear();
 
     int threshold = bestLines[index].cost * 1.5;
@@ -1491,7 +1495,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     //----- calculate track center and corner points
     leftCornerY = rightCornerY = trackCenterY = imageHeight / 2;
 
-    if (slopeBest < 573) {
+    if (slopeBest > -573 && slopeBest < 573) {
         trackCenterX = round ( (float)( trackCenterY + slopeBest * centerC ) / slopeBest );
         leftCornerX  = round ( (float)( leftCornerY + slopeBest * minX ) / slopeBest );
         rightCornerX  = round ( (float)( rightCornerY + slopeBest * maxX ) / slopeBest );
