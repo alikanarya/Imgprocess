@@ -119,6 +119,7 @@ class imgProcess{
         float slopeBest;
         QList<minCostedLines> deepLines;
         int centerC;
+        QList<int> peakPoints;
 
         int errorEdgeLimit;
         int errorAngleLimit;

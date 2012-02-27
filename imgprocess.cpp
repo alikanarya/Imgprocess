@@ -1468,6 +1468,58 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     //------------------------------------------------------------------------------------
 
 
+    if (lineList.size() >= 2) {
+        peakPoints.clear();
+
+        int derivative = 0;
+        int startIndex = -1;
+
+        // search for first signed derivative
+        for (int i = 0; i < lineList.size() - 1; i++){
+
+            derivative = lineList[i+1].cost - lineList[i].cost;
+            if (derivative != 0){
+                startIndex = i;
+                break;
+            }
+        }
+
+        // if signed derivative found, search for peak points
+        if (startIndex != -1){
+
+            peakPoints.append(startIndex);
+            int sign;
+            if (derivative < 0)
+                sign = -1;
+            else
+                sign = 1;
+
+            for (int i = startIndex; i < lineList.size() - 1; i++){
+
+                derivative = lineList[i+1].cost - lineList[i].cost;
+
+                if (sign < 0){
+                    if (derivative > 0){
+                        peakPoints.append(i);
+                        sign = 1;
+                    }
+                } else {
+                    if (derivative < 0){
+                        peakPoints.append(i);
+                        sign = -1;
+                    }
+                }
+
+
+            }
+        }
+
+
+
+
+    }
+
+
     // find the valley among lineList, cost below some threshold
     deepLines.clear();
 
