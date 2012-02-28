@@ -1346,7 +1346,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
         tangent = tan ( R2D * ( 90 + minusAngle + i * step ) );
 
-        if (tangent < 573.0 && tangent > -573.0)     //89.9-90.1 degree
+        if (tangent < 573.0 && tangent > -573.0)     //89.9 - 90.1 degree
             slope[i] = tangent;
         else if ( tangent <= -573)
             slope[i] = -573;
@@ -1398,7 +1398,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         }
 
 
-        // find minimum brightness of the angle in interest
+        // find minimum brightness (max darkness) of the angle in interest
         min = 255 * imageHeight;
 
         for (int i = 0; i < lineList.size(); i++) {
@@ -1419,7 +1419,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     }
     //------------------------------------------------------------------------------------
 
-    // find global minimum with angle & c
+
+    // find global minimum with angle & c among bestLines
     min = 255 * imageHeight;
     index = 0;
     for (int m = 0; m < precisionSize; m++){
@@ -1433,8 +1434,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     //------------------------------------------------------------------------------------
 
 
-    // re-scan image with best angle&c combination,
-    // get lineList with c && const information
+    // re-scan image with best angle & c combination,
+    // get lineList with c && cost information
     lineList.clear();
 
     for (int c = 0; c < imageWidth; c++){
@@ -1454,11 +1455,9 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             } else {
                 sum += valueMatrix[y][x];
             }
-
         }
 
         if (accept) {
-
             minCostedLines z;
             z.c = c;
             z.cost = sum;
@@ -1467,6 +1466,14 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     }
     //------------------------------------------------------------------------------------
 
+
+    //----- alarm preparetion
+    primaryLineFound = detected = centerDetermined = true;
+
+
+    // ----- find the center of the valley
+    int minX = imageWidth;
+    int maxX = 0;
 
     if (lineList.size() >= 2) {
         peakPoints.clear();
@@ -1478,6 +1485,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         for (int i = 0; i < lineList.size() - 1; i++){
 
             derivative = lineList[i+1].cost - lineList[i].cost;
+
             if (derivative != 0){
                 startIndex = i;
                 break;
@@ -1488,13 +1496,15 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         if (startIndex != -1){
 
             peakPoints.append(startIndex);
+
             int sign;
+
             if (derivative < 0)
                 sign = -1;
             else
                 sign = 1;
 
-            for (int i = startIndex; i < lineList.size() - 1; i++){
+            for (int i = startIndex + 1; i < lineList.size() - 1; i++){
 
                 derivative = lineList[i+1].cost - lineList[i].cost;
 
@@ -1509,61 +1519,98 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
                         sign = -1;
                     }
                 }
-
-
             }
+            peakPoints.append(lineList.size() - 1);
+
+            // find derivatives of peak points
+            int *derivativeArray = new int [ peakPoints.size() ];
+            derivativeArray[0] = lineList[ peakPoints[0] ].cost - lineList[ peakPoints[1] ].cost;
+
+            for (int i = 1; i < peakPoints.size(); i++)
+                derivativeArray[i] = lineList[ peakPoints[i] ].cost - lineList[ peakPoints[i-1] ].cost;
+
+            int minDerivative = 0, minCostIndex = 0;
+
+            for (int i = 1; i < peakPoints.size(); i++)
+                if ( derivativeArray[i] < minDerivative ){
+                    minDerivative = derivativeArray[i];
+                    minCostIndex = i;
+                }
+
+            // calc average brigthness cost and assign valley threshold
+            int avgCost = 0;
+            for (int i = 0; i < peakPoints.size(); i++)
+                avgCost += lineList[ peakPoints[i] ].cost;
+
+            avgCost /= peakPoints.size();
+
+            int threshold = abs(avgCost - lineList[ peakPoints[minCostIndex] ].cost)/2 + lineList[ peakPoints[minCostIndex] ].cost;
+
+
+            if ( peakPoints.size() >= 3 && minCostIndex > 0 && minCostIndex < (peakPoints.size()-1) ){
+                //minX = lineList[ peakPoints[minCostIndex - 1] ].c;
+                //maxX = lineList[ peakPoints[minCostIndex + 1] ].c;
+
+                for (int i = peakPoints[minCostIndex]; i < lineList.size(); i++)
+                    if ( lineList[i].cost > threshold){
+                        maxX = lineList[i].c;
+                        break;
+                    }
+
+                for (int i = peakPoints[minCostIndex]; i >= 0 ; i--)
+                    if ( lineList[i].cost > threshold){
+                        minX = lineList[i].c;
+                        break;
+                    }
+
+                centerC = ( minX + maxX ) / 2;
+
+            } else
+                centerC = minX = maxX = lineList[ peakPoints[minCostIndex] ].c;
+
+
+            //----- calculate track center and corner points
+            leftCornerY = rightCornerY = trackCenterY = imageHeight / 2;
+
+            if ( slopeBest > -573 && slopeBest < 573 && slopeBest != 0 ) {
+                trackCenterX = round ( (float)( trackCenterY + slopeBest * centerC ) / slopeBest );
+                leftCornerX  = round ( (float)( leftCornerY + slopeBest * minX ) / slopeBest );
+                rightCornerX  = round ( (float)( rightCornerY + slopeBest * maxX ) / slopeBest );
+            } else {
+                trackCenterX = centerC;
+                leftCornerX = minX;
+                rightCornerX = maxX;
+            }
+            //------------------------------------------------------------------------------------
+
+            delete []derivativeArray;
+
+        } else {
+            primaryLineFound = detected = centerDetermined = false;
         }
-
-
-
-
+    } else {
+        primaryLineFound = detected = centerDetermined = false;
     }
 
-
-    // find the valley among lineList, cost below some threshold
+    /* / find the valley among lineList, cost below some threshold
     deepLines.clear();
-
     int threshold = bestLines[index].cost * 1.5;
-
     for(int i = 0; i < lineList.size(); i++)
         if (lineList[i].cost <= threshold)
             deepLines.append(lineList[i]);
 
-    int minX = imageWidth;
-    int maxX = 0;
     for(int i = 0; i < deepLines.size(); i++){
-
         if (deepLines[i].c < minX)
             minX = deepLines[i].c;
 
         if (deepLines[i].c > maxX)
             maxX = deepLines[i].c;
     }
-
     centerC = (minX + maxX)/2;
-    //------------------------------------------------------------------------------------
-
-
-    //----- calculate track center and corner points
-    leftCornerY = rightCornerY = trackCenterY = imageHeight / 2;
-
-    if (slopeBest > -573 && slopeBest < 573) {
-        trackCenterX = round ( (float)( trackCenterY + slopeBest * centerC ) / slopeBest );
-        leftCornerX  = round ( (float)( leftCornerY + slopeBest * minX ) / slopeBest );
-        rightCornerX  = round ( (float)( rightCornerY + slopeBest * maxX ) / slopeBest );
-    } else {
-        trackCenterX = centerC;
-        leftCornerX = minX;
-        rightCornerX = maxX;
-    }
-
-    //------------------------------------------------------------------------------------
+    */ // ------------------------------------------------------------------------------------
 
 
     //----- alarms
-    primaryLineFound = detected = centerDetermined = true;
-
-
     angleAvg = 90 + minusAngle + index * step;
     angleAvg = 180 - angleAvg;  // since image is mirrored
     if ( abs(angleAvg) <= (90 + errorAngleLimit) )
@@ -1574,7 +1621,6 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         statusMessage = alarm5;
     }
     //------------------------------------------------------------------------------------
-
 }
 
 
@@ -1859,6 +1905,7 @@ imgProcess::~imgProcess(){
         delete []bestLines;
         lineList.clear();
         deepLines.clear();
+        peakPoints.clear();
     }
 }
 
