@@ -54,7 +54,7 @@ void imgProcess::constructValueMatrix(QImage image){
 
         for(int x = 0; x < image.width(); x++)
             if (abs(histogram[x]) > thresh)
-                edgeThickenedMatrix[y][x] = 255;
+                edgeThickenedMatrix[y][x] = 1;
             else
                 edgeThickenedMatrix[y][x] = 0;
 
@@ -282,9 +282,12 @@ void imgProcess::houghTransform(){
 void imgProcess::houghTransformExtended(){
 
     houghDistanceMax = (int) (sqrt(pow(imageWidth, 2) + pow(imageHeight, 2)));
+    centerX = 0;
+    centerY = imageHeight/2;
+/* FOR CONTRAST
     centerX = imageWidth / 2;
     centerY = imageHeight - 1;
-
+*/
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
     houghSpace = new int*[houghDistanceMax];
@@ -589,6 +592,8 @@ void imgProcess::calcAvgDistAndAngleOfMajors(){
         distanceAvgHigh = distanceAvgHigh / countHigh;
         thetaAvgHigh = thetaAvgHigh / countHigh;
     }
+
+
     /*
     distanceAvg = distanceAvgHigh;
     thetaAvg = thetaAvgHigh;
@@ -616,6 +621,7 @@ void imgProcess::calcAvgDistAndAngleOfMajors(){
         thetaAvgLo = thetaAvgHigh;
     }
 
+
     /*
     distanceAvg = distanceAvgLo;
     thetaAvg = thetaAvgLo;
@@ -626,6 +632,31 @@ void imgProcess::calcAvgDistAndAngleOfMajors(){
     // calc. ave distance and angle of higher and lower majors
     distanceAvg = (distanceAvgHigh + distanceAvgLo ) / 2;
     thetaAvg = (thetaAvgHigh + thetaAvgLo ) / 2;
+
+//zzzzzzzzzzzzzzz
+    major2Lines.clear();
+
+    solidLine firstLine;
+    firstLine.start.setX( 0 );
+    firstLine.start.setY( 0 );
+    firstLine.end.setX( imageWidth - 1);
+    firstLine.end.setY( imageHeight - 1);
+    firstLine.length = 1;
+    firstLine.distance = distanceAvgHigh;
+    firstLine.angle = thetaAvgHigh;
+    major2Lines.append( firstLine);
+
+    solidLine secondLine;
+    secondLine.start.setX( 0 );
+    secondLine.start.setY( 0 );
+    secondLine.end.setX( imageWidth - 1);
+    secondLine.end.setY( imageHeight - 1);
+    secondLine.length = 1;
+    secondLine.distance = distanceAvgLo;
+    secondLine.angle = thetaAvgLo;
+    major2Lines.append( secondLine);
+
+
 }
 
 
