@@ -31,6 +31,37 @@ void imgProcess::constructValueMatrix(QImage image){
             valueMatrix[y][x] = colorValue;
             delete color;
         }
+
+
+    histogram = new int[image.width()];
+    histogramInitSwitch = true;
+
+    int sum = 0;
+    int avg = 0;
+    int thresh = 0;
+
+    for(int y = 0; y < image.height(); y++){
+        histogram[0] = 0;
+
+        sum = 0;
+        for(int x = 1; x < image.width(); x++){
+
+            histogram[x] = valueMatrix[y][x] - valueMatrix[y][x-1];
+            sum += abs(histogram[x]);
+        }
+        avg = sum / image.width();
+        thresh = 5 * avg;
+
+        for(int x = 0; x < image.width(); x++)
+            if (abs(histogram[x]) > thresh)
+                edgeThickenedMatrix[y][x] = 255;
+            else
+                edgeThickenedMatrix[y][x] = 0;
+
+
+    }
+
+
 }
 
 
