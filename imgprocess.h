@@ -112,6 +112,7 @@ class imgProcess{
         bool secondaryLineFound;
         bool centerDetermined;
 
+        // THIN JOINT ALGO
         bool thinJointInitSwitch;
         float *slope;
         QList<minCostedLines> lineList;
@@ -121,6 +122,10 @@ class imgProcess{
         int centerC;
         QList<int> peakPoints;
 
+        // CONTRAST ALGO
+        int **contrastMatrix;               // contrast transition points
+        bool contrastInitSwitch;            // to delete in destructor
+
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -129,7 +134,6 @@ class imgProcess{
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
-
         int **houghSpace;                   // line votes: line search matrix, depends max. distance & angle scale
         bool houghSpaceInitSwitch;          // to delete in destructor
 
@@ -196,6 +200,7 @@ class imgProcess{
             houghLinesInitSwitch = false;
             histogramInitSwitch = false;
             thinJointInitSwitch = false;
+            contrastInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );
@@ -237,7 +242,7 @@ class imgProcess{
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
         void calcAvgDistAndAngle(int limit);    // calc. ave. distance anf angle of <no> hough lines ; eg houghLineNo
-        void calcAvgDistAndAngleOfMajors();     // seperate hough lines into 2 piece; hi and lo, then find the ave. distance and angle of these majors
+        void calcAvgDistAndAngleOfMajors(float multiplier);     // seperate hough lines into 2 piece; hi and lo, then find the ave. distance and angle of these majors
         void findSecondLine();                  // find second line beginning index in hough lines
         bool checkPrimaryLine();                // check if primary line found is above <voteThreshold>
         void detectVoidLines();                 // detect void lines on max. voted lines imposed on mono image
@@ -253,10 +258,16 @@ class imgProcess{
 
         void detectThinJointCenter(int refAngle, int precisionSize);
 
+        // CONTRAST ALGO
+        void constructContrastMatix(float multiplier);
+        void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
+        void constructContrastMatrixMajor2Lines();
+
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);
 
         int getLineY(int x, float distance, float theta);   // get hough line Y coor from X coor
+        int getLineX(int y, float distance, float theta);   // get hough line X coor from Y coor
         int* edgeSobelHistogram();                          // produce edge matrix Y histogram accor. X values
         int* valueHistogram();                              // produce value matrix Y histogram accor. X values
         QImage cornerImage();                               // produce detected corner image based on org. image

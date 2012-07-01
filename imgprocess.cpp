@@ -31,37 +31,6 @@ void imgProcess::constructValueMatrix(QImage image){
             valueMatrix[y][x] = colorValue;
             delete color;
         }
-
-
-    histogram = new int[image.width()];
-    histogramInitSwitch = true;
-
-    int sum = 0;
-    int avg = 0;
-    int thresh = 0;
-
-    for(int y = 0; y < image.height(); y++){
-        histogram[0] = 0;
-
-        sum = 0;
-        for(int x = 1; x < image.width(); x++){
-
-            histogram[x] = valueMatrix[y][x] - valueMatrix[y][x-1];
-            sum += abs(histogram[x]);
-        }
-        avg = sum / image.width();
-        thresh = 5 * avg;
-
-        for(int x = 0; x < image.width(); x++)
-            if (abs(histogram[x]) > thresh)
-                edgeThickenedMatrix[y][x] = 1;
-            else
-                edgeThickenedMatrix[y][x] = 0;
-
-
-    }
-
-
 }
 
 
@@ -282,12 +251,9 @@ void imgProcess::houghTransform(){
 void imgProcess::houghTransformExtended(){
 
     houghDistanceMax = (int) (sqrt(pow(imageWidth, 2) + pow(imageHeight, 2)));
-    centerX = 0;
-    centerY = imageHeight/2;
-/* FOR CONTRAST
+
     centerX = imageWidth / 2;
     centerY = imageHeight - 1;
-*/
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
     houghSpace = new int*[houghDistanceMax];
@@ -301,6 +267,33 @@ void imgProcess::houghTransformExtended(){
     for (int y = 0; y < imageHeight; y++)
         for (int x = 0; x < imageWidth; x++)
             if (edgeThickenedMatrix[y][x] != 0)
+                for (int i = 0; i < houghThetaSize; i++){
+                    theta = thetaMin + i * thetaStep;
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    if (distance >= 0) houghSpace[distance][i]++;
+                }
+}
+
+
+void imgProcess::houghTransformContrast(){
+
+    houghDistanceMax = (int) (sqrt(pow(imageWidth, 2) + pow(imageHeight, 2)));
+    centerX = 0;
+    centerY = 0;
+
+    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+
+    houghSpace = new int*[houghDistanceMax];
+    for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+    houghSpaceInitSwitch = true;
+
+    for (int y = 0; y < houghDistanceMax; y++)
+        for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
+
+    int distance, theta;
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            if (contrastMatrix[y][x] != 0)
                 for (int i = 0; i < houghThetaSize; i++){
                     theta = thetaMin + i * thetaStep;
                     distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
@@ -476,24 +469,84 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
 
 void imgProcess::constructHoughExtendedMatrixMajor2Lines(){
 
-    int lineY;
-
     for (int y = 0; y < imageHeight; y++)
         for (int x = 0; x < imageWidth; x++)
             houghExtendedMatrix[y][x] = edgeThickenedMatrix[y][x];
+
+    int lineY;
 
     if (major2Lines.size() == 2){
 
         for (int x = major2Lines[0].start.x(); x <= major2Lines[0].end.x(); x++){
             lineY = centerY - getLineY((x - centerX), major2Lines[0].distance, major2Lines[0].angle);
 
-            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differenciate line data, arbitrary
         }
 
         for (int x = major2Lines[1].start.x(); x <= major2Lines[1].end.x(); x++){
             lineY = centerY - getLineY((x - centerX), major2Lines[1].distance, major2Lines[1].angle);
 
-            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+            if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differenciate line data, arbitrary
+        }
+    }
+}
+
+
+void imgProcess::constructContrastMatix(float multiplier){
+
+    contrastMatrix = new int*[imageHeight];
+    for (int i = 0; i < imageHeight; i++)    contrastMatrix[i] = new int[imageWidth];
+
+    contrastInitSwitch = true;
+
+    int *lineArray = new int[imageWidth];
+
+    int sum, threshold;
+
+    for(int y = 0; y < imageHeight; y++){
+        lineArray[0] = 0;
+
+        sum = 0;
+        for(int x = 1; x < imageWidth; x++){
+
+            lineArray[x] = valueMatrix[y][x] - valueMatrix[y][x-1];
+            sum += abs(lineArray[x]);
+        }
+        threshold = multiplier * sum / imageWidth;
+
+        for(int x = 0; x < imageWidth; x++)
+            if (abs(lineArray[x]) > threshold)
+                contrastMatrix[y][x] = 1;
+            else
+                contrastMatrix[y][x] = 0;
+    }
+
+    delete []lineArray;
+}
+
+
+void imgProcess::constructContrastMatrixMajor2Lines(){
+
+
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            contrastMatrix[y][x] = valueMatrix[y][x];
+            //contrastMatrix[y][x] = contrastMatrix[y][x] * 255;   // to draw contrast image
+
+    int lineX;
+
+    if (major2Lines.size() == 2){
+
+        for (int y = major2Lines[0].start.y(); y <= major2Lines[0].end.y(); y++){
+            lineX = centerX + getLineX((y - centerY), major2Lines[0].distance, -1 * major2Lines[0].angle);
+
+            if (lineX >= 0 && lineX < imageWidth) contrastMatrix[y][lineX] = 2555;       // 2555 special code to differenciate line data, arbitrary
+        }
+
+        for (int y = major2Lines[1].start.y(); y <= major2Lines[1].end.y(); y++){
+            lineX = centerX + getLineX((y - centerY), major2Lines[1].distance, -1 * major2Lines[1].angle);
+
+            if (lineX >= 0 && lineX < imageWidth) contrastMatrix[y][lineX] = 2555;       // 2555 special code to differenciate line data, arbitrary
         }
     }
 }
@@ -541,9 +594,9 @@ void imgProcess::calcAvgDistAndAngle(int limit){
 
 // seperate hough lines into 2 piece; higher and lower than ave. distance
 // then find the ave. distance and angle of these majors
-void imgProcess::calcAvgDistAndAngleOfMajors(){
+void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
 
-    int _voteThreshold = (int) (houghLines[0][2] * 0.80);    // %x of first line (most voted)
+    int _voteThreshold = (int) (houghLines[0][2] * multiplier);    // %x of first line (most voted)
     int _voteThresholdIndex = houghLineNo - 1;               // last index
 
     // find the index of less than vote threshold
@@ -558,11 +611,25 @@ void imgProcess::calcAvgDistAndAngleOfMajors(){
     // calc. ave. distance of lines in between max voted and higher than threshold
     float _distanceAvg = 0;
 
+/*
     for (int line = 0; line <= _voteThresholdIndex; line++)
         _distanceAvg += houghLines[line][0];
-
     _distanceAvg = (int) (_distanceAvg / (_voteThresholdIndex + 1));
+*/
 
+    float distanceMax = 0;
+    for (int line = 0; line <= _voteThresholdIndex; line++)
+        if (houghLines[line][0] > distanceMax){
+            distanceMax = houghLines[line][0];
+        }
+
+    float distanceMin = distanceMax;
+    for (int line = 0; line <= _voteThresholdIndex; line++)
+        if (houghLines[line][0] < distanceMin){
+            distanceMin = houghLines[line][0];
+        }
+
+    _distanceAvg = ( distanceMax + distanceMin )/2;
 
     // group lines in 2: higher and lower than ave. distance
     lowLinesList.clear();
@@ -633,7 +700,7 @@ void imgProcess::calcAvgDistAndAngleOfMajors(){
     distanceAvg = (distanceAvgHigh + distanceAvgLo ) / 2;
     thetaAvg = (thetaAvgHigh + thetaAvgLo ) / 2;
 
-//zzzzzzzzzzzzzzz
+    // implemented for contrast detection
     major2Lines.clear();
 
     solidLine firstLine;
@@ -1706,9 +1773,20 @@ QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format
 int imgProcess::getLineY(int x, float distance, float theta){
 
     int y = -1;
-    if (theta >= 0.1)
-        y = (int) ( (distance - x*cos(theta*R2D)) / sin(theta*R2D) );
+    float sine = sin(theta*R2D);
+    if (sine >= 0.1)
+        y = (int) ( (distance - x*cos(theta*R2D)) / sine );
     return y;
+}
+
+
+int imgProcess::getLineX(int y, float distance, float theta){
+
+    int x = -1;
+    float cosine = cos(theta*R2D);
+    if (cosine != 0)
+        x = (int) ( (distance - y*sin(theta*R2D)) / cosine );
+    return x;
 }
 
 
@@ -1969,6 +2047,12 @@ imgProcess::~imgProcess(){
         deepLines.clear();
         peakPoints.clear();
     }
+
+    if ( contrastInitSwitch ) {
+        for (int y = 0; y < imageHeight; y++) delete []contrastMatrix[y];
+        delete []contrastMatrix;
+    }
+
 }
 
 
