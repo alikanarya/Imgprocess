@@ -262,6 +262,7 @@ class imgProcess{
         void constructContrastMatix(float multiplier);
         void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
         void constructContrastMatrixMajor2Lines();
+        void detectContrastCenter();
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

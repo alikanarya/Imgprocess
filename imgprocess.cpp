@@ -527,7 +527,6 @@ void imgProcess::constructContrastMatix(float multiplier){
 
 void imgProcess::constructContrastMatrixMajor2Lines(){
 
-
     for (int y = 0; y < imageHeight; y++)
         for (int x = 0; x < imageWidth; x++)
             contrastMatrix[y][x] = valueMatrix[y][x];
@@ -538,13 +537,13 @@ void imgProcess::constructContrastMatrixMajor2Lines(){
     if (major2Lines.size() == 2){
 
         for (int y = major2Lines[0].start.y(); y <= major2Lines[0].end.y(); y++){
-            lineX = centerX + getLineX((y - centerY), major2Lines[0].distance, -1 * major2Lines[0].angle);
+            lineX = centerX + getLineX((centerY - y), major2Lines[0].distance, major2Lines[0].angle);
 
             if (lineX >= 0 && lineX < imageWidth) contrastMatrix[y][lineX] = 2555;       // 2555 special code to differenciate line data, arbitrary
         }
 
         for (int y = major2Lines[1].start.y(); y <= major2Lines[1].end.y(); y++){
-            lineX = centerX + getLineX((y - centerY), major2Lines[1].distance, -1 * major2Lines[1].angle);
+            lineX = centerX + getLineX((centerY - y), major2Lines[1].distance, major2Lines[1].angle);
 
             if (lineX >= 0 && lineX < imageWidth) contrastMatrix[y][lineX] = 2555;       // 2555 special code to differenciate line data, arbitrary
         }
@@ -1750,6 +1749,33 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         statusMessage = alarm5;
     }
     //------------------------------------------------------------------------------------
+}
+
+
+void imgProcess::detectContrastCenter(){
+
+    detected = true;
+
+    int y = imageHeight/2;
+
+    trackCenterX = centerX + getLineX((centerY - y), distanceAvg, thetaAvg);
+    rightCornerX = centerX + getLineX((centerY - y), major2Lines[0].distance, major2Lines[0].angle);
+    leftCornerX = centerX + getLineX((centerY - y), major2Lines[1].distance, major2Lines[1].angle);
+
+    trackCenterY = rightCornerY = leftCornerY = y;
+
+    //----- alarms
+    angleAvg = 90 + thetaAvg;
+
+    if ( abs(angleAvg) <= (90 + errorAngleLimit) )
+        angleInLimit = true;
+    else {
+        angleInLimit = false;
+        detected = false;       // do not accecpt this cam setup, line angle is not in tolerance
+        statusMessage = alarm5;
+    }
+    //------------------------------------------------------------------------------------
+
 }
 
 
