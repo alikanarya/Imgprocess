@@ -785,7 +785,10 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
     int distanceAvgLo = 0;
     int thetaAvgLo = 0;
     int countLo = 0;
-    int thresholdLo = houghLines[ lowLinesList[0] ][2] * 0.80;
+    int thresholdLo = 0;
+
+    if (lowLinesList.size() != 0)
+        thresholdLo = houghLines[ lowLinesList[0] ][2] * 0.80;
 
     for (int i = 0; i < lowLinesList.size(); i++)
         if (houghLines[ lowLinesList[i] ][2] >= thresholdLo) {
