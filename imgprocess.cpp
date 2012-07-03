@@ -339,6 +339,52 @@ void imgProcess::calculateHoughMaxs(int number){
 }
 
 
+bool imgProcess::sortHoughLines_toDistance(){
+
+    if (houghLineNo != 0) {
+
+        float **houghLinesCopy = new float*[houghLineNo];
+        for (int i = 0; i < houghLineNo; i++)   houghLinesCopy[i] = new float[3];
+
+        for (int line = 0; line < houghLineNo; line++)
+            for (int i = 0; i < 3; i++)
+                houghLinesCopy[line][i] = houghLines[line][i];
+
+        houghLinesSorted = new float*[houghLineNo];
+        for (int i = 0; i < houghLineNo; i++)   houghLinesSorted[i] = new float[3];
+        houghLinesSortedInitSwitch = true;
+
+        int maxDistance, index;
+
+        for (int x = (houghLineNo - 1); x >= 0; x--){
+
+            maxDistance = 0;
+            index = 0;
+
+            for (int y = 0; y < houghLineNo; y++){
+                if (houghLinesCopy[y][0] > maxDistance){
+                    maxDistance = houghLinesCopy[y][0];
+                    index = y;
+                }
+            }
+
+            houghLinesSorted[x][0] = houghLinesCopy[index][0];      // distance
+            houghLinesSorted[x][1] = houghLinesCopy[index][1];      // angle
+            houghLinesSorted[x][2] = houghLinesCopy[index][2];      // vote value
+
+            houghLinesCopy[index][0] = -1;
+        }
+
+        for (int y = 0; y < houghLineNo; y++) delete []houghLinesCopy[y];
+        delete []houghLinesCopy;
+
+        return true;
+    } else
+        return false;
+
+}
+
+
 void imgProcess::constructHoughMatrix(){
 
     int lineY;
@@ -610,12 +656,15 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
     // calc. ave. distance of lines in between max voted and higher than threshold
     float _distanceAvg = 0;
 
-/*
+
+/* Avreage Method: global
     for (int line = 0; line <= _voteThresholdIndex; line++)
         _distanceAvg += houghLines[line][0];
     _distanceAvg = (int) (_distanceAvg / (_voteThresholdIndex + 1));
 */
 
+
+/* Avreage Method: (max dist + min dist) / 2
     float distanceMax = 0;
     for (int line = 0; line <= _voteThresholdIndex; line++)
         if (houghLines[line][0] > distanceMax){
@@ -630,6 +679,32 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
 
     _distanceAvg = ( distanceMax + distanceMin )/2;
 
+*/
+
+    // Avreage Method: distance derivative
+    sortHoughLines_toDistance();
+
+    int size = _voteThresholdIndex + 1;
+    int *distanceVector = new int[size];
+
+    distanceVector[0] = 0;
+    for (int line = 1; line < size; line++)
+        distanceVector[line] = abs(houghLinesSorted[line][0] - houghLinesSorted[line-1][0]);
+
+    int derivativeMax = 0, index = 0;
+    for (int line = 1; line < size; line++)
+        if (distanceVector[line] > derivativeMax){
+            derivativeMax = distanceVector[line];
+            index = line;
+        }
+
+    _distanceAvg = houghLinesSorted[index][0];
+    delete []distanceVector;
+    // ---------
+
+
+
+
     // group lines in 2: higher and lower than ave. distance
     lowLinesList.clear();
     highLinesList.clear();
@@ -642,7 +717,7 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
     }
 
 
-    // calc. ave. distance and angle of higher lines which have same max vote value
+    /* calc. ave. distance and angle of higher lines which have same max vote value
     int distanceAvgHigh = 0;
     int thetaAvgHigh = 0;
     int countHigh = 0;
@@ -658,7 +733,25 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
         distanceAvgHigh = distanceAvgHigh / countHigh;
         thetaAvgHigh = thetaAvgHigh / countHigh;
     }
+    */
 
+    // calc. ave. distance and angle of higher lines which are voted above some threshold
+    int distanceAvgHigh = 0;
+    int thetaAvgHigh = 0;
+    int countHigh = 0;
+    int thresholdHigh = houghLines[ highLinesList[0] ][2] * 0.80;
+
+    for (int i = 0; i < highLinesList.size(); i++)
+        if (houghLines[ highLinesList[i] ][2] >= thresholdHigh) {
+            countHigh++;
+            distanceAvgHigh += houghLines[ highLinesList[i] ][0];
+            thetaAvgHigh += houghLines[ highLinesList[i] ][1];
+        }
+
+    if (countHigh != 0) {
+        distanceAvgHigh = distanceAvgHigh / countHigh;
+        thetaAvgHigh = thetaAvgHigh / countHigh;
+    }
 
     /*
     distanceAvg = distanceAvgHigh;
@@ -667,7 +760,7 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
     getImage(houghMatrix, edgeWidth, edgeHeight)->save("_hi.jpg");
     */
 
-    // calc. ave. distance and angle of lower lines which have same max vote value
+    /* calc. ave. distance and angle of lower lines which have same max vote value
     int distanceAvgLo = 0;
     int thetaAvgLo = 0;
     int countLo = 0;
@@ -686,7 +779,28 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
         distanceAvgLo = distanceAvgHigh;
         thetaAvgLo = thetaAvgHigh;
     }
+    */
 
+    // calc. ave. distance and angle of lower lines which are voted above some threshold
+    int distanceAvgLo = 0;
+    int thetaAvgLo = 0;
+    int countLo = 0;
+    int thresholdLo = houghLines[ lowLinesList[0] ][2] * 0.80;
+
+    for (int i = 0; i < lowLinesList.size(); i++)
+        if (houghLines[ lowLinesList[i] ][2] >= thresholdLo) {
+            countLo++;
+            distanceAvgLo += houghLines[ lowLinesList[i] ][0];
+            thetaAvgLo += houghLines[ lowLinesList[i] ][1];
+        }
+
+    if (countLo != 0) {
+        distanceAvgLo = distanceAvgLo / countLo;
+        thetaAvgLo = thetaAvgLo / countLo;
+    } else {    // in case of finding only 1 major (it will be classified in higher profile)
+        distanceAvgLo = distanceAvgHigh;
+        thetaAvgLo = thetaAvgHigh;
+    }
 
     /*
     distanceAvg = distanceAvgLo;
@@ -2078,6 +2192,12 @@ imgProcess::~imgProcess(){
         for (int y = 0; y < imageHeight; y++) delete []contrastMatrix[y];
         delete []contrastMatrix;
     }
+
+    if ( houghLinesSortedInitSwitch ) {
+        for (int y = 0; y < houghLineNo; y++) delete []houghLinesSorted[y];
+        delete []houghLinesSorted;
+    }
+
 
 }
 

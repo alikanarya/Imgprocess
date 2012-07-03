@@ -140,6 +140,9 @@ class imgProcess{
         float **houghLines;                 // line data of max. voted lines; distance/angle/vote value
         bool houghLinesInitSwitch;          // to delete in destructor
 
+        float **houghLinesSorted;           // sort houghLines wrt distance
+        bool houghLinesSortedInitSwitch;    // to delete in destructor
+
         int *histogram;                     // histogram array
         bool histogramInitSwitch;           // to delete in destructor
 
@@ -263,6 +266,7 @@ class imgProcess{
         void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
         void constructContrastMatrixMajor2Lines();
         void detectContrastCenter();
+        bool sortHoughLines_toDistance();
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);
