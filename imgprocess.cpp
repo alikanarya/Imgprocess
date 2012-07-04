@@ -358,11 +358,11 @@ bool imgProcess::sortHoughLines_toDistance(){
 
         for (int x = (houghLineNo - 1); x >= 0; x--){
 
-            maxDistance = 0;
+            maxDistance = -1;
             index = 0;
 
             for (int y = 0; y < houghLineNo; y++){
-                if (houghLinesCopy[y][0] > maxDistance){
+                if (houghLinesCopy[y][0] >= maxDistance){
                     maxDistance = houghLinesCopy[y][0];
                     index = y;
                 }
@@ -372,7 +372,7 @@ bool imgProcess::sortHoughLines_toDistance(){
             houghLinesSorted[x][1] = houghLinesCopy[index][1];      // angle
             houghLinesSorted[x][2] = houghLinesCopy[index][2];      // vote value
 
-            houghLinesCopy[index][0] = -1;
+            houghLinesCopy[index][0] = -2;
         }
 
         for (int y = 0; y < houghLineNo; y++) delete []houghLinesCopy[y];
