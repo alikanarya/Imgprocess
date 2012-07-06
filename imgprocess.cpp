@@ -2201,7 +2201,6 @@ imgProcess::~imgProcess(){
         delete []houghLinesSorted;
     }
 
-
 }
 
 

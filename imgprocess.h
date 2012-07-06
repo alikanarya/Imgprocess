@@ -204,6 +204,7 @@ class imgProcess{
             histogramInitSwitch = false;
             thinJointInitSwitch = false;
             contrastInitSwitch = false;
+            houghLinesSortedInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );
