@@ -76,6 +76,7 @@ class imgProcess{
 
         // detection parameters
         int houghLineNo;                    // no. of max voted lines concerned
+        int houghLinesSorted_size;
         int houghVoteAvg;                   // ave vote value of max. voted lines
         int voteThreshold;                  // vote threshold to accept primary line as concerned
         int voidThreshold;                  // void line length threhold in pixels to accept primary void line as concerned
@@ -267,7 +268,7 @@ class imgProcess{
         void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
         void constructContrastMatrixMajor2Lines();
         void detectContrastCenter();
-        bool sortHoughLines_toDistance();
+        bool sortHoughLines_toDistance(int _size);
 
         // produces image from matrix. if hough line code is included in, dras lines with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);

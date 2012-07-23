@@ -226,6 +226,8 @@ void imgProcess::houghTransform(){
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
     //centerX = edgeWidth / 2;
     //centerY = edgeHeight - 1;
+    centerX = 0;
+    centerY = 0;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
@@ -339,29 +341,31 @@ void imgProcess::calculateHoughMaxs(int number){
 }
 
 
-bool imgProcess::sortHoughLines_toDistance(){
+bool imgProcess::sortHoughLines_toDistance(int _size){
+
+    houghLinesSorted_size = _size;
 
     if (houghLineNo != 0) {
 
-        float **houghLinesCopy = new float*[houghLineNo];
-        for (int i = 0; i < houghLineNo; i++)   houghLinesCopy[i] = new float[3];
+        float **houghLinesCopy = new float*[houghLinesSorted_size];
+        for (int i = 0; i < houghLinesSorted_size; i++)   houghLinesCopy[i] = new float[3];
 
-        for (int line = 0; line < houghLineNo; line++)
+        for (int line = 0; line < houghLinesSorted_size; line++)
             for (int i = 0; i < 3; i++)
                 houghLinesCopy[line][i] = houghLines[line][i];
 
-        houghLinesSorted = new float*[houghLineNo];
-        for (int i = 0; i < houghLineNo; i++)   houghLinesSorted[i] = new float[3];
+        houghLinesSorted = new float*[houghLinesSorted_size];
+        for (int i = 0; i < houghLinesSorted_size; i++)   houghLinesSorted[i] = new float[3];
         houghLinesSortedInitSwitch = true;
 
         int maxDistance, index;
 
-        for (int x = (houghLineNo - 1); x >= 0; x--){
+        for (int x = (houghLinesSorted_size - 1); x >= 0; x--){
 
             maxDistance = -1;
             index = 0;
 
-            for (int y = 0; y < houghLineNo; y++){
+            for (int y = 0; y < houghLinesSorted_size; y++){
                 if (houghLinesCopy[y][0] >= maxDistance){
                     maxDistance = houghLinesCopy[y][0];
                     index = y;
@@ -375,7 +379,7 @@ bool imgProcess::sortHoughLines_toDistance(){
             houghLinesCopy[index][0] = -2;
         }
 
-        for (int y = 0; y < houghLineNo; y++) delete []houghLinesCopy[y];
+        for (int y = 0; y < houghLinesSorted_size; y++) delete []houghLinesCopy[y];
         delete []houghLinesCopy;
 
         return true;
@@ -682,9 +686,11 @@ void imgProcess::calcAvgDistAndAngleOfMajors(float multiplier){
 */
 
     // Avreage Method: distance derivative
-    sortHoughLines_toDistance();
 
     int size = _voteThresholdIndex + 1;
+
+    sortHoughLines_toDistance(size);
+
     int *distanceVector = new int[size];
 
     distanceVector[0] = 0;
@@ -2197,7 +2203,7 @@ imgProcess::~imgProcess(){
     }
 
     if ( houghLinesSortedInitSwitch ) {
-        for (int y = 0; y < houghLineNo; y++) delete []houghLinesSorted[y];
+        for (int y = 0; y < houghLinesSorted_size; y++) delete []houghLinesSorted[y];
         delete []houghLinesSorted;
     }
 
