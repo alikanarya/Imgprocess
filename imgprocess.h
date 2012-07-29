@@ -2,6 +2,8 @@
 #define IMGPROCESS_H
 
 #include "imgprocess_msg.h"
+//#include "../_Modules/Algo/localMinimum.h"
+
 #include <QImage>
 #include <QColor>
 
@@ -53,6 +55,12 @@ public:
 struct minCostedLines {
     int c;
     int cost;
+};
+
+struct houghData {
+    float distance;
+    float angle;
+    float voteValue;
 };
 
 // image processing class
@@ -126,6 +134,12 @@ class imgProcess{
         // CONTRAST ALGO
         int **contrastMatrix;               // contrast transition points
         bool contrastInitSwitch;            // to delete in destructor
+
+        // EDGE DETETION ALGO
+        int localMaximaSize;
+        int **rangeArray;
+        bool rangeArrayInitSwitch;
+
 
         int errorEdgeLimit;
         int errorAngleLimit;
@@ -268,6 +282,10 @@ class imgProcess{
         void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
         void constructContrastMatrixMajor2Lines();
         void detectContrastCenter();
+
+        // EDGE DETECTION ALGO
+        void detectMainEdges();
+
         bool sortHoughLines_toDistance(int _size);
 
         // produces image from matrix. if hough line code is included in, dras lines with RED

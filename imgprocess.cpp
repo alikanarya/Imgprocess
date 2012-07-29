@@ -6,6 +6,7 @@
 #include "math.h"
 
 #include "imgprocess_msg.h"
+#include "../_Modules/Algo/localMinimum.h"
 
 void imgProcess::toMono(){
 
@@ -1902,6 +1903,43 @@ void imgProcess::detectContrastCenter(){
 }
 
 
+void imgProcess::detectMainEdges(){
+
+    sortHoughLines_toDistance( houghLineNo );
+
+    int *valArray = new int[houghLineNo];
+
+    for (int i = 0; i < houghLineNo; i++) valArray[i] = houghLinesSorted[i][2];
+
+    QList<range> localMaximalist;
+
+    findLocalMinimum(valArray, houghLineNo, localMaximalist);
+    localMaximaSize = localMaximalist.size();
+
+    if ( !localMaximalist.isEmpty() ){
+
+        // DEBUG
+        rangeArray = new int*[localMaximaSize];
+        for (int i = 0; i < localMaximaSize; i++)    rangeArray[i] = new int[2];
+        rangeArrayInitSwitch = true;
+        for (int i = 0; i < localMaximaSize; i++){
+            rangeArray[i][0] = localMaximalist[i].start;
+            rangeArray[i][1] = localMaximalist[i].end;
+        }
+
+
+
+
+
+    } else {
+
+    }
+
+    delete valArray;
+    //localMaximalist.empty();
+}
+
+
 QImage* imgProcess::getImage(int **matrix, int width, int height, QImage::Format format){
 
     QImage *image = new QImage(width, height, format);
@@ -2205,6 +2243,12 @@ imgProcess::~imgProcess(){
     if ( houghLinesSortedInitSwitch ) {
         for (int y = 0; y < houghLinesSorted_size; y++) delete []houghLinesSorted[y];
         delete []houghLinesSorted;
+    }
+
+
+    if ( rangeArrayInitSwitch ) {
+        for (int y = 0; y < localMaximaSize; y++) delete []rangeArray[y];
+        delete []rangeArray;
     }
 
 }
