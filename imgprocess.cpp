@@ -184,6 +184,40 @@ void imgProcess::detectEdgeSobel(){
 }
 
 
+void imgProcess::scaleEdgeData(int threshold){
+
+    int max, index;
+    float multiplier;
+    for (int y = 0; y < edgeHeight; y++){
+
+        max = index = 0;
+        for (int x = 0; x < edgeWidth; x++)
+            if (edgeMatrix[y][x] > max){
+                max = edgeMatrix[y][x];
+                index = x;
+            }
+
+        if (max < 255 && max != 0 ){
+            multiplier = 255.0 / max;
+            for (int x = 0; x < edgeWidth; x++)
+                if ( edgeMatrix[y][x] > threshold )
+                    edgeMatrix[y][x] = edgeMatrix[y][x] * multiplier;
+        }
+    }
+}
+
+
+void imgProcess::makeBinaryEdgeMatrix(int threshold){
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            if (edgeMatrix[y][x] >= threshold)
+                edgeMatrix[y][x] = 1;
+            else
+                edgeMatrix[y][x] = 0;
+}
+
+
 void imgProcess::thickenEdges(){
 
     int xnStart = -1, xnEnd = 1, ynStart = -1, ynEnd = 1;
@@ -1926,17 +1960,85 @@ void imgProcess::detectMainEdges(){
             rangeArray[i][0] = localMaximalist[i].start;
             rangeArray[i][1] = localMaximalist[i].end;
         }
+        //
+
+        QList<houghData> listHoughData;
+        listHoughData.empty();
+
+        int *distArray = new int[houghLineNo];
+
+        for (int i = 0; i < houghLineNo; i++)   distArray[i] = houghLinesSorted[i][0];
+
+        int refValue, compValue, c;
+        int flag = -1;
+        float angleAvg;
+
+        for (int i = 0; i < localMaximalist.size(); i++) {
+
+            c = localMaximalist[i].start;
+
+            do {
+
+                QList<int> indexList;
+                indexList.empty();
+                refValue = distArray[c];
+                indexList.append(c);
+                distArray[c] = flag;
+
+                for (int j = c+1; j <= localMaximalist[i].end; j++){
+                    compValue = distArray[j];
+                    if (refValue == compValue && compValue != flag) {
+                        indexList.append(j);
+                        distArray[j] = flag;
+                    }
+                }
+
+                angleAvg = 0;
+                if (indexList.size() == 1){
+                    angleAvg = houghLinesSorted[ indexList.first() ][1];
+                    c++;
+                } else {
+                    for (int k = 0; k < indexList.size(); k++)
+                        angleAvg += houghLinesSorted[ indexList[k] ][1];
+
+                    angleAvg = angleAvg / indexList.size();
+                    c = indexList.last()+1;
+                }
+
+                houghData hd;
+                hd.distance = houghLinesSorted[ indexList.first() ][0];
+                hd.angle = angleAvg;
+                hd.voteValue = houghLinesSorted[ indexList.first() ][2];
+                listHoughData.append(hd);
+
+                indexList.empty();
+
+            } while (c <= localMaximalist[i].end);
+        }
+
+        // DEBUG
+        listHoughDataSize = listHoughData.size();
+        listHoughDataArray = new int*[listHoughDataSize];
+        for (int i = 0; i < listHoughDataSize; i++)    listHoughDataArray[i] = new int[3];
+        listHoughDataArrayInitSwitch = true;
+        for (int i = 0; i < listHoughDataSize; i++){
+            listHoughDataArray[i][0] = listHoughData[i].distance;
+            listHoughDataArray[i][1] = listHoughData[i].angle;
+            listHoughDataArray[i][2] = listHoughData[i].voteValue;
+        }
+        //
 
 
-
-
+        delete distArray;
+        listHoughData.empty();
 
     } else {
 
     }
 
     delete valArray;
-    //localMaximalist.empty();
+
+    localMaximalist.empty();
 }
 
 
@@ -2245,12 +2347,15 @@ imgProcess::~imgProcess(){
         delete []houghLinesSorted;
     }
 
-
     if ( rangeArrayInitSwitch ) {
         for (int y = 0; y < localMaximaSize; y++) delete []rangeArray[y];
         delete []rangeArray;
     }
 
+    if ( listHoughDataArrayInitSwitch ) {
+        for (int y = 0; y < listHoughDataSize; y++) delete []listHoughDataArray[y];
+        delete []listHoughDataArray;
+    }
 }
 
 

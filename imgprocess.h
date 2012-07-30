@@ -139,6 +139,9 @@ class imgProcess{
         int localMaximaSize;
         int **rangeArray;
         bool rangeArrayInitSwitch;
+        int listHoughDataSize;
+        int **listHoughDataArray;
+        bool listHoughDataArrayInitSwitch;
 
 
         int errorEdgeLimit;
@@ -247,6 +250,8 @@ class imgProcess{
         bool saveList(QList<solidLine> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
+        void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
+        void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
         void thickenEdges();                    // thicken edges
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
