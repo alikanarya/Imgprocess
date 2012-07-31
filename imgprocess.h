@@ -143,6 +143,13 @@ class imgProcess{
         int **listHoughDataArray;
         bool listHoughDataArrayInitSwitch;
 
+        int localMaxima2ndSize;
+        int **rangeArray2nd;
+        bool rangeArray2ndInitSwitch;
+        int listHoughData2ndSize;
+        int **listHoughData2ndArray;
+        bool listHoughData2ndArrayInitSwitch;
+
 
         int errorEdgeLimit;
         int errorAngleLimit;
@@ -256,6 +263,7 @@ class imgProcess{
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
+        void codeLineData(int **matrix, int width, int height, QList<houghData> list, bool orientation); // codes line(s) to given matrix
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it
         void constructHoughMatrix2Lines();      // construct hough matrix base on edge matrix with 2 lines coded on it
         void constructHoughMatrixAvgLine();
