@@ -150,6 +150,12 @@ class imgProcess{
         int **listHoughData2ndArray;
         bool listHoughData2ndArrayInitSwitch;
 
+        int listHoughData2ndFilteredSize;
+        int **listHoughData2ndFilteredArray;
+        bool listHoughData2ndFilteredArrayInitSwitch;
+
+        int neighbourhood;
+
 
         int errorEdgeLimit;
         int errorAngleLimit;
@@ -230,6 +236,11 @@ class imgProcess{
             thinJointInitSwitch = false;
             contrastInitSwitch = false;
             houghLinesSortedInitSwitch = false;
+            rangeArrayInitSwitch = false;
+            listHoughDataArrayInitSwitch = false;
+            rangeArray2ndInitSwitch = false;
+            listHoughData2ndArrayInitSwitch = false;
+            listHoughData2ndFilteredArrayInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );
@@ -240,6 +251,7 @@ class imgProcess{
             primaryLine.distance = -1;
             primaryLine.angle = -1;
 
+            neighbourhood = 10;
         }
 
         void toMono();      // produce mono image
