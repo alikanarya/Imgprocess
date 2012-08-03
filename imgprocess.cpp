@@ -36,6 +36,29 @@ void imgProcess::constructValueMatrix(QImage image){
 }
 
 
+void imgProcess::gaussianBlur(){
+
+    int sum;
+
+    for (int y = 2;y < imageHeight - 2; y++){
+
+        for (int x = 2; x < imageWidth - 2; x++) {
+
+            sum =   gaussianMask[0][0]*valueMatrix[y-2][x-2] + gaussianMask[0][1]*valueMatrix[y-2][x-1] + gaussianMask[0][2]*valueMatrix[y-2][x] + gaussianMask[0][3]*valueMatrix[y-2][x+1] + gaussianMask[0][4]*valueMatrix[y-2][x+2] +
+                    gaussianMask[1][0]*valueMatrix[y-1][x-2] + gaussianMask[1][1]*valueMatrix[y-1][x-1] + gaussianMask[1][2]*valueMatrix[y-1][x] + gaussianMask[1][3]*valueMatrix[y-1][x+1] + gaussianMask[1][4]*valueMatrix[y-1][x+2] +
+                    gaussianMask[2][0]*valueMatrix[y][x-2]   + gaussianMask[2][1]*valueMatrix[y][x-1]   + gaussianMask[2][2]*valueMatrix[y][x]   + gaussianMask[2][3]*valueMatrix[y][x+1]   + gaussianMask[2][4]*valueMatrix[y][x+2]   +
+                    gaussianMask[3][0]*valueMatrix[y+1][x-2] + gaussianMask[3][1]*valueMatrix[y+1][x-1] + gaussianMask[3][2]*valueMatrix[y+1][x] + gaussianMask[3][3]*valueMatrix[y+1][x+1] + gaussianMask[3][4]*valueMatrix[y+1][x+2] +
+                    gaussianMask[4][0]*valueMatrix[y+2][x-2] + gaussianMask[4][1]*valueMatrix[y+2][x-1] + gaussianMask[4][2]*valueMatrix[y+2][x] + gaussianMask[4][3]*valueMatrix[y+2][x+1] + gaussianMask[4][4]*valueMatrix[y+2][x+2];
+
+            valueMatrix[y][x] = sum / gaussianDivider;
+
+            if (valueMatrix[y][x] > 255)        valueMatrix[y][x] = 255;
+            else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
+        }
+    }
+}
+
+
 int imgProcess::getMatrixPoint(int *matrix, int width, int x, int y){
 
     int (*ptr)[width] = (int (*)[width])matrix;
@@ -181,6 +204,48 @@ void imgProcess::detectEdgeSobel(){
             else if (G < 0)
                 G = 0;
             edgeMatrix[y-1][x-1] = G;
+        }
+}
+
+
+void imgProcess::detectEdgeSobelwDirections(){
+
+    edgeGradientMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeGradientMatrix[i] = new int[edgeWidth];
+    edgeGradientMatrixInitSwitch = true;
+
+    int G, Gx, Gy;
+    float angle, angleApprox;
+
+    for (int y = 1;y < imageHeight - 1; y++)
+        for (int x = 1; x < imageWidth - 1; x++){
+            Gx =    sobelX[0][0]*valueMatrix[y-1][x-1] + sobelX[0][1]*valueMatrix[y-1][x] + sobelX[0][2]*valueMatrix[y-1][x+1] +
+                    sobelX[1][0]*valueMatrix[y][x-1]   + sobelX[1][1]*valueMatrix[y][x]   + sobelX[1][2]*valueMatrix[y][x+1] +
+                    sobelX[2][0]*valueMatrix[y+1][x-1] + sobelX[2][1]*valueMatrix[y+1][x] + sobelX[2][2]*valueMatrix[y+1][x+1];
+
+            Gy =    sobelY[0][0]*valueMatrix[y-1][x-1] + sobelY[0][1]*valueMatrix[y-1][x] + sobelY[0][2]*valueMatrix[y-1][x+1] +
+                    sobelY[1][0]*valueMatrix[y][x-1]   + sobelY[1][1]*valueMatrix[y][x]   + sobelY[1][2]*valueMatrix[y][x+1] +
+                    sobelY[2][0]*valueMatrix[y+1][x-1] + sobelY[2][1]*valueMatrix[y+1][x] + sobelY[2][2]*valueMatrix[y+1][x+1];
+
+            G = (int)(sqrt(pow(Gx, 2) + pow(Gy, 2)));
+
+            if (G > 255)    G = 255;
+            else if (G < 0) G = 0;
+            edgeMatrix[y-1][x-1] = G;
+
+            angle = atan2(Gx, Gy) * 180 / PI;
+
+            /* Convert actual edge direction to approximate value */
+            if ( ( (angle <= 22.5) && (angle > -22.5) ) || (angle > 157.5) || (angle < -157.5) )
+                    angleApprox = 0;
+            if ( ( (angle > 22.5) && (angle <= 67.5) ) || ( (angle < -112.5) && (angle >= -157.5) ) )
+                    angleApprox = 45;
+            if ( ( (angle > 67.5) && (angle <= 112.5) ) || ( (angle <= -67.5) && (angle > -112.5) ) )
+                    angleApprox = 90;
+            if ( ( (angle > 112.5) && (angle <= 157.5) ) || ( (angle <= -22.5) && (angle > -67.5) ) )
+                    angleApprox = 135;
+
+            edgeGradientMatrix[y-1][x-1] = angleApprox;
         }
 }
 
@@ -2577,6 +2642,12 @@ imgProcess::~imgProcess(){
         for (int y = 0; y < listHoughData2ndFilteredSize; y++) delete []listHoughData2ndFilteredArray[y];
         delete []listHoughData2ndFilteredArray;
     }
+
+    if ( edgeGradientMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeGradientMatrix[y];
+        delete []edgeGradientMatrix;
+    }
+
 }
 
 

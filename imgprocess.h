@@ -10,8 +10,10 @@
 #define PI 3.14159265
 #define R2D PI/180          // convert radyant to degree
 
-const int sobelX[3][3] = {{-1,0,1},{-2,0,2},{-1,0,1}};
-const int sobelY[3][3] = {{1,2,1},{0,0,0},{-1,-2,-1}};
+const int sobelX[3][3] = { {-1,0,1}, {-2,0,2}, {-1,0,1} };
+const int sobelY[3][3] = { {1,2,1}, {0,0,0}, {-1,-2,-1} };
+const int gaussianMask[5][5] = { {2,4,5,4,2}, {4,9,12,9,4}, {5,12,15,12,5}, {4,9,12,9,4}, {2,4,5,4,2} };
+const int gaussianDivider = 159;
 
 // class for the void(empty) line data
 class voidLine{
@@ -162,6 +164,8 @@ class imgProcess{
 
         int **valueMatrix;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
+        int **edgeGradientMatrix;           // edge gradient data matrix
+        bool edgeGradientMatrixInitSwitch;
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
@@ -251,11 +255,12 @@ class imgProcess{
             primaryLine.distance = -1;
             primaryLine.angle = -1;
 
-            neighbourhood = 10;
+            neighbourhood = 5;
         }
 
         void toMono();      // produce mono image
         void constructValueMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
+        void gaussianBlur();    // to reduce noise
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
 
         // saves a int matrix with given filename
@@ -269,6 +274,7 @@ class imgProcess{
         bool saveList(QList<solidLine> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
+        void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
         void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
         void thickenEdges();                    // thicken edges
