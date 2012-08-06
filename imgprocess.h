@@ -138,6 +138,7 @@ class imgProcess{
         bool contrastInitSwitch;            // to delete in destructor
 
         // EDGE DETETION ALGO
+        int tHi, tLo;
         int localMaximaSize;
         int **rangeArray;
         bool rangeArrayInitSwitch;
@@ -166,6 +167,15 @@ class imgProcess{
         int **edgeMatrix;                   // edge image data matrix
         int **edgeGradientMatrix;           // edge gradient data matrix
         bool edgeGradientMatrixInitSwitch;
+        int **edgeStrongMatrix;
+        bool edgeStrongMatrixInitSwitch;
+        int **edgeWeakMatrix;
+        bool edgeWeakMatrixInitSwitch;
+        bool **edgeMapMatrix;
+        bool edgeMapMatrixInitSwitch;
+        bool **edgeVisitMatrix;
+        bool edgeVisitMatrixInitSwitch;
+
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
@@ -245,6 +255,9 @@ class imgProcess{
             rangeArray2ndInitSwitch = false;
             listHoughData2ndArrayInitSwitch = false;
             listHoughData2ndFilteredArrayInitSwitch = false;
+            edgeStrongMatrixInitSwitch = false;
+            edgeWeakMatrixInitSwitch = false;
+            edgeVisitMatrixInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );
@@ -255,6 +268,8 @@ class imgProcess{
             primaryLine.distance = -1;
             primaryLine.angle = -1;
 
+            tHi = 80;
+            tLo = 20;
             neighbourhood = 5;
         }
 
@@ -275,9 +290,13 @@ class imgProcess{
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
+        void nonMaximumSuppression();
+        void cannyThresholding(int lo, int hi);
+        void edgeTracing();
         void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
         void thickenEdges();                    // thicken edges
+
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
@@ -330,6 +349,7 @@ class imgProcess{
         QImage cornerAndPrimaryLineImage(solidLine line1, solidLine line2, int line2offset);    // produce detected corner and primary lines image based on org. image
         QImage drawLines(minCostedLines *lineArray, int size);
         QImage drawLine(minCostedLines *line, float tangent);
+        QImage* getImage_cannyThresholds(QImage::Format format);
 
         ~imgProcess();                                      // destructor
 };

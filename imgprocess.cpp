@@ -219,6 +219,7 @@ void imgProcess::detectEdgeSobelwDirections(){
 
     for (int y = 1;y < imageHeight - 1; y++)
         for (int x = 1; x < imageWidth - 1; x++){
+
             Gx =    sobelX[0][0]*valueMatrix[y-1][x-1] + sobelX[0][1]*valueMatrix[y-1][x] + sobelX[0][2]*valueMatrix[y-1][x+1] +
                     sobelX[1][0]*valueMatrix[y][x-1]   + sobelX[1][1]*valueMatrix[y][x]   + sobelX[1][2]*valueMatrix[y][x+1] +
                     sobelX[2][0]*valueMatrix[y+1][x-1] + sobelX[2][1]*valueMatrix[y+1][x] + sobelX[2][2]*valueMatrix[y+1][x+1];
@@ -233,7 +234,7 @@ void imgProcess::detectEdgeSobelwDirections(){
             else if (G < 0) G = 0;
             edgeMatrix[y-1][x-1] = G;
 
-            angle = atan2(Gx, Gy) * 180 / PI;
+            angle = atan2(Gy, Gx) * 180 / PI;
 
             /* Convert actual edge direction to approximate value */
             if ( ( (angle <= 22.5) && (angle > -22.5) ) || (angle > 157.5) || (angle < -157.5) )
@@ -247,6 +248,139 @@ void imgProcess::detectEdgeSobelwDirections(){
 
             edgeGradientMatrix[y-1][x-1] = angleApprox;
         }
+}
+
+
+void imgProcess::nonMaximumSuppression(){
+
+    int hotPixel, prevPixel, nextPixel;
+    int prevPixelX, prevPixelY, nextPixelX, nextPixelY;
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++){
+
+            hotPixel = edgeMatrix[y][x];
+
+            switch (edgeGradientMatrix[y][x]) {
+
+                case 0  :
+                    prevPixelX = x - 1;
+                    prevPixelY = y;
+                    nextPixelX = x + 1;
+                    nextPixelY = y;
+                    break;
+
+                case 45 :
+                    prevPixelX = x - 1;
+                    prevPixelY = y + 1;
+                    nextPixelX = x + 1;
+                    nextPixelY = y - 1;
+                  /*prevPixelX = x - 1;
+                    prevPixelY = y - 1;
+                    nextPixelX = x + 1;
+                    nextPixelY = y + 1;*/
+                    break;
+
+                case 90 :
+                    prevPixelX = x;
+                    prevPixelY = y + 1;
+                    nextPixelX = x;
+                    nextPixelY = y - 1;
+                    break;
+
+                case 135 :
+                    prevPixelX = x + 1;
+                    prevPixelY = y + 1;
+                    nextPixelX = x - 1;
+                    nextPixelY = y - 1;
+                  /*prevPixelX = x + 1;
+                    prevPixelY = y - 1;
+                    nextPixelX = x - 1;
+                    nextPixelY = y + 1;*/
+                    break;
+
+                default  :
+                    prevPixelX = nextPixelX = x;
+                    prevPixelY = nextPixelY = y;
+                    break;
+            }
+
+            if ( prevPixelX < 0 || prevPixelY < 0 || prevPixelX >= edgeWidth ||  prevPixelY >= edgeHeight )
+                prevPixel = 0;
+            else
+                prevPixel = edgeMatrix[prevPixelY][prevPixelX];
+
+            if ( nextPixelX < 0 || nextPixelY < 0 || nextPixelX >= edgeWidth ||  nextPixelY >= edgeHeight )
+                nextPixel = 0;
+            else
+                nextPixel = edgeMatrix[nextPixelY][nextPixelX];
+
+            if ( (hotPixel < prevPixel) || (hotPixel < nextPixel) )
+                edgeMatrix[y][x] = 0;
+
+        }
+}
+
+
+void imgProcess::cannyThresholding(int lo, int hi){
+
+    tLo = lo;
+    tHi = hi;
+    float tLoF = 255.0 * tLo / 100.0;
+    float tHiF = 255.0 * tHi / 100.0;
+
+    edgeStrongMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeStrongMatrix[i] = new int[edgeWidth];
+    edgeStrongMatrixInitSwitch = true;
+
+    edgeWeakMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeWeakMatrix[i] = new int[edgeWidth];
+    edgeWeakMatrixInitSwitch = true;
+
+    edgeMapMatrix = new bool*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeMapMatrix[i] = new bool[edgeWidth];
+    edgeMapMatrixInitSwitch = true;
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++){
+            edgeStrongMatrix[y][x] = edgeWeakMatrix[y][x] = 0;
+            edgeMapMatrix[y][x] = false;
+        }
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            if ( edgeMatrix[y][x] >= tHiF ) {
+                edgeStrongMatrix[y][x] = edgeMatrix[y][x];
+                edgeMapMatrix[y][x] = true;
+            }
+            else if ( edgeMatrix[y][x] < tHiF && edgeMatrix[y][x] >= tLoF)
+                edgeWeakMatrix[y][x] = edgeMatrix[y][x];
+}
+
+
+void imgProcess::edgeTracing(){
+
+    int cy, cx;
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            if (edgeMapMatrix[y][x]){
+
+                for (int i = -1; i <= 1; i++)       // for y
+                    for (int j = -1; j <= 1; j++){  // for x
+                        cy = y + i;
+                        cx = x + j;
+
+                        if ( (cx >= 0 && cx < edgeWidth) && (cy >= 0 && cy < edgeHeight) ){
+
+                            if ( (edgeWeakMatrix[cy][cx] > 0) && (edgeGradientMatrix[cy][cx] == edgeGradientMatrix[y][x]))
+                                edgeMapMatrix[cy][cx] = true;
+                        }
+                    }
+
+            }
+
+
 }
 
 
@@ -2552,6 +2686,23 @@ QImage imgProcess::drawLine(minCostedLines *line, float tangent){
 }
 
 
+QImage* imgProcess::getImage_cannyThresholds( QImage::Format format ){
+
+    QImage *image = new QImage(edgeWidth, edgeHeight, format);
+    QRgb red = qRgb(255, 0, 0);
+    QRgb blue = qRgb(0, 0, 255);
+
+    for(int y = 0; y < edgeHeight; y++)
+        for(int x = 0; x < edgeWidth; x++)
+            if ( edgeStrongMatrix[y][x] > 0 )
+                image->setPixel(x, y, red);
+            else if ( edgeWeakMatrix[y][x] > 0 )
+                image->setPixel(x, y, blue);
+
+    return image;
+}
+
+
 imgProcess::~imgProcess(){
 
     for (int y = 0; y < imageHeight; y++) delete []valueMatrix[y];
@@ -2646,6 +2797,26 @@ imgProcess::~imgProcess(){
     if ( edgeGradientMatrixInitSwitch ) {
         for (int y = 0; y < edgeHeight; y++) delete []edgeGradientMatrix[y];
         delete []edgeGradientMatrix;
+    }
+
+    if ( edgeStrongMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeStrongMatrix[y];
+        delete []edgeStrongMatrix;
+    }
+
+    if ( edgeWeakMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeWeakMatrix[y];
+        delete []edgeWeakMatrix;
+    }
+
+    if ( edgeVisitMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeVisitMatrix[y];
+        delete []edgeVisitMatrix;
+    }
+
+    if ( edgeMapMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapMatrix[y];
+        delete []edgeMapMatrix;
     }
 
 }
