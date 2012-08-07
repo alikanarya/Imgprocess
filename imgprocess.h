@@ -167,6 +167,8 @@ class imgProcess{
         int **edgeMatrix;                   // edge image data matrix
         int **edgeGradientMatrix;           // edge gradient data matrix
         bool edgeGradientMatrixInitSwitch;
+        int **edgeSuppressedMatrix;
+        bool edgeSuppressedMatrixInitSwitch;
         int **edgeStrongMatrix;
         bool edgeStrongMatrixInitSwitch;
         int **edgeWeakMatrix;
@@ -175,6 +177,8 @@ class imgProcess{
         bool edgeMapMatrixInitSwitch;
         bool **edgeVisitMatrix;
         bool edgeVisitMatrixInitSwitch;
+        bool **edgeW2SMapMatrix;
+        bool edgeW2SMapMatrixInitSwitch;
 
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
@@ -293,6 +297,8 @@ class imgProcess{
         void nonMaximumSuppression();
         void cannyThresholding(int lo, int hi);
         void edgeTracing();
+        void checkContinuity(int inX, int inY, int inDir);
+
         void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
         void thickenEdges();                    // thicken edges
@@ -338,8 +344,10 @@ class imgProcess{
 
         bool sortHoughLines_toDistance(int _size);
 
-        // produces image from matrix. if hough line code is included in, dras lines with RED
+        // produces image from matrix. if special code is included in, draws pixels with RED
         QImage* getImage(int **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);
+
+        QImage* getImage(bool **matrix, int width, int height, QImage::Format format = QImage::Format_RGB32);
 
         int getLineY(int x, float distance, float theta);   // get hough line Y coor from X coor
         int getLineX(int y, float distance, float theta);   // get hough line X coor from Y coor
@@ -350,6 +358,7 @@ class imgProcess{
         QImage drawLines(minCostedLines *lineArray, int size);
         QImage drawLine(minCostedLines *line, float tangent);
         QImage* getImage_cannyThresholds(QImage::Format format);
+        QImage* getImage_cannyTracedEdges(QImage::Format format);
 
         ~imgProcess();                                      // destructor
 };
