@@ -383,178 +383,31 @@ void imgProcess::edgeTracing(){
 
 void imgProcess::checkContinuity(int inX, int inY, int inDir){
 
-    int prevPixelX, prevPixelY, nextPixelX, nextPixelY;
+    int nextPixelX, nextPixelY;
     bool coorValid;
 
-    switch (inDir) {
+    for (int cy = -1; cy <= 1; cy++){
+        for (int cx = -1; cx <= 1; cx++){
 
-        case 0 :
+            if ( !(cy == 0 && cx == 0) ){
+                nextPixelX = inX + cx;
+                nextPixelY = inY + cy;
 
-            prevPixelX = inX;
-            prevPixelY = inY - 1;
+                coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
 
-            coorValid =  !( (prevPixelX < 0) || (prevPixelY < 0) || (prevPixelX >= edgeWidth) || (prevPixelY >= edgeHeight) );
+                if ( coorValid ) {
 
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[prevPixelY][prevPixelX] && (edgeWeakMatrix[prevPixelY][prevPixelX] > 0) ) {
-                    edgeStrongMatrix[prevPixelY][prevPixelX] = edgeWeakMatrix[prevPixelY][prevPixelX];
-                    edgeMapMatrix[prevPixelY][prevPixelX] = true;
-                    edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                    edgeW2SMapMatrix[prevPixelY][prevPixelX] = true;
+                    if ( !edgeVisitMatrix[nextPixelY][nextPixelX] && (edgeWeakMatrix[nextPixelY][nextPixelX] > 0) && (edgeGradientMatrix[nextPixelY][nextPixelX] == inDir) ) {
+                        edgeStrongMatrix[nextPixelY][nextPixelX] = edgeWeakMatrix[nextPixelY][nextPixelX];
+                        edgeMapMatrix[nextPixelY][nextPixelX] = true;
+                        edgeVisitMatrix[nextPixelY][nextPixelX] = true;
+                        edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
 
-                    checkContinuity(prevPixelX, prevPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[prevPixelY][prevPixelX] = true;
+                        checkContinuity(nextPixelX, nextPixelY, inDir);
+                    }
                 }
             }
-
-
-            nextPixelX = inX;
-            nextPixelY = inY + 1;
-
-            coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[nextPixelY][nextPixelX] && (edgeWeakMatrix[nextPixelY][nextPixelX] > 0) ) {
-                    edgeStrongMatrix[nextPixelY][nextPixelX] = edgeWeakMatrix[nextPixelY][nextPixelX];
-                    edgeMapMatrix[nextPixelY][nextPixelX] = true;
-                    edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                    edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
-
-                    checkContinuity(nextPixelX, nextPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                }
-            }
-
-            break;
-
-        case 45 :
-
-            prevPixelX = inX + 1;
-            prevPixelY = inY + 1;
-
-            coorValid =  !( (prevPixelX < 0) || (prevPixelY < 0) || (prevPixelX >= edgeWidth) || (prevPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[prevPixelY][prevPixelX] && (edgeWeakMatrix[prevPixelY][prevPixelX] > 0) ) {
-                    edgeStrongMatrix[prevPixelY][prevPixelX] = edgeWeakMatrix[prevPixelY][prevPixelX];
-                    edgeMapMatrix[prevPixelY][prevPixelX] = true;
-                    edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                    edgeW2SMapMatrix[prevPixelY][prevPixelX] = true;
-
-                    checkContinuity(prevPixelX, prevPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                }
-            }
-
-
-            nextPixelX = inX - 1;
-            nextPixelY = inY - 1;
-
-            coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[nextPixelY][nextPixelX] && (edgeWeakMatrix[nextPixelY][nextPixelX] > 0) ) {
-                    edgeStrongMatrix[nextPixelY][nextPixelX] = edgeWeakMatrix[nextPixelY][nextPixelX];
-                    edgeMapMatrix[nextPixelY][nextPixelX] = true;
-                    edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                    edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
-
-                    checkContinuity(nextPixelX, nextPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                }
-            }
-
-            break;
-
-        case 90  :
-
-            prevPixelX = inX - 1;
-            prevPixelY = inY;
-
-            coorValid =  !( (prevPixelX < 0) || (prevPixelY < 0) || (prevPixelX >= edgeWidth) || (prevPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[prevPixelY][prevPixelX] && (edgeWeakMatrix[prevPixelY][prevPixelX] > 0) ) {
-                    edgeStrongMatrix[prevPixelY][prevPixelX] = edgeWeakMatrix[prevPixelY][prevPixelX];
-                    edgeMapMatrix[prevPixelY][prevPixelX] = true;
-                    edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                    edgeW2SMapMatrix[prevPixelY][prevPixelX] = true;
-
-                    checkContinuity(prevPixelX, prevPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                }
-            }
-
-
-            nextPixelX = inX + 1;
-            nextPixelY = inY;
-
-            coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[nextPixelY][nextPixelX] && (edgeWeakMatrix[nextPixelY][nextPixelX] > 0) ) {
-                    edgeStrongMatrix[nextPixelY][nextPixelX] = edgeWeakMatrix[nextPixelY][nextPixelX];
-                    edgeMapMatrix[nextPixelY][nextPixelX] = true;
-                    edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                    edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
-
-                    checkContinuity(nextPixelX, nextPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                }
-            }
-
-            break;
-
-        case 135 :
-
-            prevPixelX = inX - 1;
-            prevPixelY = inY + 1;
-
-            coorValid =  !( (prevPixelX < 0) || (prevPixelY < 0) || (prevPixelX >= edgeWidth) || (prevPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[prevPixelY][prevPixelX] && (edgeWeakMatrix[prevPixelY][prevPixelX] > 0) ) {
-                    edgeStrongMatrix[prevPixelY][prevPixelX] = edgeWeakMatrix[prevPixelY][prevPixelX];
-                    edgeMapMatrix[prevPixelY][prevPixelX] = true;
-                    edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                    edgeW2SMapMatrix[prevPixelY][prevPixelX] = true;
-
-                    checkContinuity(prevPixelX, prevPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[prevPixelY][prevPixelX] = true;
-                }
-            }
-
-
-            nextPixelX = inX + 1;
-            nextPixelY = inY - 1;
-
-            coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
-
-            if ( coorValid ) {
-                if ( !edgeVisitMatrix[nextPixelY][nextPixelX] && (edgeWeakMatrix[nextPixelY][nextPixelX] > 0) ) {
-                    edgeStrongMatrix[nextPixelY][nextPixelX] = edgeWeakMatrix[nextPixelY][nextPixelX];
-                    edgeMapMatrix[nextPixelY][nextPixelX] = true;
-                    edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                    edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
-
-                    checkContinuity(nextPixelX, nextPixelY, inDir);
-                } else {
-                    //edgeVisitMatrix[nextPixelY][nextPixelX] = true;
-                }
-            }
-
-            break;
-
-        default  :
-            //edgeVisitMatrix[inY][inX] = true;
-            break;
+        }
     }
 }
 
@@ -652,6 +505,35 @@ void imgProcess::houghTransform(){
     for (int y = 0; y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             if (edgeMatrix[y][x] != 0)
+                for (int i = 0; i < houghThetaSize; i++){
+                    theta = thetaMin + i * thetaStep;
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    if (distance >= 0) houghSpace[distance][i]++;
+                }
+}
+
+
+void imgProcess::houghTransformEdgeMap(){
+
+    houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
+    //centerX = edgeWidth / 2;
+    //centerY = edgeHeight - 1;
+    centerX = 0;
+    centerY = 0;
+
+    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+
+    houghSpace = new int*[houghDistanceMax];
+    for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+    houghSpaceInitSwitch = true;
+
+    for (int y = 0; y < houghDistanceMax; y++)
+        for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
+
+    int distance, theta;
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            if (edgeMapMatrix[y][x])
                 for (int i = 0; i < houghThetaSize; i++){
                     theta = thetaMin + i * thetaStep;
                     distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));

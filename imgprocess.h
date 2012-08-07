@@ -304,6 +304,7 @@ class imgProcess{
         void thickenEdges();                    // thicken edges
 
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
+        void houghTransformEdgeMap();                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
         void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
         void codeLineData(int **matrix, int width, int height, QList<houghData> list, bool orientation); // codes line(s) to given matrix
