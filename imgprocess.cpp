@@ -2455,8 +2455,8 @@ void imgProcess::detectMainEdges(){
 
                 QList<houghData> mainEdgesList;
 
-                if ( listHoughData2ndFiltered.size() > 3)
-                    mainEdgesNum = 3;
+                if ( listHoughData2ndFiltered.size() > 20)
+                    mainEdgesNum = 20;
                 else
                     mainEdgesNum = listHoughData2ndFiltered.size();
 
