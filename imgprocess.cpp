@@ -36,6 +36,34 @@ void imgProcess::constructValueMatrix(QImage image){
 }
 
 
+void imgProcess::constructValueHueMatrix(QImage image, bool scale){
+
+    QRgb rgbValue;
+    QColor *color;
+    int colorValue;
+
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++){
+            rgbValue = image.pixel(x,y);
+            color = new QColor(rgbValue);
+            colorValue = color->hue();
+
+            if (scale) {
+                colorValue = colorValue * 255.0 / 360.0;
+
+                if ( colorValue > 255) colorValue = 255;
+                else if (colorValue < 0)  colorValue = 0;
+            } else {
+                if ( colorValue > 359) colorValue = 359;
+                else if (colorValue < 0)  colorValue = 0;
+            }
+
+            valueMatrix[y][x] = colorValue;
+            delete color;
+        }
+}
+
+
 void imgProcess::gaussianBlur(){
 
     int sum;
@@ -52,8 +80,8 @@ void imgProcess::gaussianBlur(){
 
             valueMatrix[y][x] = sum / gaussianDivider;
 
-            if (valueMatrix[y][x] > 255)        valueMatrix[y][x] = 255;
-            else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
+            //if (valueMatrix[y][x] > 255)        valueMatrix[y][x] = 255;
+            //else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
         }
     }
 }
@@ -230,8 +258,8 @@ void imgProcess::detectEdgeSobelwDirections(){
 
             G = (int)(sqrt(pow(Gx, 2) + pow(Gy, 2)));
 
-            if (G > 255)    G = 255;
-            else if (G < 0) G = 0;
+            //if (G > 255)    G = 255;
+            //else if (G < 0) G = 0;
             edgeMatrix[y-1][x-1] = G;
 
             angle = atan2(Gy, Gx) * 180 / PI;
@@ -322,12 +350,17 @@ void imgProcess::nonMaximumSuppression(){
 }
 
 
-void imgProcess::cannyThresholding(int lo, int hi){
+void imgProcess::cannyThresholding(bool autoThresh, int loPercent, int hiPercent){
 
-    tLo = lo;
-    tHi = hi;
-    float tLoF = 255.0 * tLo / 100.0;
-    float tHiF = 255.0 * tHi / 100.0;
+    if (autoThresh){
+
+        findMedianValue();
+
+    } else {
+        tLo = 255.0 * loPercent / 100.0;
+        tHi = 255.0 * hiPercent / 100.0;
+
+    }
 
     edgeStrongMatrix = new int*[edgeHeight];
     for (int i = 0; i < edgeHeight; i++)   edgeStrongMatrix[i] = new int[edgeWidth];
@@ -360,11 +393,11 @@ void imgProcess::cannyThresholding(int lo, int hi){
 
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
-            if ( edgeSuppressedMatrix[y][x] >= tHiF ) {
+            if ( edgeSuppressedMatrix[y][x] >= tHi ) {
                 edgeStrongMatrix[y][x] = edgeSuppressedMatrix[y][x];
                 edgeMapMatrix[y][x] = true;
             }
-            else if ( edgeSuppressedMatrix[y][x] < tHiF && edgeSuppressedMatrix[y][x] >= tLoF)
+            else if ( edgeSuppressedMatrix[y][x] < tHi && edgeSuppressedMatrix[y][x] >= tLo )
                 edgeWeakMatrix[y][x] = edgeSuppressedMatrix[y][x];
 }
 
@@ -2455,8 +2488,8 @@ void imgProcess::detectMainEdges(){
 
                 QList<houghData> mainEdgesList;
 
-                if ( listHoughData2ndFiltered.size() > 20)
-                    mainEdgesNum = 20;
+                if ( listHoughData2ndFiltered.size() > 4)
+                    mainEdgesNum = 4;
                 else
                     mainEdgesNum = listHoughData2ndFiltered.size();
 
@@ -2587,6 +2620,28 @@ int* imgProcess::valueHistogram(){
 }
 
 
+void imgProcess::findMedianValue(){
+
+    loValue = 400;
+    hiValue = -1;
+
+    for(int y = 0; y < imageHeight; y++)
+        for(int x = 0; x < imageWidth; x++) {
+            if ( valueMatrix[y][x] < loValue )
+                loValue = valueMatrix[y][x];
+            if ( valueMatrix[y][x] > hiValue )
+                hiValue = valueMatrix[y][x];
+        }
+
+    //medianValue = (min + max) / 2;
+    int delta = hiValue - loValue + 1;
+    medianValue = loValue + delta / 2;
+
+    tLo = ( loValue + 0.66 * delta / 2 ) * 100  / 255.0;
+    tHi = ( loValue + 1.33 * delta / 2 ) * 100  / 255.0;
+}
+
+
 QImage imgProcess::cornerImage(){
 
     imgCorner = imgOrginal.copy();
@@ -2703,6 +2758,24 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
         }
 //    }
     return imgCornerAndPrimaryLines;
+}
+
+
+QImage imgProcess::drawLines(){
+
+    QImage image = imgOrginal.copy();
+
+    QRgb rgbRed;
+
+    rgbRed = qRgb(255, 0, 0);     // red
+
+    for(int y = 0; y < image.height(); y++)
+        for(int x = 0; x < image.width(); x++){
+            if (valueMatrix[y][x] == 2555)
+                image.setPixel(x, y, rgbRed);
+        }
+
+    return image;
 }
 
 

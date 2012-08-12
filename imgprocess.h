@@ -139,6 +139,7 @@ class imgProcess{
 
         // EDGE DETETION ALGO
         int tHi, tLo;
+        int hiValue, loValue, medianValue;
         int localMaximaSize;
         int **rangeArray;
         bool rangeArrayInitSwitch;
@@ -272,13 +273,14 @@ class imgProcess{
             primaryLine.distance = -1;
             primaryLine.angle = -1;
 
-            tHi = 80;
+            tHi = 50;
             tLo = 20;
-            neighbourhood = 5;
+            neighbourhood = -1;
         }
 
         void toMono();      // produce mono image
         void constructValueMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
+        void constructValueHueMatrix(QImage image, bool scale = false);
         void gaussianBlur();    // to reduce noise
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
 
@@ -295,7 +297,7 @@ class imgProcess{
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
         void nonMaximumSuppression();
-        void cannyThresholding(int lo, int hi);
+        void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);
         void edgeTracing();
         void checkContinuity(int inX, int inY, int inDir);
 
@@ -354,8 +356,12 @@ class imgProcess{
         int getLineX(int y, float distance, float theta);   // get hough line X coor from Y coor
         int* edgeSobelHistogram();                          // produce edge matrix Y histogram accor. X values
         int* valueHistogram();                              // produce value matrix Y histogram accor. X values
+
+        void findMedianValue();
+
         QImage cornerImage();                               // produce detected corner image based on org. image
         QImage cornerAndPrimaryLineImage(solidLine line1, solidLine line2, int line2offset);    // produce detected corner and primary lines image based on org. image
+        QImage drawLines();
         QImage drawLines(minCostedLines *lineArray, int size);
         QImage drawLine(minCostedLines *line, float tangent);
         QImage* getImage_cannyThresholds(QImage::Format format);
