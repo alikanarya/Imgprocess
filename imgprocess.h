@@ -140,6 +140,7 @@ class imgProcess{
         // EDGE DETETION ALGO
         int tHi, tLo;
         int hiValue, loValue, medianValue;
+
         int localMaximaSize;
         int **rangeArray;
         bool rangeArrayInitSwitch;
@@ -154,9 +155,16 @@ class imgProcess{
         int **listHoughData2ndArray;
         bool listHoughData2ndArrayInitSwitch;
 
-        int listHoughData2ndFilteredSize;
-        int **listHoughData2ndFilteredArray;
-        bool listHoughData2ndFilteredArrayInitSwitch;
+        int localMaxima3rdSize;
+        int **rangeArray3rd;
+        bool rangeArray3rdInitSwitch;
+        int listHoughData3rdSize;
+        int **listHoughData3rdArray;
+        bool listHoughData3rdArrayInitSwitch;
+
+        int listHoughData3rdFilteredSize;
+        int **listHoughData3rdFilteredArray;
+        bool listHoughData3rdFilteredArrayInitSwitch;
 
         int neighbourhood;
 
@@ -259,7 +267,9 @@ class imgProcess{
             listHoughDataArrayInitSwitch = false;
             rangeArray2ndInitSwitch = false;
             listHoughData2ndArrayInitSwitch = false;
-            listHoughData2ndFilteredArrayInitSwitch = false;
+            rangeArray3rdInitSwitch = false;
+            listHoughData3rdArrayInitSwitch = false;
+            listHoughData3rdFilteredArrayInitSwitch = false;
             edgeStrongMatrixInitSwitch = false;
             edgeWeakMatrixInitSwitch = false;
             edgeVisitMatrixInitSwitch = false;
@@ -275,7 +285,7 @@ class imgProcess{
 
             tHi = 50;
             tLo = 20;
-            neighbourhood = -1;
+            neighbourhood = 5;
         }
 
         void toMono();      // produce mono image
