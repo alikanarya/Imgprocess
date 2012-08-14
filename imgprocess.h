@@ -353,7 +353,7 @@ class imgProcess{
         void detectContrastCenter();
 
         // EDGE DETECTION ALGO
-        void detectMainEdges();
+        void detectMainEdges(bool thinjoint, bool debug = false);
 
         bool sortHoughLines_toDistance(int _size);
 
