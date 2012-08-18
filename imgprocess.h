@@ -327,6 +327,7 @@ class imgProcess{
         bool saveList(QList<solidLine> array, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
+        void prepareCannyArrays();
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
         void nonMaximumSuppression();
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);

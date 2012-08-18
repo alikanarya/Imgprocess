@@ -335,14 +335,44 @@ void imgProcess::detectEdgeSobel(){
 }
 
 
-void imgProcess::detectEdgeSobelwDirections(){
+void imgProcess::prepareCannyArrays(){
 
     edgeGradientMatrix = new int*[edgeHeight];
     for (int i = 0; i < edgeHeight; i++)   edgeGradientMatrix[i] = new int[edgeWidth];
     edgeGradientMatrixInitSwitch = true;
 
+    edgeSuppressedMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeSuppressedMatrix[i] = new int[edgeWidth];
+    edgeSuppressedMatrixInitSwitch = true;
+
+    edgeStrongMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeStrongMatrix[i] = new int[edgeWidth];
+    edgeStrongMatrixInitSwitch = true;
+
+    edgeWeakMatrix = new int*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeWeakMatrix[i] = new int[edgeWidth];
+    edgeWeakMatrixInitSwitch = true;
+
+    edgeMapMatrix = new bool*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeMapMatrix[i] = new bool[edgeWidth];
+    edgeMapMatrixInitSwitch = true;
+
+    edgeVisitMatrix = new bool*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeVisitMatrix[i] = new bool[edgeWidth];
+    edgeVisitMatrixInitSwitch = true;
+
+    // map coor.s of weaks connected to strength, for debugging
+    edgeW2SMapMatrix = new bool*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeW2SMapMatrix[i] = new bool[edgeWidth];
+    edgeW2SMapMatrixInitSwitch = true;
+
+}
+
+
+void imgProcess::detectEdgeSobelwDirections(){
+
     int G, Gx, Gy;
-    float angle, angleApprox;
+    float angle, angleApprox = 0;
 
     for (int y = 1;y < imageHeight - 1; y++)
         for (int x = 1; x < imageWidth - 1; x++){
@@ -379,10 +409,6 @@ void imgProcess::detectEdgeSobelwDirections(){
 
 
 void imgProcess::nonMaximumSuppression(){
-
-    edgeSuppressedMatrix = new int*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeSuppressedMatrix[i] = new int[edgeWidth];
-    edgeSuppressedMatrixInitSwitch = true;
 
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
@@ -461,26 +487,6 @@ void imgProcess::cannyThresholding(bool autoThresh, int loPercent, int hiPercent
 
     }
 
-    edgeStrongMatrix = new int*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeStrongMatrix[i] = new int[edgeWidth];
-    edgeStrongMatrixInitSwitch = true;
-
-    edgeWeakMatrix = new int*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeWeakMatrix[i] = new int[edgeWidth];
-    edgeWeakMatrixInitSwitch = true;
-
-    edgeMapMatrix = new bool*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeMapMatrix[i] = new bool[edgeWidth];
-    edgeMapMatrixInitSwitch = true;
-
-    edgeVisitMatrix = new bool*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeVisitMatrix[i] = new bool[edgeWidth];
-    edgeVisitMatrixInitSwitch = true;
-
-    // map coor.s of weaks connected to strength, for debugging
-    edgeW2SMapMatrix = new bool*[edgeHeight];
-    for (int i = 0; i < edgeHeight; i++)   edgeW2SMapMatrix[i] = new bool[edgeWidth];
-    edgeW2SMapMatrixInitSwitch = true;
 
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++){
