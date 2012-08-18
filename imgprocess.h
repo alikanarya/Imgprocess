@@ -189,6 +189,16 @@ class imgProcess{
         bool **edgeW2SMapMatrix;
         bool edgeW2SMapMatrixInitSwitch;
 
+        int valueSelection;
+        bool **edgeMapValueMatrix;
+        bool edgeMapValueMatrixInitSwitch;
+        bool **edgeMapRedMatrix;
+        bool edgeMapRedMatrixInitSwitch;
+        bool **edgeMapGreenMatrix;
+        bool edgeMapGreenMatrixInitSwitch;
+        bool **edgeMapBlueMatrix;
+        bool edgeMapBlueMatrixInitSwitch;
+
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
@@ -270,9 +280,18 @@ class imgProcess{
             rangeArray3rdInitSwitch = false;
             listHoughData3rdArrayInitSwitch = false;
             listHoughData3rdFilteredArrayInitSwitch = false;
+            edgeGradientMatrixInitSwitch = false;
             edgeStrongMatrixInitSwitch = false;
             edgeWeakMatrixInitSwitch = false;
             edgeVisitMatrixInitSwitch = false;
+            edgeMapMatrixInitSwitch = false;
+            edgeSuppressedMatrixInitSwitch = false;
+            edgeW2SMapMatrixInitSwitch = false;
+            edgeMapValueMatrixInitSwitch = false;
+            edgeMapRedMatrixInitSwitch = false;
+            edgeMapGreenMatrixInitSwitch = false;
+            edgeMapBlueMatrixInitSwitch = false;
+
 
             // no solid line
             primaryLine.start.setX( -1 );
@@ -290,7 +309,9 @@ class imgProcess{
 
         void toMono();      // produce mono image
         void constructValueMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
+        void constructValueMatrix(QImage image, int selection);    // construct pixel value matrix of an image according to single color value
         void constructValueHueMatrix(QImage image, bool scale = false);
+        void constructValueMaxMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
         void gaussianBlur();    // to reduce noise
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
 
@@ -299,6 +320,7 @@ class imgProcess{
         bool saveMatrix(int **matrix, int width, int height, QString fname, int threshold = 255, bool xSwitch = false);
 
         bool saveMatrix(float **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
+        bool saveMatrix(bool **matrix, int width, int height, QString fname);  // saves a boolean matrix with given filename
         bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
         bool saveList(QList<int> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
@@ -310,6 +332,8 @@ class imgProcess{
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);
         void edgeTracing();
         void checkContinuity(int inX, int inY, int inDir);
+        void assignEdgeMap();
+        void mergeEdgeMaps();
 
         void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary

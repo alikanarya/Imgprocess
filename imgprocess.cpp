@@ -36,6 +36,46 @@ void imgProcess::constructValueMatrix(QImage image){
 }
 
 
+void imgProcess::constructValueMatrix(QImage image, int selection){
+
+    valueSelection = selection;
+
+    QRgb rgbValue;
+    QColor *color;
+    int colorValue;
+
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++){
+            rgbValue = image.pixel(x,y);
+            color = new QColor(rgbValue);
+
+            switch (valueSelection) {
+            case 0:
+                colorValue = color->value();
+                break;
+            case 1:
+                colorValue = color->red();
+                break;
+            case 2:
+                colorValue = color->green();
+                break;
+            case 3:
+                colorValue = color->blue();
+                break;
+            default:
+                colorValue = color->value();
+                break;
+            }
+
+            if ( colorValue > 255) colorValue = 255;
+            else if (colorValue < 0)  colorValue = 0;
+
+            valueMatrix[y][x] = colorValue;
+            delete color;
+        }
+}
+
+
 void imgProcess::constructValueHueMatrix(QImage image, bool scale){
 
     QRgb rgbValue;
@@ -59,6 +99,39 @@ void imgProcess::constructValueHueMatrix(QImage image, bool scale){
             }
 
             valueMatrix[y][x] = colorValue;
+            delete color;
+        }
+}
+
+
+void imgProcess::constructValueMaxMatrix(QImage image){
+
+    QRgb rgbValue;
+    QColor *color;
+    int colorValue;
+
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++){
+            rgbValue = image.pixel(x,y);
+            color = new QColor(rgbValue);
+
+            QList<int> list;
+            list.append( color->value() );
+            list.append( color->red() );
+            list.append( color->blue() );
+            list.append( color->green() );
+
+            colorValue = -1;
+            for (int i = 0; i < 4; i++)
+                if ( list[i] > colorValue)
+                    colorValue = list[i];
+
+            if ( colorValue > 255) colorValue = 255;
+            else if (colorValue < 0)  colorValue = 0;
+
+            valueMatrix[y][x] = colorValue;
+
+            list.empty();
             delete color;
         }
 }
@@ -132,6 +205,32 @@ bool imgProcess::saveMatrix(float **matrix, int width, int height, QString fname
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width; x++){
                 out << matrix[y][x];
+                if (x != (width - 1)) out << ",";
+            }
+            out << "\n";
+        }
+        file.close();
+    } else saveStatus = false;
+    return saveStatus;
+}
+
+
+bool imgProcess::saveMatrix(bool **matrix, int width, int height, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+    int val;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
+                if ( matrix[y][x] )
+                    val = 1;
+                else val = 0;
+
+                out << val;
                 if (x != (width - 1)) out << ",";
             }
             out << "\n";
@@ -442,6 +541,83 @@ void imgProcess::checkContinuity(int inX, int inY, int inDir){
             }
         }
     }
+}
+
+
+void imgProcess::assignEdgeMap(){
+
+    switch (valueSelection) {
+    case 0:
+
+        edgeMapValueMatrix = new bool*[edgeHeight];
+        for (int i = 0; i < edgeHeight; i++)   edgeMapValueMatrix[i] = new bool[edgeWidth];
+        edgeMapValueMatrixInitSwitch = true;
+
+        for (int y = 0; y < edgeHeight; y++)
+            for (int x = 0; x < edgeWidth; x++)
+                edgeMapValueMatrix[y][x] = edgeMapMatrix[y][x];
+
+        break;
+
+    case 1:
+
+        edgeMapRedMatrix = new bool*[edgeHeight];
+        for (int i = 0; i < edgeHeight; i++)   edgeMapRedMatrix[i] = new bool[edgeWidth];
+        edgeMapRedMatrixInitSwitch = true;
+
+        for (int y = 0; y < edgeHeight; y++)
+            for (int x = 0; x < edgeWidth; x++)
+                edgeMapRedMatrix[y][x] = edgeMapMatrix[y][x];
+
+        break;
+
+    case 2:
+
+        edgeMapGreenMatrix = new bool*[edgeHeight];
+        for (int i = 0; i < edgeHeight; i++)   edgeMapGreenMatrix[i] = new bool[edgeWidth];
+        edgeMapGreenMatrixInitSwitch = true;
+
+        for (int y = 0; y < edgeHeight; y++)
+            for (int x = 0; x < edgeWidth; x++)
+                edgeMapGreenMatrix[y][x] = edgeMapMatrix[y][x];
+
+        break;
+
+    case 3:
+
+        edgeMapBlueMatrix = new bool*[edgeHeight];
+        for (int i = 0; i < edgeHeight; i++)   edgeMapBlueMatrix[i] = new bool[edgeWidth];
+        edgeMapBlueMatrixInitSwitch = true;
+
+        for (int y = 0; y < edgeHeight; y++)
+            for (int x = 0; x < edgeWidth; x++)
+                edgeMapBlueMatrix[y][x] = edgeMapMatrix[y][x];
+
+        break;
+
+    default:
+        break;
+    }
+
+}
+
+
+void imgProcess::mergeEdgeMaps(){
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+
+            edgeMapMatrix[y][x] = edgeMapValueMatrix[y][x] &&
+                                  edgeMapRedMatrix[y][x] &&
+                                  edgeMapGreenMatrix[y][x] &&
+                                  edgeMapBlueMatrix[y][x];
+
+/*
+    edgeMapMatrix[y][x] = edgeMapValueMatrix[y][x] ||
+                          edgeMapRedMatrix[y][x] ||
+                          edgeMapGreenMatrix[y][x] ||
+                          edgeMapBlueMatrix[y][x];
+*/
 }
 
 
@@ -3029,6 +3205,28 @@ imgProcess::~imgProcess(){
         for (int y = 0; y < edgeHeight; y++) delete []edgeW2SMapMatrix[y];
         delete []edgeW2SMapMatrix;
     }
+
+
+    if ( edgeMapValueMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapValueMatrix[y];
+        delete []edgeMapValueMatrix;
+    }
+
+    if ( edgeMapRedMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapRedMatrix[y];
+        delete []edgeMapRedMatrix;
+    }
+
+    if ( edgeMapGreenMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapGreenMatrix[y];
+        delete []edgeMapGreenMatrix;
+    }
+
+    if ( edgeMapBlueMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapBlueMatrix[y];
+        delete []edgeMapBlueMatrix;
+    }
+
 }
 
 
