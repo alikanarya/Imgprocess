@@ -140,6 +140,7 @@ class imgProcess{
         // EDGE DETETION ALGO
         int tHi, tLo;
         int hiValue, loValue, medianValue;
+        int thinCornerNum;
 
         int localMaximaSize;
         int **rangeArray;

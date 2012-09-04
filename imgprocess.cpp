@@ -2632,10 +2632,10 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                 //
                 // THIN JOINT
                 //
-                // SELECT 2 MAXS
+                // SELECT MAXS
                 //
 
-                int size = 2;
+                int size = thinCornerNum;
 
                 if ( listHoughData2nd.size() < 2 )
                     size = listHoughData2nd.size();
