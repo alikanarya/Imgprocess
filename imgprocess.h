@@ -170,6 +170,9 @@ class imgProcess{
         int neighbourhood;
 
 
+        houghData centerLine;
+        QList<houghData> mainEdgesList;
+
         int errorEdgeLimit;
         int errorAngleLimit;
 

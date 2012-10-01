@@ -2603,7 +2603,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             // SELECT MAIN EDGES
 
-            QList<houghData> mainEdgesList;
+//            QList<houghData> mainEdgesList;
 
             if ( !thinjoint ){
                 //
@@ -2625,9 +2625,22 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         hd.angle =  listHoughData2nd[i].angle;
                         hd.voteValue =  listHoughData2nd[i].voteValue;
                         mainEdgesList.append(hd);
-
                 }
 
+                /*
+                if ( mainEdgesList.size() != 0) {
+
+                    float angleSum = 0, distanceSum = 0;
+                    for (int i = 0; i < mainEdgesList.size(); i++){
+                        angleSum += mainEdgesList[i].angle;
+                        distanceSum += mainEdgesList[i].distance;
+                    }
+
+                    centerLine.angle = angleSum / mainEdgesList.size();
+                    centerLine.distance = distanceSum / mainEdgesList.size();
+
+                }
+                */
             } else {
                 //
                 // THIN JOINT
@@ -2657,6 +2670,13 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     mainEdgesList.append(hd);
                     listHoughData2nd[index].voteValue = -1;
                 }
+
+                if ( mainEdgesList.size() != 0) {
+                    centerLine.angle = mainEdgesList[0].angle;
+                    centerLine.distance = mainEdgesList[0].distance;
+                    centerLine.voteValue = mainEdgesList[0].voteValue;
+                }
+
 
             }
 
@@ -2717,7 +2737,6 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             //------------------------------------------------------------------------------------
 
             // clear vars
-            mainEdgesList.empty();
 
         } else {
 
@@ -3232,6 +3251,8 @@ imgProcess::~imgProcess(){
         for (int y = 0; y < edgeHeight; y++) delete []edgeMapBlueMatrix[y];
         delete []edgeMapBlueMatrix;
     }
+
+    mainEdgesList.empty();
 
 }
 
