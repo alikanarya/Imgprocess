@@ -627,6 +627,86 @@ void imgProcess::mergeEdgeMaps(){
 }
 
 
+void imgProcess::thickenEdgeMap(int diameter){
+
+    int xnStart, xnEnd, ynStart, ynEnd;
+
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            edgeThickenedMatrix[y][x] = 0;
+
+
+    for (int y = 1; y < (imageHeight - 1); y++) {
+
+        ynStart = y - diameter;
+        ynEnd = y + diameter;
+        if (ynStart < 0) ynStart = 0;
+        if (ynEnd >= edgeHeight) ynEnd = edgeHeight;
+
+        for (int x = 1; x < (imageWidth - 1); x++){
+
+            xnStart = x - diameter;
+            xnEnd = x + diameter;
+            if (xnStart < 0) xnStart = 0;
+            if (xnEnd >= edgeWidth) xnEnd = edgeWidth;
+
+            if ( edgeMapMatrix[y - 1][x - 1] )
+                for (int xn = xnStart; xn <= xnEnd; xn++)
+                    for (int yn = ynStart; yn <= ynEnd; yn++)
+                       edgeThickenedMatrix[yn][xn] = 1;
+        }
+    }
+
+    for (int y = 1; y < imageHeight - 1; y++)
+        for (int x = 1; x < imageWidth - 1; x++)
+            if (edgeThickenedMatrix[y][x] == 1)
+                edgeMapMatrix[y - 1][x - 1] = true;
+            else
+                edgeMapMatrix[y - 1][x - 1] = false;
+
+}
+
+
+void imgProcess::scoreLineCrossing(bool orientation){
+
+    // orientation
+    // true: vertical line
+    // false: horizontal line
+
+    if (mainEdgesList.size() != 0) {
+
+        mainEdgeScore = 0;
+
+        if (orientation) {
+
+            int lineX;
+
+            for (int y = 0; y < edgeHeight; y++){
+                lineX = centerX + getLineX((centerY - y), mainEdgesList[0].distance, mainEdgesList[0].angle);
+
+                if (lineX >= 0 && lineX < edgeWidth)
+                    if ( edgeMapMatrix[y][lineX]) mainEdgeScore++;
+            }
+
+        } else {
+
+            int lineY;
+
+            for (int x = 0; x < edgeWidth; x++){
+                lineY = centerY - getLineY((x - centerX), mainEdgesList[0].distance, mainEdgesList[0].angle);
+
+                if (lineY >= 0 && lineY < edgeHeight)
+                    if ( edgeMapMatrix[lineY][x]) mainEdgeScore++;
+
+            }
+        }
+
+    }
+
+
+}
+
+
 void imgProcess::scaleEdgeData(int threshold){
 
     int max, index;

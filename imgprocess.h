@@ -172,6 +172,7 @@ class imgProcess{
 
         houghData centerLine;
         QList<houghData> mainEdgesList;
+        int mainEdgeScore;
 
         int errorEdgeLimit;
         int errorAngleLimit;
@@ -339,6 +340,8 @@ class imgProcess{
         void checkContinuity(int inX, int inY, int inDir);
         void assignEdgeMap();
         void mergeEdgeMaps();
+        void thickenEdgeMap(int diameter);
+        void scoreLineCrossing(bool orientation);   // line detection, in edge map
 
         void scaleEdgeData(int threshold);      // scales edge data acording to line maximum
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
