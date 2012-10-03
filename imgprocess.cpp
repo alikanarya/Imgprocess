@@ -688,6 +688,8 @@ void imgProcess::scoreLineCrossing(bool orientation){
                     if ( edgeMapMatrix[y][lineX]) mainEdgeScore++;
             }
 
+            mainEdgeScorePercent = abs ( mainEdgeScore * sin (R2D * (90 - mainEdgesList[0].angle)) * 100.0 / edgeHeight );
+
         } else {
 
             int lineY;
@@ -699,6 +701,9 @@ void imgProcess::scoreLineCrossing(bool orientation){
                     if ( edgeMapMatrix[lineY][x]) mainEdgeScore++;
 
             }
+
+            mainEdgeScorePercent = abs ( mainEdgeScore * cos (R2D * (90 - mainEdgesList[0].angle)) * 100.0 / edgeWidth );
+
         }
 
     }

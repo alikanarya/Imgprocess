@@ -173,6 +173,7 @@ class imgProcess{
         houghData centerLine;
         QList<houghData> mainEdgesList;
         int mainEdgeScore;
+        float mainEdgeScorePercent;
 
         int errorEdgeLimit;
         int errorAngleLimit;
