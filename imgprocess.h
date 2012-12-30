@@ -335,7 +335,7 @@ class imgProcess{
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void prepareCannyArrays();
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
-        void nonMaximumSuppression();
+        void nonMaximumSuppression(bool suppress = true);
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);
         void edgeTracing();
         void checkContinuity(int inX, int inY, int inDir);

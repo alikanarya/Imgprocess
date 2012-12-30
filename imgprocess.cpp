@@ -408,70 +408,72 @@ void imgProcess::detectEdgeSobelwDirections(){
 }
 
 
-void imgProcess::nonMaximumSuppression(){
+void imgProcess::nonMaximumSuppression(bool suppress){
 
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             edgeSuppressedMatrix[y][x] = edgeMatrix[y][x];
 
-    int hotPixel, prevPixel, nextPixel;
-    int prevPixelX, prevPixelY, nextPixelX, nextPixelY;
+    if (suppress) {
+        int hotPixel, prevPixel, nextPixel;
+        int prevPixelX, prevPixelY, nextPixelX, nextPixelY;
 
-    for (int y = 0;y < edgeHeight; y++)
-        for (int x = 0; x < edgeWidth; x++){
+        for (int y = 0;y < edgeHeight; y++)
+            for (int x = 0; x < edgeWidth; x++){
 
-            hotPixel = edgeMatrix[y][x];
+                hotPixel = edgeMatrix[y][x];
 
-            switch (edgeGradientMatrix[y][x]) {
+                switch (edgeGradientMatrix[y][x]) {
 
-                case 0  :
-                    prevPixelX = x - 1;
-                    prevPixelY = y;
-                    nextPixelX = x + 1;
-                    nextPixelY = y;
-                    break;
+                    case 0  :
+                        prevPixelX = x - 1;
+                        prevPixelY = y;
+                        nextPixelX = x + 1;
+                        nextPixelY = y;
+                        break;
 
-                case 45 :
-                    prevPixelX = x - 1;
-                    prevPixelY = y + 1;
-                    nextPixelX = x + 1;
-                    nextPixelY = y - 1;
-                    break;
+                    case 45 :
+                        prevPixelX = x - 1;
+                        prevPixelY = y + 1;
+                        nextPixelX = x + 1;
+                        nextPixelY = y - 1;
+                        break;
 
-                case 90 :
-                    prevPixelX = x;
-                    prevPixelY = y + 1;
-                    nextPixelX = x;
-                    nextPixelY = y - 1;
-                    break;
+                    case 90 :
+                        prevPixelX = x;
+                        prevPixelY = y + 1;
+                        nextPixelX = x;
+                        nextPixelY = y - 1;
+                        break;
 
-                case 135 :
-                    prevPixelX = x + 1;
-                    prevPixelY = y + 1;
-                    nextPixelX = x - 1;
-                    nextPixelY = y - 1;
-                    break;
+                    case 135 :
+                        prevPixelX = x + 1;
+                        prevPixelY = y + 1;
+                        nextPixelX = x - 1;
+                        nextPixelY = y - 1;
+                        break;
 
-                default  :
-                    prevPixelX = nextPixelX = x;
-                    prevPixelY = nextPixelY = y;
-                    break;
+                    default  :
+                        prevPixelX = nextPixelX = x;
+                        prevPixelY = nextPixelY = y;
+                        break;
+                }
+
+                if ( prevPixelX < 0 || prevPixelY < 0 || prevPixelX >= edgeWidth ||  prevPixelY >= edgeHeight )
+                    prevPixel = 0;
+                else
+                    prevPixel = edgeMatrix[prevPixelY][prevPixelX];
+
+                if ( nextPixelX < 0 || nextPixelY < 0 || nextPixelX >= edgeWidth ||  nextPixelY >= edgeHeight )
+                    nextPixel = 0;
+                else
+                    nextPixel = edgeMatrix[nextPixelY][nextPixelX];
+
+                if ( (hotPixel < prevPixel) || (hotPixel < nextPixel) )
+                    edgeSuppressedMatrix[y][x] = 0;
+
             }
-
-            if ( prevPixelX < 0 || prevPixelY < 0 || prevPixelX >= edgeWidth ||  prevPixelY >= edgeHeight )
-                prevPixel = 0;
-            else
-                prevPixel = edgeMatrix[prevPixelY][prevPixelX];
-
-            if ( nextPixelX < 0 || nextPixelY < 0 || nextPixelX >= edgeWidth ||  nextPixelY >= edgeHeight )
-                nextPixel = 0;
-            else
-                nextPixel = edgeMatrix[nextPixelY][nextPixelX];
-
-            if ( (hotPixel < prevPixel) || (hotPixel < nextPixel) )
-                edgeSuppressedMatrix[y][x] = 0;
-
-        }
+    }
 }
 
 
@@ -836,7 +838,8 @@ void imgProcess::houghTransformEdgeMap(){
             if (edgeMapMatrix[y][x])
                 for (int i = 0; i < houghThetaSize; i++){
                     theta = thetaMin + i * thetaStep;
-                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+//                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (y - centerY) * sin(theta * R2D));
                     if (distance >= 0) houghSpace[distance][i]++;
                 }
 }
@@ -1008,10 +1011,10 @@ void imgProcess::codeLineData(int **matrix, int width, int height, QList<houghDa
 
                 int lineY;
 
-                for (int x = 0; x < width; x++){
-                    lineY = centerY + 1 - getLineY((x - centerX - 1), list[0].distance, list[0].angle);
+                for (int x = 0; x < edgeWidth; x++){
+                    lineY = centerY + 1 + getLineY((x - centerX), list[c].distance, list[c].angle);
 
-                    if (lineY >= 0 && lineY < height) matrix[lineY][x] = 2555;       // 2555 special code to differenciate line data, arbitrary
+                    if (lineY >= 0 && lineY < height) matrix[lineY][x+1] = 2555;       // 2555 special code to differenciate line data, arbitrary
                 }
             }
         }
@@ -1939,7 +1942,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < primaryGroup.size(); i++)
                 if ( primaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = primaryGroup[i].length;
-            float primaryLengthThreshold = maxSolidLineLength * 0.75;
+            float primaryLengthThreshold = maxSolidLineLength * 0.99;
             //------------------------------------------------------------------------------------
 
             int count = 0;
@@ -1967,7 +1970,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < secondaryGroup.size(); i++)
                 if ( secondaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = secondaryGroup[i].length;
-            float secondaryLengthThreshold = maxSolidLineLength * 0.75;
+            float secondaryLengthThreshold = maxSolidLineLength * 0.99;
             //------------------------------------------------------------------------------------
 
 
@@ -2815,7 +2818,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
 
             if (DEBUG) {
-                codeLineData(valueMatrix, imageWidth, imageHeight, mainEdgesList, true);
+//                codeLineData(valueMatrix, imageWidth, imageHeight, listHoughData2nd, false);
+                codeLineData(valueMatrix, imageWidth, imageHeight, mainEdgesList, false);
             }
 
             //----- alarms
@@ -2894,7 +2898,7 @@ int imgProcess::getLineX(int y, float distance, float theta){
 
     int x = -1;
     float cosine = cos(theta*R2D);
-    if (cosine != 0)
+    if (cosine >= 0.1)
         x = (int) ( (distance - y*sin(theta*R2D)) / cosine );
     return x;
 }
@@ -3007,7 +3011,8 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
         QRgb valueCorner, valuePrimary;
 
         // draw primary lines
-        valuePrimary = qRgb(255, 0, 0);     // red
+//        valuePrimary = qRgb(255, 0, 0);     // red
+        valuePrimary = qRgb(0, 0, 255);     // blue
         int lineY;
 
         if ( line1.distance > 0 ) {
