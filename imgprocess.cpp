@@ -1942,7 +1942,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < primaryGroup.size(); i++)
                 if ( primaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = primaryGroup[i].length;
-            float primaryLengthThreshold = maxSolidLineLength * 0.99;
+            float primaryLengthThreshold = maxSolidLineLength * 1.0;
             //------------------------------------------------------------------------------------
 
             int count = 0;
@@ -1970,7 +1970,7 @@ void imgProcess::detectLongestSolidLines(){
             for (int i = 0; i < secondaryGroup.size(); i++)
                 if ( secondaryGroup[i].length > maxSolidLineLength )
                     maxSolidLineLength = secondaryGroup[i].length;
-            float secondaryLengthThreshold = maxSolidLineLength * 0.99;
+            float secondaryLengthThreshold = maxSolidLineLength * 1.0;
             //------------------------------------------------------------------------------------
 
 
@@ -2006,7 +2006,7 @@ void imgProcess::detectLongestSolidLines(){
             count = 0;
             int sum = 0;
             for (int i = 0; i < primaryGroup.size(); i++)
-                if ( primaryGroup[i].length > primaryLengthThreshold ) {
+                if ( primaryGroup[i].length >= primaryLengthThreshold ) {
                 //if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
                     count++;
 
@@ -2075,7 +2075,7 @@ void imgProcess::detectLongestSolidLines(){
             count = 0;
             sum = 0;
             for (int i = 0; i < secondaryGroup.size(); i++)
-                if ( secondaryGroup[i].length > secondaryLengthThreshold ) {
+                if ( secondaryGroup[i].length >= secondaryLengthThreshold ) {
                 //if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
                     count++;
 
@@ -2962,7 +2962,7 @@ QImage imgProcess::cornerImage(){
 
     imgCorner = imgOrginal.copy();
 
-    if (detected){
+//    if (detected){
         QRgb value;
         value = qRgb(0, 255, 0);        // green
 
@@ -2998,7 +2998,7 @@ QImage imgProcess::cornerImage(){
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value);
         }
-    }
+    //}
     return imgCorner;
 }
 
