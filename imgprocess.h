@@ -73,6 +73,7 @@ class imgProcess{
         QImage imgMono;         // mono image
         QImage imgCorner;       // orginal image with detected corners shown
         QImage imgCornerAndPrimaryLines;    // orginal image with detected corners and primary lines shown
+        QImage imgSolidLines;
 
         const int imageWidth, imageHeight;  // org. image
         int edgeWidth, edgeHeight;          // edge detected image
@@ -113,7 +114,7 @@ class imgProcess{
         QList<majorArea *> majorList;   // NOT USED
         float majorThresholdPercent;    // NOT USED
         int maxSolidLineLength;
-        QList<solidLine> majorLines;    // list that hold major lines data from major areas NOT USED
+        QList<solidLine> majorLines;    // list that hold major lines data FOR DEBUGGING
         QList<solidLine> major2Lines;   // list that hold 2 major lines
         bool majorLinesFound;
         solidLine primaryLine;
@@ -375,7 +376,7 @@ class imgProcess{
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
         solidLine detectLongestSolidLine(float distance, float angle, bool flag, int xStartOffset, int xEndOffset);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
-        void detectLongestSolidLines();         // detect longest solid(continuous) lines from value matrix
+        void detectLongestSolidLines(bool averaging = true, bool matrixFlag = true);    // detect longest solid(continuous) lines from value(true) or edge(false) matrix
 
         void detectThinJointCenter(int refAngle, int precisionSize);
 
@@ -404,6 +405,7 @@ class imgProcess{
 
         QImage cornerImage();                               // produce detected corner image based on org. image
         QImage cornerAndPrimaryLineImage(solidLine line1, solidLine line2, int line2offset);    // produce detected corner and primary lines image based on org. image
+        QImage drawSolidLines( QList<solidLine> lineList );
         QImage drawLines();
         QImage drawLines(minCostedLines *lineArray, int size);
         QImage drawLine(minCostedLines *line, float tangent);
