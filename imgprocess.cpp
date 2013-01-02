@@ -2165,36 +2165,24 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
 
     //----- calculate corners & center
-    leftCornerX = 0;
-    leftCornerY = imageHeight/2;
-    rightCornerX = imageWidth - 1;
-    rightCornerY = imageHeight/2;
 
     centerDetermined = false;
     angleAvg = 0;
 
-    if (!matrixFlag) {  // if edge matrix is used
-
-        for (int i = 0; i < major2Lines.size(); i++){
-            major2Lines[i].start.setX( major2Lines[i].start.x() + 1 );
-            major2Lines[i].start.setY( major2Lines[i].start.y() + 1 );
-            major2Lines[i].end.setX( major2Lines[i].end.x() + 1 );
-            major2Lines[i].end.setY( major2Lines[i].end.y() + 1 );
-        }
-
-        // DEBUG
-        //centerX = 1;
-        //centerY = 1;
-        for (int i = 0; i < majorLines.size(); i++){
-            majorLines[i].start.setX( majorLines[i].start.x() + 1 );
-            majorLines[i].start.setY( majorLines[i].start.y() + 1 );
-            majorLines[i].end.setX( majorLines[i].end.x() + 1 );
-            majorLines[i].end.setY( majorLines[i].end.y() + 1 );
-        }
+    if (matrixFlag) {   // if value matrix is used
+        leftCornerX = 0;
+        leftCornerY = imageHeight/2;
+        rightCornerX = imageWidth - 1;
+        rightCornerY = imageHeight/2;
+    } else {            // if edge matrix is used
+        leftCornerX = 0;
+        leftCornerY = edgeHeight/2;
+        rightCornerX = edgeWidth - 1;
+        rightCornerY = edgeHeight/2;
     }
 
-    if ( primaryLineFound && secondaryLineFound ) {
 
+    if ( primaryLineFound && secondaryLineFound ) {
 
         if ( major2Lines[0].start.x() > major2Lines[1].start.x() ) {    // primary = RIGHT
             rightCornerX = major2Lines[0].start.x();
@@ -3009,7 +2997,7 @@ void imgProcess::findMedianValue(){
 }
 
 
-QImage imgProcess::cornerImage(){
+QImage imgProcess::cornerImage( bool matrixFlag ){
 
     imgCorner = imgOrginal.copy();
 
@@ -3017,35 +3005,41 @@ QImage imgProcess::cornerImage(){
         QRgb value;
         value = qRgb(0, 255, 0);        // green
 
+        int xOffset = 0, yOffset = 0;
+
+        if (!matrixFlag){   // edge matrix
+            xOffset = yOffset = 1;
+        }
+
         int X, Y;
 
         for (int x = -4; x <= 4; x++){
 
-            X = leftCornerX + x;
-            Y = leftCornerY;
+            X = leftCornerX + x + xOffset;
+            Y = leftCornerY + yOffset;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value );
 
-            X = rightCornerX + x;
-            Y = rightCornerY;
+            X = rightCornerX + x + xOffset;
+            Y = rightCornerY + yOffset;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value );
         }
 
         for (int y = -4; y <= 4; y++){
 
-            X = leftCornerX;
-            Y = leftCornerY + y;
+            X = leftCornerX + xOffset;
+            Y = leftCornerY + y + yOffset;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value);
 
-            X = rightCornerX;
-            Y = rightCornerY + y;
+            X = rightCornerX + xOffset;
+            Y = rightCornerY + y + yOffset;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value);
 
-            X = trackCenterX;
-            Y = trackCenterY + y;
+            X = trackCenterX + xOffset;
+            Y = trackCenterY + y + yOffset;
             if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
                 imgCorner.setPixel( X, Y, value);
         }
@@ -3054,77 +3048,80 @@ QImage imgProcess::cornerImage(){
 }
 
 
-QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, int line2offset ){
+QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, int line2offset, bool matrixFlag ){
 
     imgCornerAndPrimaryLines = imgOrginal.copy();
 
-//    if (detected){
-        QRgb valueCorner, valuePrimary;
+    QRgb valueCorner, valuePrimary;
 
-        // draw primary lines
-//        valuePrimary = qRgb(255, 0, 0);     // red
-        valuePrimary = qRgb(0, 0, 255);     // blue
-        int lineY;
+    valuePrimary = qRgb(0, 0, 255);     // blue
 
-        if ( line1.distance > 0 ) {
+    int xOffset = 0, yOffset = 0;
 
-            for (int x = line1.start.x(); x <= line1.end.x(); x++){
-                lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle);
+    if (!matrixFlag){   // edge matrix
+        xOffset = yOffset = 1;
+    }
 
-                if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
-                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary );
-            }
+    int lineY;
+
+    if ( line1.distance > 0 ) {
+
+        for (int x = line1.start.x(); x <= line1.end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle) + yOffset;
+
+            if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( x + xOffset, lineY, valuePrimary );
         }
+    }
 
-        if ( line2.distance > 0 ) {
+    if ( line2.distance > 0 ) {
 
-            int startX = line2offset + line2.start.x();
-            int endX = line2offset + line2.end.x();
+        int startX = line2offset + line2.start.x();
+        int endX = line2offset + line2.end.x();
 
-            for (int x = startX; x <= endX; x++){
-                lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle);
+        for (int x = startX; x <= endX; x++){
+            lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle) + yOffset;
 
-                if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
-                    imgCornerAndPrimaryLines.setPixel( x, lineY, valuePrimary );
-            }
+            if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( x + xOffset, lineY, valuePrimary );
         }
+    }
 
+    // draw corners and center
+    valueCorner = qRgb(0, 255, 0);        // green
+    int X, Y;
 
-        // draw corners and center
-        valueCorner = qRgb(0, 255, 0);        // green
-        int X, Y;
+    for (int x = -4; x <= 4; x++){
 
-        for (int x = -4; x <= 4; x++){
+        X = leftCornerX + x + xOffset;
+        Y = leftCornerY + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
-            X = leftCornerX + x;
-            Y = leftCornerY;
-            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        X = rightCornerX + x + xOffset;
+        Y = rightCornerY + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+    }
 
-            X = rightCornerX + x;
-            Y = rightCornerY;
-            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-        }
+    for (int y = -4; y <= 4; y++){
 
-        for (int y = -4; y <= 4; y++){
+        X = leftCornerX + xOffset;
+        Y = leftCornerY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
-            X = leftCornerX;
-            Y = leftCornerY + y;
-            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        X = rightCornerX + xOffset;
+        Y = rightCornerY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
-            X = rightCornerX;
-            Y = rightCornerY + y;
-            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        X = trackCenterX + xOffset;
+        Y = trackCenterY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+    }
 
-            X = trackCenterX;
-            Y = trackCenterY + y;
-            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-        }
-//    }
     return imgCornerAndPrimaryLines;
 }
 
@@ -3153,6 +3150,34 @@ QImage imgProcess::drawSolidLines( QList<solidLine> lineList ){
     }
 
     return imgSolidLines;
+}
+
+
+QImage* imgProcess::drawSolidLines2EdgeMatrix( solidLine line, QImage::Format format ){
+
+    QImage *image = new QImage(edgeWidth, edgeHeight, format);
+    QRgb trackValue = qRgb(255, 255, 255);
+    QRgb lineValue = qRgb(0, 0, 255);
+
+    int lineY;
+
+    for(int y = 0; y < edgeHeight; y++)
+        for(int x = 0; x < edgeWidth; x++)
+            if ( edgeMatrix[y][x] == 255 )
+                image->setPixel(x, y, trackValue);
+
+    if ( line.distance > 0 ) {
+
+        for (int x = line.start.x(); x <= line.end.x(); x++){
+            lineY = centerY - getLineY((x - centerX), line.distance, line.angle);
+
+            if ( x >= 0 && x < image->width() && lineY >= 0 && lineY < image->height())
+                image->setPixel( x, lineY, lineValue );
+        }
+    }
+
+
+    return image;
 }
 
 
