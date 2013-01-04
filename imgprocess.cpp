@@ -1946,20 +1946,23 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 }
             //------------------------------------------------------------------------------------
 
+            if (primaryGroup.size() != 0)
+                primaryLineFound = true;
+            else
+                primaryLineFound = false;
 
-            float multiplier = 1.0;
+            if (secondaryGroup.size() != 0)
+                secondaryLineFound = true;
+            else
+                secondaryLineFound = false;
 
-            if (!averaging)
+            float multiplier = 0.90;
+
+            if (averaging)
                 multiplier = 0.75;
 
-            //----- detect maximum length in primaryGroup (to recheck, can be removed)
-            maxSolidLineLength = 0;
+            float primaryLengthThreshold = primaryGroup[0].length * multiplier;
 
-            for (int i = 0; i < primaryGroup.size(); i++)
-                if ( primaryGroup[i].length > maxSolidLineLength )
-                    maxSolidLineLength = primaryGroup[i].length;
-            float primaryLengthThreshold = maxSolidLineLength * multiplier;
-            //------------------------------------------------------------------------------------
 
             int count = 0;
 
@@ -2014,8 +2017,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             //float avgAngleDown = thetaAvgPrimary - 0.5;    // -0.5C for deadband
 
             // * for weighted average
-            QList<solidLine> buffer;
-            buffer.clear();
+            primaryGroupMaxs.clear();
 
             //distanceAvgPrimary = 0;
             //thetaAvgPrimary = 0;
@@ -2030,7 +2032,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     //thetaAvgPrimary += primaryGroup[i].angle;
 
                     // * for weighted average
-                    buffer.append( primaryGroup[i] );
+                    primaryGroupMaxs.append( primaryGroup[i] );
                     sum += primaryGroup[i].length;
 
                     // DEBUG
@@ -2041,6 +2043,8 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
             if ( count != 0 ) {
 
+                primaryLineFound = true;
+
                 if (averaging) {
 
                     // * weighted average
@@ -2048,8 +2052,8 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     thetaAvgPrimary = 0;
                     if ( sum != 0 ){
                         for (int i = 0; i < count; i++ ) {
-                            distanceAvgPrimary += buffer[i].length * buffer[i].distance;
-                            thetaAvgPrimary += buffer[i].length * buffer[i].angle;
+                            distanceAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].distance;
+                            thetaAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].angle;
                         }
 
                         distanceAvgPrimary /= sum;
@@ -2062,25 +2066,20 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     //thetaAvgPrimary /= count;
 
                     int priXStartOffset = matrix_width - 1;
-                    for (int i = 0; i < buffer.size(); i++ ) {
+                    for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
 
-                        if ( buffer[i].start.x() < priXStartOffset )
-                            priXStartOffset = buffer[i].start.x();
+                        if ( primaryGroupMaxs[i].start.x() < priXStartOffset )
+                            priXStartOffset = primaryGroupMaxs[i].start.x();
                     }
 
                     int priXEndOffset = 0;
-                    for (int i = 0; i < buffer.size(); i++ ) {
+                    for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
 
-                        if ( buffer[i].end.x() > priXEndOffset )
-                            priXEndOffset = buffer[i].end.x();
+                        if ( primaryGroupMaxs[i].end.x() > priXEndOffset )
+                            priXEndOffset = primaryGroupMaxs[i].end.x();
                     }
 
-                    primaryLineFound = true;
                     major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , matrixFlag, priXStartOffset, priXEndOffset ) );
-
-                } else {
-                // NOT AVERAGING, TAKE MAXIMUM LENGTH LINE
-
                 }
             } else {
                 primaryLineFound = false;
@@ -2096,7 +2095,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             //avgAngleDown = thetaAvgSecondary - 0.5;    // -0.5C for deadband
 
             // * for weighted average
-            buffer.clear();
+            secondaryGroupMaxs.clear();
 
             //distanceAvgSecondary = 0;
             //thetaAvgSecondary = 0;
@@ -2111,7 +2110,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     //thetaAvgSecondary += secondaryGroup[i].angle;
 
                     // * for weighted average
-                    buffer.append( secondaryGroup[i] );
+                    secondaryGroupMaxs.append( secondaryGroup[i] );
                     sum += secondaryGroup[i].length;
 
                     // DEBUG
@@ -2120,44 +2119,48 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
             if ( count != 0 ) {
 
-                // * weighted average
-                distanceAvgSecondary = 0;
-                thetaAvgSecondary = 0;
-                if ( sum != 0 ){
-                    for (int i = 0; i < count; i++ ) {
-                        distanceAvgSecondary += buffer[i].length * buffer[i].distance;
-                        thetaAvgSecondary += buffer[i].length * buffer[i].angle;
+                secondaryLineFound = true;
+
+                if (averaging) {
+
+                    // * weighted average
+                    distanceAvgSecondary = 0;
+                    thetaAvgSecondary = 0;
+                    if ( sum != 0 ){
+                        for (int i = 0; i < count; i++ ) {
+                            distanceAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].distance;
+                            thetaAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].angle;
+                        }
+
+                        distanceAvgSecondary /= sum;
+                        thetaAvgSecondary /= sum;
+                    } else {
+                        distanceAvgSecondary  = imageHeight/2;
+                        thetaAvgSecondary = 90;
                     }
 
-                    distanceAvgSecondary /= sum;
-                    thetaAvgSecondary /= sum;
-                } else {
-                    distanceAvgSecondary  = imageHeight/2;
-                    thetaAvgSecondary = 90;
+                    //distanceAvgSecondary /= count;
+                    //thetaAvgSecondary /= count;
+
+                    int secXStartOffset = matrix_width - 1;
+                    for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+
+                        if ( secondaryGroupMaxs[i].start.x() < secXStartOffset )
+                            secXStartOffset = secondaryGroupMaxs[i].start.x();
+                    }
+
+                    int secXEndOffset = 0;
+                    for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+
+                        if ( secondaryGroupMaxs[i].end.x() > secXEndOffset )
+                            secXEndOffset = secondaryGroupMaxs[i].end.x();
+                    }
+
+                    major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , matrixFlag, secXStartOffset, secXEndOffset ) );
+
+                    if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
+                        secondaryLineFound = false;
                 }
-
-                //distanceAvgSecondary /= count;
-                //thetaAvgSecondary /= count;
-
-                int secXStartOffset = matrix_width - 1;
-                for (int i = 0; i < buffer.size(); i++ ) {
-
-                    if ( buffer[i].start.x() < secXStartOffset )
-                        secXStartOffset = buffer[i].start.x();
-                }
-
-                int secXEndOffset = 0;
-                for (int i = 0; i < buffer.size(); i++ ) {
-
-                    if ( buffer[i].end.x() > secXEndOffset )
-                        secXEndOffset = buffer[i].end.x();
-                }
-
-                secondaryLineFound = true;
-                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , matrixFlag, secXStartOffset, secXEndOffset ) );
-
-                if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
-                    secondaryLineFound = false;
             }
             //------------------------------------------------------------------------------------
         }

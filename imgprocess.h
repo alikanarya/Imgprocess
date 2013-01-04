@@ -120,6 +120,8 @@ class imgProcess{
         solidLine primaryLine;
         QList<solidLine> primaryGroup;
         QList<solidLine> secondaryGroup;
+        QList<solidLine> primaryGroupMaxs;
+        QList<solidLine> secondaryGroupMaxs;
         bool primaryLineFound;
         bool secondaryLineFound;
         bool centerDetermined;
