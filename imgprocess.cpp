@@ -1956,215 +1956,229 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             else
                 secondaryLineFound = false;
 
-            float multiplier = 0.90;
+            float multiplier = 0.75;
 
-            if (averaging)
-                multiplier = 0.75;
+            if ( !averaging )
+                multiplier = 0.90;
 
             float primaryLengthThreshold = primaryGroup[0].length * multiplier;
 
 
-            int count = 0;
-
-            /* for angle band program
-            //----- primaryGroup: calculate average angle of max lines if more than 1 max
-            count = 0;
-            thetaAvgPrimary = 0;
-
-            for (int i = 0; i < primaryGroup.size(); i++)
-                if ( primaryGroup[i].length == maxSolidLineLength ) {
-                    thetaAvgPrimary += primaryGroup[i].angle;
-                    count++;
-                }
-
-            if ( count != 0 ) {
-                thetaAvgPrimary /= count;
-            }
-            //------------------------------------------------------------------------------------
-            */
-
             //----- detect maximum length in secondaryGroup
-            maxSolidLineLength = 0;
+            int maxSolidLineLengthSecondary = 0;
 
             for (int i = 0; i < secondaryGroup.size(); i++)
-                if ( secondaryGroup[i].length > maxSolidLineLength )
-                    maxSolidLineLength = secondaryGroup[i].length;
-            float secondaryLengthThreshold = maxSolidLineLength * multiplier;
+                if ( secondaryGroup[i].length > maxSolidLineLengthSecondary )
+                    maxSolidLineLengthSecondary = secondaryGroup[i].length;
+
+            float secondaryLengthThreshold = maxSolidLineLengthSecondary * multiplier;
             //------------------------------------------------------------------------------------
 
-
-            /* for angle band program
-            //----- secondaryGroup: calculate average angle of max lines if more than 1 max
-            count = 0;
-            thetaAvgSecondary = 0;
-
-            for (int i = 0; i < secondaryGroup.size(); i++)
-                if ( secondaryGroup[i].length == maxSolidLineLength ) {
-                    thetaAvgSecondary += secondaryGroup[i].angle;
-                    count++;
-                }
-
-            if ( count != 0 ) {
-                thetaAvgSecondary /= count;
-            }
-            //------------------------------------------------------------------------------------
-            */
 
             //----- primaryGroup:
-            //----- average above lenght threshold and obtain major line
-            //      //----- average angle and distance within the same angle band of max. lenght and obtain major line
-            //float avgAngleUp = thetaAvgPrimary + 0.5;      // +0.5C for deadband
-            //float avgAngleDown = thetaAvgPrimary - 0.5;    // -0.5C for deadband
-
-            // * for weighted average
+            //----- average above lenght threshold
             primaryGroupMaxs.clear();
 
-            //distanceAvgPrimary = 0;
-            //thetaAvgPrimary = 0;
-            count = 0;
-            int sum = 0;
             for (int i = 0; i < primaryGroup.size(); i++)
                 if ( primaryGroup[i].length >= primaryLengthThreshold ) {
-                //if ( primaryGroup[i].angle >= avgAngleDown && primaryGroup[i].angle <= avgAngleUp ) {
-                    count++;
-
-                    //distanceAvgPrimary += primaryGroup[i].distance;
-                    //thetaAvgPrimary += primaryGroup[i].angle;
-
-                    // * for weighted average
                     primaryGroupMaxs.append( primaryGroup[i] );
-                    sum += primaryGroup[i].length;
 
                     // DEBUG
                     majorLines.append( primaryGroup[i] );
                 }
 
-            major2Lines.clear();
-
-            if ( count != 0 ) {
-
-                primaryLineFound = true;
-
-                if (averaging) {
-
-                    // * weighted average
-                    distanceAvgPrimary = 0;
-                    thetaAvgPrimary = 0;
-                    if ( sum != 0 ){
-                        for (int i = 0; i < count; i++ ) {
-                            distanceAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].distance;
-                            thetaAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].angle;
-                        }
-
-                        distanceAvgPrimary /= sum;
-                        thetaAvgPrimary /= sum;
-                    } else {
-                        distanceAvgPrimary  = imageHeight/2;
-                        thetaAvgPrimary = 90;
-                    }
-                    //distanceAvgPrimary /= count;
-                    //thetaAvgPrimary /= count;
-
-                    int priXStartOffset = matrix_width - 1;
-                    for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
-
-                        if ( primaryGroupMaxs[i].start.x() < priXStartOffset )
-                            priXStartOffset = primaryGroupMaxs[i].start.x();
-                    }
-
-                    int priXEndOffset = 0;
-                    for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
-
-                        if ( primaryGroupMaxs[i].end.x() > priXEndOffset )
-                            priXEndOffset = primaryGroupMaxs[i].end.x();
-                    }
-
-                    major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , matrixFlag, priXStartOffset, priXEndOffset ) );
-                }
-            } else {
-                primaryLineFound = false;
-
-            }
-            //------------------------------------------------------------------------------------
-
 
             //----- secondaryGroup:
-            //----- average above lenght threshold and obtain major line
-            //      //----- average angle and distance within the same angle band of max. lenght and obtain major line
-            //avgAngleUp = thetaAvgSecondary + 0.5;      // +0.5C for deadband
-            //avgAngleDown = thetaAvgSecondary - 0.5;    // -0.5C for deadband
-
-            // * for weighted average
+            //----- average above lenght threshold
             secondaryGroupMaxs.clear();
 
-            //distanceAvgSecondary = 0;
-            //thetaAvgSecondary = 0;
-            count = 0;
-            sum = 0;
             for (int i = 0; i < secondaryGroup.size(); i++)
                 if ( secondaryGroup[i].length >= secondaryLengthThreshold ) {
-                //if ( secondaryGroup[i].angle >= avgAngleDown && secondaryGroup[i].angle <= avgAngleUp ) {
-                    count++;
-
-                    //distanceAvgSecondary += secondaryGroup[i].distance;
-                    //thetaAvgSecondary += secondaryGroup[i].angle;
-
-                    // * for weighted average
                     secondaryGroupMaxs.append( secondaryGroup[i] );
-                    sum += secondaryGroup[i].length;
 
                     // DEBUG
                     majorLines.append( secondaryGroup[i] );
                 }
 
-            if ( count != 0 ) {
 
-                secondaryLineFound = true;
+            major2Lines.clear();
 
-                if (averaging) {
+            // * weighted average
+            distanceAvgPrimary = 0;
+            thetaAvgPrimary = 0;
+            int sum = 0;
 
-                    // * weighted average
-                    distanceAvgSecondary = 0;
-                    thetaAvgSecondary = 0;
-                    if ( sum != 0 ){
-                        for (int i = 0; i < count; i++ ) {
-                            distanceAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].distance;
-                            thetaAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].angle;
-                        }
-
-                        distanceAvgSecondary /= sum;
-                        thetaAvgSecondary /= sum;
-                    } else {
-                        distanceAvgSecondary  = imageHeight/2;
-                        thetaAvgSecondary = 90;
-                    }
-
-                    //distanceAvgSecondary /= count;
-                    //thetaAvgSecondary /= count;
-
-                    int secXStartOffset = matrix_width - 1;
-                    for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
-
-                        if ( secondaryGroupMaxs[i].start.x() < secXStartOffset )
-                            secXStartOffset = secondaryGroupMaxs[i].start.x();
-                    }
-
-                    int secXEndOffset = 0;
-                    for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
-
-                        if ( secondaryGroupMaxs[i].end.x() > secXEndOffset )
-                            secXEndOffset = secondaryGroupMaxs[i].end.x();
-                    }
-
-                    major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , matrixFlag, secXStartOffset, secXEndOffset ) );
-
-                    if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
-                        secondaryLineFound = false;
-                }
+            for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
+                distanceAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].distance;
+                thetaAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].angle;
+                sum += primaryGroupMaxs[i].length;
             }
-            //------------------------------------------------------------------------------------
-        }
-    }
+
+            if (sum != 0) {
+                distanceAvgPrimary /= sum;
+                thetaAvgPrimary /= sum;
+            }
+            //----------------------------
+
+            // * weighted average
+            distanceAvgSecondary = 0;
+            thetaAvgSecondary = 0;
+            sum = 0;
+
+            for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+                distanceAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].distance;
+                thetaAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].angle;
+                sum += secondaryGroupMaxs[i].length;
+            }
+
+            if (sum != 0) {
+                distanceAvgSecondary /= sum;
+                thetaAvgSecondary /= sum;
+            }
+            //----------------------------
+
+            if (averaging) {
+
+
+                /*
+                //----- average angle and distance within the same angle band of max. lenght and obtain major line
+                float avgAngleUp = thetaAvgPrimary + 0.5;      // +0.5C for deadband
+                float avgAngleDown = thetaAvgPrimary - 0.5;    // -0.5C for deadband
+                sum = 0;
+                distanceAvgPrimary = 0;
+
+                for (int i = 0; i < primaryGroupMaxs.size(); i++ )
+                    if ( primaryGroupMaxs[i].angle >= avgAngleDown && primaryGroupMaxs[i].angle <= avgAngleUp ) {
+                        distanceAvgPrimary += primaryGroupMaxs[i].length * primaryGroupMaxs[i].distance;
+                        sum += primaryGroupMaxs[i].length;
+                    }
+
+                if (sum != 0)
+                    distanceAvgPrimary /= sum;
+                */
+
+                int priXStartOffset = matrix_width - 1;
+                for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
+
+                    if ( primaryGroupMaxs[i].start.x() < priXStartOffset )
+                        priXStartOffset = primaryGroupMaxs[i].start.x();
+                }
+
+                int priXEndOffset = 0;
+                for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
+
+                    if ( primaryGroupMaxs[i].end.x() > priXEndOffset )
+                        priXEndOffset = primaryGroupMaxs[i].end.x();
+                }
+
+                major2Lines.append( detectLongestSolidLine( distanceAvgPrimary, thetaAvgPrimary , matrixFlag, priXStartOffset, priXEndOffset ) );
+
+
+                /*
+                //----- average angle and distance within the same angle band of max. lenght and obtain major line
+                avgAngleUp = thetaAvgSecondary + 0.5;      // +0.5C for deadband
+                avgAngleDown = thetaAvgSecondary - 0.5;    // -0.5C for deadband
+                sum = 0;
+                distanceAvgSecondary = 0;
+
+                for (int i = 0; i < secondaryGroupMaxs.size(); i++ )
+                    if ( secondaryGroupMaxs[i].angle >= avgAngleDown && secondaryGroupMaxs[i].angle <= avgAngleUp ) {
+                        distanceAvgSecondary += secondaryGroupMaxs[i].length * secondaryGroupMaxs[i].distance;
+                        sum += secondaryGroupMaxs[i].length;
+                    }
+
+                if (sum != 0)
+                    distanceAvgSecondary /= sum;
+                */
+
+                int secXStartOffset = matrix_width - 1;
+                for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+
+                    if ( secondaryGroupMaxs[i].start.x() < secXStartOffset )
+                        secXStartOffset = secondaryGroupMaxs[i].start.x();
+                }
+
+                int secXEndOffset = 0;
+                for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+
+                    if ( secondaryGroupMaxs[i].end.x() > secXEndOffset )
+                        secXEndOffset = secondaryGroupMaxs[i].end.x();
+                }
+
+                major2Lines.append( detectLongestSolidLine( distanceAvgSecondary, thetaAvgSecondary , matrixFlag, secXStartOffset, secXEndOffset ) );
+
+                if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
+                    secondaryLineFound = false;
+
+            } else {    // NOT AVERAGING
+
+                int startX = matrix_width - 1;
+                int endX = 0;
+                int startY = matrix_height - 1;
+                int endY = matrix_height - 1;
+
+                for (int i = 0; i < primaryGroupMaxs.size(); i++ ) {
+
+                    if ( primaryGroupMaxs[i].start.x() < startX )   // left most X value
+                        startX = primaryGroupMaxs[i].start.x();
+
+                    if ( primaryGroupMaxs[i].end.x() > endX )       // right most X value
+                        endX = primaryGroupMaxs[i].end.x();
+
+                    if ( primaryGroupMaxs[i].start.y() < startY )   // left upper(smallest for centerY=0) Y value
+                        startY = primaryGroupMaxs[i].start.y();
+
+                    if ( primaryGroupMaxs[i].end.y() < endY )       // right upper(smallest for centerY=0) Y value
+                        endY = primaryGroupMaxs[i].end.y();
+                }
+
+                solidLine major1;
+                major1.start.setX( startX );
+                major1.start.setY( startY );
+                major1.end.setX( endX );
+                major1.end.setY( endY );
+                major1.distance = distanceAvgPrimary;
+                major1.length = endX - startX + 1;  // rough calculation
+                major1.angle = thetaAvgPrimary;
+
+                major2Lines.append( major1 );
+
+
+
+                startX = matrix_width - 1;
+                endX = 0;
+                startY = matrix_height - 1;
+                endY = matrix_height - 1;
+
+                for (int i = 0; i < secondaryGroupMaxs.size(); i++ ) {
+
+                    if ( secondaryGroupMaxs[i].start.x() < startX )   // left most X value
+                        startX = secondaryGroupMaxs[i].start.x();
+
+                    if ( secondaryGroupMaxs[i].end.x() > endX )       // right most X value
+                        endX = secondaryGroupMaxs[i].end.x();
+
+                    if ( secondaryGroupMaxs[i].start.y() < startY )   // left upper(smallest for centerY=0) Y value
+                        startY = secondaryGroupMaxs[i].start.y();
+
+                    if ( secondaryGroupMaxs[i].end.y() < endY )       // right upper(smallest for centerY=0) Y value
+                        endY = secondaryGroupMaxs[i].end.y();
+                }
+
+                solidLine major2;
+                major2.start.setX( startX );
+                major2.start.setY( startY );
+                major2.end.setX( endX );
+                major2.end.setY( endY );
+                major2.distance = distanceAvgSecondary;
+                major2.length = endX - startX + 1;  // rough calculation
+                major2.angle = thetaAvgSecondary;
+
+                major2Lines.append( major2 );
+
+            }
+        } // solidSpaceMainTrimmed.size()
+    } // globalMaxLength
 
 
     //----- calculate corners & center
@@ -2233,6 +2247,12 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
     trackCenterX = ( leftCornerX + rightCornerX ) / 2;
     trackCenterY = ( leftCornerY + rightCornerY ) / 2;
+
+    if (!matrixFlag) {   // if edge matrix is used
+        trackCenterX++;
+        trackCenterY++;
+    }
+
     //------------------------------------------------------------------------------------
 
 
