@@ -1882,8 +1882,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
     float angle = 0;
     float angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
+    int lo = houghLines[0][0] * 0.50;
+    int hi = houghLines[0][0] * 1.50;
 
-    for (int distance = 0; distance < matrix_height; distance++)
+    //for (int distance = 0; distance < matrix_height; distance++)
+        for (int distance = lo; distance < hi; distance++)
         for (int angleIndex = 0; angleIndex < angleSize; angleIndex++){
             angle = thetaMin + angleIndex * thetaStep;
             solidSpaceMain.append( detectLongestSolidLine( distance, angle, matrixFlag, 0, (matrix_width-1) ) );  // in value/edge matrix
@@ -2222,12 +2225,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
         }
 
         angleAvg = ( major2Lines[0].angle + major2Lines[1].angle ) / 2 - 90;  // to check laser setup
-    }
-    else
+    } else {
         if ( primaryLineFound ) {
 
             int distance2Left = major2Lines[0].start.x();
-            int distance2Right = (imageWidth - 1) - major2Lines[0].end.x();
+            int distance2Right = (matrix_width - 1) - major2Lines[0].end.x();
 
             if ( distance2Left > distance2Right ) {                     // primary = RIGHT
                 rightCornerX = major2Lines[0].start.x();
@@ -2243,6 +2245,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 }
             angleAvg = major2Lines[0].angle - 90;     // to check laser setup
         }
+    }
 
 
     trackCenterX = ( leftCornerX + rightCornerX ) / 2;
