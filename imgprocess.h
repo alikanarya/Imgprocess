@@ -352,9 +352,9 @@ class imgProcess{
         void thickenEdges();                    // thicken edges
 
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
-        void houghTransformEdgeMap();                  // conduct hough transform & construct hough space matrix for edge image size
+        void houghTransformEdgeMap();           // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size
-        void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix
+        void calculateHoughMaxs(int number);    // copy data of <number> of max voted lines to hough lines matrix; Finds Y values
         void codeLineData(int **matrix, int width, int height, QList<houghData> list, bool orientation); // codes line(s) to given matrix
         void constructHoughMatrix();            // construct hough matrix base on edge matrix with max voted lines coded on it
         void constructHoughMatrix2Lines();      // construct hough matrix base on edge matrix with 2 lines coded on it
@@ -363,6 +363,7 @@ class imgProcess{
         void constructHoughMatrixPrimaryLines(solidLine line1, solidLine line2, int line2offset);
         void constructHoughMatrixMajor2Lines();
         void constructHoughExtendedMatrixMajor2Lines();
+        void constructHoughMatrixFindX();       // construct hough matrix base on edge matrix with max voted lines coded on it; Finds X values - for perpendicular lines
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
         int calcAngleAvg();                     // calc. vote ave. angle max. voted lines wrt center (-90)
         void calcAvgDistAndAngle(int limit);    // calc. ave. distance anf angle of <no> hough lines ; eg houghLineNo
@@ -415,6 +416,10 @@ class imgProcess{
         QImage* getImage_cannyThresholds(QImage::Format format);
         QImage* getImage_cannyTracedEdges(QImage::Format format);
 
+
         ~imgProcess();                                      // destructor
 };
+
+
+
 #endif // IMGPROCESS_H

@@ -8,7 +8,6 @@
 #include "imgprocess_msg.h"
 #include "../_Modules/Algo/localMinimum.h"
 
-
 void imgProcess::toMono(){
 
     imgMono = imgOrginal.convertToFormat(QImage::Format_Mono,Qt::ThresholdDither);
@@ -789,10 +788,10 @@ void imgProcess::thickenEdges(){
 void imgProcess::houghTransform(){
 
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    //centerX = edgeWidth / 2;
-    //centerY = edgeHeight - 1;
-    centerX = 0;
-    centerY = 0;
+    centerX = edgeWidth / 2;
+    centerY = edgeHeight - 1;
+    //centerX = 0;
+    //centerY = 0;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
@@ -818,10 +817,13 @@ void imgProcess::houghTransform(){
 void imgProcess::houghTransformEdgeMap(){
 
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    //centerX = edgeWidth / 2;
-    //centerY = edgeHeight - 1;
     centerX = 0;
     centerY = 0;
+
+    //houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight/2, 2)));
+    //centerX = 0;
+    //centerY = edgeHeight /2;
+    //centerY = edgeHeight - 1;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
@@ -1033,10 +1035,12 @@ void imgProcess::constructHoughMatrix(){
 
     for (int i = 0; i< houghLineNo; i++)
         for (int x = 0; x < edgeWidth; x++){
-            lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+            //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+            lineY = getLineY((x-centerX), houghLines[i][0], houghLines[i][1]) - centerY;
 
             if (lineY >= 0 && lineY < edgeHeight)
-                if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+                if (houghMatrix[lineY][x] == 0)
+                    houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
 }
 
@@ -1173,6 +1177,26 @@ void imgProcess::constructHoughExtendedMatrixMajor2Lines(){
             if (lineY >= 0 && lineY < imageHeight) houghExtendedMatrix[lineY][x] = 2555;       // 2555 special code to differenciate line data, arbitrary
         }
     }
+}
+
+
+void imgProcess::constructHoughMatrixFindX(){
+
+    int lineX;
+
+    for (int y = 0; y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            houghMatrix[y][x] = edgeMatrix[y][x];
+
+    for (int i = 0; i< houghLineNo; i++)
+        for (int y = 0; y < edgeHeight; y++){
+            //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+            lineX = getLineX((y-centerY), houghLines[i][0], houghLines[i][1]) - centerX;
+
+            if (lineX >= 0 && lineX < edgeWidth)
+                //if (houghMatrix[lineY][x] == 0)
+                    houghMatrix[y][lineX] = 2555;       // 2555 special code to differeciate line data, arbitrary
+        }
 }
 
 
@@ -2953,7 +2977,7 @@ int imgProcess::getLineY(int x, float distance, float theta){
 
     int y = -1;
     float sine = sin(theta*R2D);
-    if (sine >= 0.1)
+    if (sine >= 0.001)
         y = (int) ( (distance - x*cos(theta*R2D)) / sine );
     return y;
 }
@@ -3018,8 +3042,8 @@ void imgProcess::findMedianValue(){
     int delta = hiValue - loValue + 1;
     medianValue = loValue + delta / 2;
 
-    tLo = ( loValue + 0.66 * delta / 2 ) * 100  / 255.0;
-    tHi = ( loValue + 1.33 * delta / 2 ) * 100  / 255.0;
+    tLo = ( loValue + 0.33 * delta ) * 100  / 255.0;
+    tHi = ( loValue + 0.67 * delta ) * 100  / 255.0;
 }
 
 

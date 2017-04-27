@@ -1,12 +1,12 @@
-#ifndef IMGPROCESS_MSG_H
+ï»¿#ifndef IMGPROCESS_MSG_H
 #define IMGPROCESS_MSG_H
 
-#define message0    "Herşey normal"
+#define message0    "HerÅŸey normal"
 
-#define alarm1      "Lazer izi tespit edilemedi !!! (Eşik değerinden az)"
-#define alarm2      "Hiç aralık bulunamadı !!!"
-#define alarm3      "Aralık miktarı eşik değerinden az !!!"
-#define alarm4      "Bulunan aralık imajın kenarlarına çok yakın !!!"
-#define alarm5      "Lazer açısı çok fazla !!!"
+#define alarm1      "Lazer izi tespit edilemedi !!! (EÅŸik deÄŸerinden az)"
+#define alarm2      "HiÃ§ aralÄ±k bulunamadÄ± !!!"
+#define alarm3      "AralÄ±k miktarÄ± eÅŸik deÄŸerinden az !!!"
+#define alarm4      "Bulunan aralÄ±k imajÄ±n kenarlarÄ±na Ã§ok yakÄ±n !!!"
+#define alarm5      "Lazer aÃ§Ä±sÄ± Ã§ok fazla !!!"
 
 #endif // IMGPROCESS_MSG_H
