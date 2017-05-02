@@ -8,6 +8,9 @@
 #include "imgprocess_msg.h"
 #include "../_Modules/Algo/localMinimum.h"
 
+#include <iostream>
+using namespace std;
+
 void imgProcess::toMono(){
 
     imgMono = imgOrginal.convertToFormat(QImage::Format_Mono,Qt::ThresholdDither);
@@ -136,6 +139,33 @@ void imgProcess::constructValueMaxMatrix(QImage image){
 }
 
 
+float imgProcess::gaussianFn(int x,int y, float stddev){
+
+    if (stddev != 0)
+        return exp( (pow(x,2)+pow(y,2))/(-2*pow(stddev,2)) ) / (2*M_PI*pow(stddev,2));
+    else
+        return 0;
+}
+
+void imgProcess::constructGaussianMatrix(){
+
+    gaussianMatrix = new float*[gaussianMatrixSize];
+    for (int i = 0; i < gaussianMatrixSize; i++) gaussianMatrix[i] = new float[gaussianMatrixSize];
+
+    int center = (gaussianMatrixSize-1)/2;
+
+    for (int x = 0; x < gaussianMatrixSize; x++)
+        for (int y = 0; y < gaussianMatrixSize; y++)
+            gaussianMatrix[x][y] = gaussianFn(x-center, y-center, stdDev);
+/*
+    for (int x = 0; x < gaussianMatrixSize; x++){
+        for (int y = 0; y < gaussianMatrixSize; y++)
+            cout << gaussianMatrix[x][y] << " - ";
+        cout << endl;
+    }
+*/
+}
+
 void imgProcess::gaussianBlur(){
 
     int sum;
@@ -158,6 +188,27 @@ void imgProcess::gaussianBlur(){
     }
 }
 
+void imgProcess::gaussianBlur(int size, float stddev){
+
+    int sum;
+
+    for (int y = 2;y < imageHeight - 2; y++){
+
+        for (int x = 2; x < imageWidth - 2; x++) {
+
+            sum =   gaussianMask[0][0]*valueMatrix[y-2][x-2] + gaussianMask[0][1]*valueMatrix[y-2][x-1] + gaussianMask[0][2]*valueMatrix[y-2][x] + gaussianMask[0][3]*valueMatrix[y-2][x+1] + gaussianMask[0][4]*valueMatrix[y-2][x+2] +
+                    gaussianMask[1][0]*valueMatrix[y-1][x-2] + gaussianMask[1][1]*valueMatrix[y-1][x-1] + gaussianMask[1][2]*valueMatrix[y-1][x] + gaussianMask[1][3]*valueMatrix[y-1][x+1] + gaussianMask[1][4]*valueMatrix[y-1][x+2] +
+                    gaussianMask[2][0]*valueMatrix[y][x-2]   + gaussianMask[2][1]*valueMatrix[y][x-1]   + gaussianMask[2][2]*valueMatrix[y][x]   + gaussianMask[2][3]*valueMatrix[y][x+1]   + gaussianMask[2][4]*valueMatrix[y][x+2]   +
+                    gaussianMask[3][0]*valueMatrix[y+1][x-2] + gaussianMask[3][1]*valueMatrix[y+1][x-1] + gaussianMask[3][2]*valueMatrix[y+1][x] + gaussianMask[3][3]*valueMatrix[y+1][x+1] + gaussianMask[3][4]*valueMatrix[y+1][x+2] +
+                    gaussianMask[4][0]*valueMatrix[y+2][x-2] + gaussianMask[4][1]*valueMatrix[y+2][x-1] + gaussianMask[4][2]*valueMatrix[y+2][x] + gaussianMask[4][3]*valueMatrix[y+2][x+1] + gaussianMask[4][4]*valueMatrix[y+2][x+2];
+
+            valueMatrix[y][x] = sum / gaussianDivider;
+
+            //if (valueMatrix[y][x] > 255)        valueMatrix[y][x] = 255;
+            //else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
+        }
+    }
+}
 
 int imgProcess::getMatrixPoint(int *matrix, int width, int x, int y){
 
@@ -3494,6 +3545,9 @@ imgProcess::~imgProcess(){
         for (int y = 0; y < edgeHeight; y++) delete []edgeMapBlueMatrix[y];
         delete []edgeMapBlueMatrix;
     }
+
+    for (int y = 0; y < gaussianMatrixSize; y++) delete []gaussianMatrix[y];
+    delete []gaussianMatrix;
 
     mainEdgesList.empty();
 

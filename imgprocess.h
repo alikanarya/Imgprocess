@@ -7,6 +7,8 @@
 #include <QImage>
 #include <QColor>
 
+#define _USE_MATH_DEFINES
+
 #define PI 3.14159265
 #define R2D PI/180          // convert radyant to degree
 
@@ -232,6 +234,11 @@ class imgProcess{
         int angleAvg;                       // average angle degree wrt center point (-90)
         bool angleInLimit;                  // true if <avgAngle> is within +/- 3 degree
 
+        int gaussianMatrixSize = 7;
+        float stdDev = 0.84089642;
+        float **gaussianMatrix;
+        void constructGaussianMatrix();
+
 
         // constructor
         imgProcess(QImage &image, const int width, const int height) : imageWidth(width), imageHeight(height) {
@@ -325,9 +332,9 @@ class imgProcess{
         void constructValueMatrix(QImage image, int selection);    // construct pixel value matrix of an image according to single color value
         void constructValueHueMatrix(QImage image, bool scale = false);
         void constructValueMaxMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
-        void gaussianBlur();    // to reduce noise
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
 
+        float gaussianFn(int x,int y, float stddev);
         // saves a int matrix with given filename
         // saving with X and _ pointers (not used)
         bool saveMatrix(int **matrix, int width, int height, QString fname, int threshold = 255, bool xSwitch = false);
@@ -341,6 +348,8 @@ class imgProcess{
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void prepareCannyArrays();
+        void gaussianBlur();    // to reduce noise
+        void gaussianBlur(int size, float stddev);    // to reduce noise
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
         void nonMaximumSuppression(bool suppress = true);
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);
