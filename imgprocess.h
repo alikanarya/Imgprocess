@@ -237,7 +237,7 @@ class imgProcess{
         int gaussianMatrixSize = 7;
         float stdDev = 0.84089642;
         float **gaussianMatrix;
-        void constructGaussianMatrix();
+        float gaussianMatrixSum = 1;
 
 
         // constructor
@@ -348,6 +348,7 @@ class imgProcess{
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void prepareCannyArrays();
+        void constructGaussianMatrix(int size, float _stddev);
         void gaussianBlur();    // to reduce noise
         void gaussianBlur(int size, float stddev);    // to reduce noise
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
