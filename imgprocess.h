@@ -238,6 +238,7 @@ class imgProcess{
         float stdDev = 0.84089642;
         float **gaussianMatrix;
         float gaussianMatrixSum = 1;
+        bool gaussianMatrixInitSwitch;
 
 
         // constructor
@@ -311,7 +312,7 @@ class imgProcess{
             edgeMapRedMatrixInitSwitch = false;
             edgeMapGreenMatrixInitSwitch = false;
             edgeMapBlueMatrixInitSwitch = false;
-
+            gaussianMatrixInitSwitch = false;
 
             // no solid line
             primaryLine.start.setX( -1 );
@@ -349,8 +350,8 @@ class imgProcess{
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void prepareCannyArrays();
         void constructGaussianMatrix(int size, float _stddev);
+        void gaussianBlurFixed();    // to reduce noise
         void gaussianBlur();    // to reduce noise
-        void gaussianBlur(int size, float stddev);    // to reduce noise
         void detectEdgeSobelwDirections();      // detect edges and edge directios & construct edge matrix and edge dir. matrix
         void nonMaximumSuppression(bool suppress = true);
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);

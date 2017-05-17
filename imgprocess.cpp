@@ -154,6 +154,7 @@ void imgProcess::constructGaussianMatrix(int size, float _stddev){
 
     gaussianMatrix = new float*[gaussianMatrixSize];
     for (int i = 0; i < gaussianMatrixSize; i++) gaussianMatrix[i] = new float[gaussianMatrixSize];
+    gaussianMatrixInitSwitch =true;
 
     int center = (gaussianMatrixSize-1)/2;
 
@@ -164,16 +165,17 @@ void imgProcess::constructGaussianMatrix(int size, float _stddev){
             gaussianMatrixSum += gaussianMatrix[x][y];
         }
 
+    /*
     cout << "Sum= " << gaussianMatrixSum << endl;
     for (int x = 0; x < gaussianMatrixSize; x++){
         for (int y = 0; y < gaussianMatrixSize; y++)
             cout << gaussianMatrix[x][y] << " : ";
         cout << endl;
     }
-
+    */
 }
 
-void imgProcess::gaussianBlur(){
+void imgProcess::gaussianBlurFixed(){
 
     int sum;
 
@@ -195,9 +197,7 @@ void imgProcess::gaussianBlur(){
     }
 }
 
-void imgProcess::gaussianBlur(int size, float _stddev){
-
-    //constructGaussianMatrix(size, _stddev);
+void imgProcess::gaussianBlur(){
 
     int center = (gaussianMatrixSize-1)/2;
 
@@ -850,10 +850,6 @@ void imgProcess::thickenEdges(){
 void imgProcess::houghTransform(){
 
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    centerX = edgeWidth / 2;
-    centerY = edgeHeight - 1;
-    //centerX = 0;
-    //centerY = 0;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
@@ -870,7 +866,8 @@ void imgProcess::houghTransform(){
             if (edgeMatrix[y][x] != 0)
                 for (int i = 0; i < houghThetaSize; i++){
                     theta = thetaMin + i * thetaStep;
-                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+//                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (y - centerY) * sin(theta * R2D));
                     if (distance >= 0) houghSpace[distance][i]++;
                 }
 }
@@ -879,13 +876,6 @@ void imgProcess::houghTransform(){
 void imgProcess::houghTransformEdgeMap(){
 
     houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight, 2)));
-    centerX = 0;
-    centerY = 0;
-
-    //houghDistanceMax = (int) (sqrt(pow(edgeWidth, 2) + pow(edgeHeight/2, 2)));
-    //centerX = 0;
-    //centerY = edgeHeight /2;
-    //centerY = edgeHeight - 1;
 
     houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
@@ -3536,7 +3526,6 @@ imgProcess::~imgProcess(){
         delete []edgeW2SMapMatrix;
     }
 
-
     if ( edgeMapValueMatrixInitSwitch ) {
         for (int y = 0; y < edgeHeight; y++) delete []edgeMapValueMatrix[y];
         delete []edgeMapValueMatrix;
@@ -3557,8 +3546,10 @@ imgProcess::~imgProcess(){
         delete []edgeMapBlueMatrix;
     }
 
-    for (int y = 0; y < gaussianMatrixSize; y++) delete []gaussianMatrix[y];
-    delete []gaussianMatrix;
+    if ( gaussianMatrixInitSwitch ) {
+        for (int y = 0; y < gaussianMatrixSize; y++) delete []gaussianMatrix[y];
+        delete []gaussianMatrix;
+    }
 
     mainEdgesList.empty();
 
