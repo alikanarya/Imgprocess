@@ -2684,12 +2684,12 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
         // ** HOUGH DATA > SORTED HOUGH DATA WRT DISTANCE
 
     // 1ST ITERATION
-    int *valArray = new int[houghLineNo];
-    for (int i = 0; i < houghLineNo; i++) valArray[i] = houghLinesSorted[i][2];     // votes
+    int *voteArray = new int[houghLineNo];
+    for (int i = 0; i < houghLineNo; i++) voteArray[i] = houghLinesSorted[i][2];     // votes
 
     QList<range> localMaximalist;
 
-    findLocalMinimum(valArray, houghLineNo, localMaximalist);
+    findLocalMinimum(voteArray, houghLineNo, localMaximalist);
         // ** SORTED HOUGH DATA > localMaximalist
     localMaximaSize = localMaximalist.size();
 
@@ -2718,6 +2718,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
         int flag = -1;
         float angleAvg;
 
+        //-A----------------------------------------------------------------
         for (int i = 0; i < localMaximalist.size(); i++) {
 
             c = localMaximalist[i].start;
@@ -2803,6 +2804,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
         // get hough datas of 2nd iter. local maximas
         QList<houghData> listHoughData2nd;
 
+        //-B----------------------------------------------------------------
         for (int t = 0; t < localMaximalist2nd.size(); t++)
             for (int ts = localMaximalist2nd[t].start; ts <= localMaximalist2nd[t].end; ts++){
                 houghData hd;
@@ -2812,6 +2814,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                 listHoughData2nd.append(hd);
             }
         // ** localMaximalist2nd > listHoughData2nd
+        //------------------------------------------------------------------
 
         listHoughData2ndSize = listHoughData2nd.size();
 
@@ -2835,6 +2838,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 //            QList<houghData> mainEdgesList;
 
             if ( !thinjoint ){
+                //-C----------------------------------------------------------------
                 //
                 // WIDE JOINT
                 //
@@ -2870,7 +2874,9 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                 }
                 */
+                //------------------------------------------------------------------
             } else {
+                //-D----------------------------------------------------------------
                 //
                 // THIN JOINT
                 //
@@ -2905,7 +2911,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     centerLine.distance = mainEdgesList[0].distance;
                     centerLine.voteValue = mainEdgesList[0].voteValue;
                 }
-
+                //------------------------------------------------------------------
 
             }
 
@@ -2917,6 +2923,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             if ( !mainEdgesList.isEmpty() ){
 
+                //-E----------------------------------------------------------------
                 QList<int> xCoors;
 
                 for (int i = 0; i < mainEdgesList.size(); i++){
@@ -2945,6 +2952,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     trackCenterX = rightCornerX = leftCornerX = imageWidth / 2;     // DETECTION ERROR
 
                 }
+                //------------------------------------------------------------------
 
                 xCoors.empty();
 
@@ -2989,7 +2997,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
     }   // if ( !localMaximalist.isEmpty() )
 
     // clear vars
-    delete valArray;
+    delete voteArray;
     localMaximalist.empty();
 }
 
