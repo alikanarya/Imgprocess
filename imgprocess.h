@@ -188,6 +188,7 @@ class imgProcess{
         int errorAngleLimit;
 
         int **valueMatrix;                  // image data matrix
+        int **valueMatrixOrg;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
         int **edgeGradientMatrix;           // edge gradient data matrix
         bool edgeGradientMatrixInitSwitch;
@@ -247,6 +248,9 @@ class imgProcess{
             imgOrginal = image;     // passes image to class not copy of it
             valueMatrix = new int*[height];
             for (int i = 0; i < height; i++) valueMatrix[i] = new int[width];
+
+            valueMatrixOrg = new int*[height];
+            for (int i = 0; i < height; i++) valueMatrixOrg[i] = new int[width];
 
             edgeWidth = imageWidth - 2;
             edgeHeight = imageHeight - 2;

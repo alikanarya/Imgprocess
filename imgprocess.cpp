@@ -33,6 +33,7 @@ void imgProcess::constructValueMatrix(QImage image){
             else if (colorValue < 0)  colorValue = 0;
 
             valueMatrix[y][x] = colorValue;
+            valueMatrixOrg[y][x] = colorValue;
             delete color;
         }
 }
@@ -73,6 +74,7 @@ void imgProcess::constructValueMatrix(QImage image, int selection){
             else if (colorValue < 0)  colorValue = 0;
 
             valueMatrix[y][x] = colorValue;
+            valueMatrixOrg[y][x] = colorValue;
             delete color;
         }
 }
@@ -200,17 +202,14 @@ void imgProcess::gaussianBlurFixed(){
 void imgProcess::gaussianBlur(){
 
     int center = (gaussianMatrixSize-1)/2;
-
     float sum;
 
     for (int y = center; y < imageHeight - center; y++){
-
         for (int x = center; x < imageWidth - center; x++) {
-
             sum = 0;
             for (int i = 0; i < gaussianMatrixSize; i++)
                 for (int j = 0; j < gaussianMatrixSize; j++)
-                    sum += gaussianMatrix[i][j] * valueMatrix[y-center+i][x-center+j];
+                    sum += gaussianMatrix[i][j] * valueMatrixOrg[y-center+i][x-center+j];
                     //sum += gaussianMask[i][j] * valueMatrix[y-center+i][x-center+j];
 
             valueMatrix[y][x] = (int) (sum / gaussianMatrixSum);
@@ -219,6 +218,12 @@ void imgProcess::gaussianBlur(){
             else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
         }
     }
+/*
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++)
+            if (x<gaussianMatrixSize || x>=(imageWidth-gaussianMatrixSize) || y<gaussianMatrixSize || y>=(imageHeight-gaussianMatrixSize))
+                valueMatrix[y][x] = 0;
+*/
 }
 
 int imgProcess::getMatrixPoint(int *matrix, int width, int x, int y){
@@ -967,7 +972,8 @@ void imgProcess::calculateHoughMaxs(int number){
         maxDistance = 0;
         maxThetaIndex = 0;
 
-        for (int distance = 0; distance < houghDistanceMax; distance++)
+        //disrance=10 , to elimiate the edges near border
+        for (int distance = 10; distance < houghDistanceMax; distance++)
             for (int i = 0; i < houghThetaSize; i++)
                 if (houghSpace[distance][i] > max){
                     max = houghSpace[distance][i];
@@ -1188,20 +1194,24 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
         for (int x = 0; x < edgeWidth; x++)
             houghMatrix[y][x] = edgeMatrix[y][x];
 
-    if (majorLines.size() == 2){
+    if (major2Lines.size() == 2){
 
-        for (int x = majorLines[0].start.x(); x <= majorLines[0].end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
+        for (int x = major2Lines[0].start.x(); x <= major2Lines[0].end.x(); x++){
+            lineY = getLineY((x - centerX), major2Lines[0].distance, major2Lines[0].angle);
+            //lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
 
             if (lineY >= 0 && lineY < edgeHeight)
-                if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+                //if (houghMatrix[lineY][x] == 0)
+                    houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
 
-        for (int x = majorLines[1].start.x(); x <= majorLines[1].end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
+        for (int x = major2Lines[1].start.x(); x <= major2Lines[1].end.x(); x++){
+            lineY = getLineY((x - centerX), major2Lines[1].distance, major2Lines[1].angle);
+            //lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
 
             if (lineY >= 0 && lineY < edgeHeight)
-                if (houghMatrix[lineY][x] == 0) houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
+                //if (houghMatrix[lineY][x] == 0)
+                    houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
     }
 }
@@ -1843,7 +1853,8 @@ solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool f
 
     for (int x = xOffset; x <= (xEndOffset + 1); x++){   // +1 for last coordinate to catch last line shape
 
-        lineY = centerY - getLineY((x - centerX), distance, angle);
+        lineY = getLineY((x - centerX), distance, angle);
+        //lineY = centerY - getLineY((x - centerX), distance, angle);
 
         if (lineY >= 0 && lineY < height){
 
@@ -1953,6 +1964,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
     primaryLineFound = false;
     secondaryLineFound = false;
 
+    //-A----------------------------------------------------------------
     //----- find all solid lines in value matrix
     solidSpaceMain.clear();
     float angle = 0;
@@ -1960,6 +1972,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
     int lo = houghLines[0][0] * 0.50;
     int hi = houghLines[0][0] * 1.50;
+//cout << lo << "-" << hi << endl;
 
     //for (int distance = 0; distance < matrix_height; distance++)
         for (int distance = lo; distance < hi; distance++)
@@ -1970,6 +1983,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
     //------------------------------------------------------------------------------------
 
 
+//cout << solidSpaceMain.size() << endl;
     //----- find max length
     float globalMaxLength = 0;
     for (int x = 0; x < solidSpaceMain.size(); x++)
@@ -1977,9 +1991,10 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             globalMaxLength = solidSpaceMain[x].length;
     //------------------------------------------------------------------------------------
 
-
+//cout << globalMaxLength << endl;
     if ( globalMaxLength != 0 ) {
 
+        //-B----------------------------------------------------------------
         //----- remove lines w/ length behind threshold
         solidSpaceMainTrimmed.clear();
         float thresholdLength = globalMaxLength * 0.20;  // % 20 of global maximum
@@ -2006,8 +2021,9 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             //------------------------------------------------------------------------------------
 
 
+            //-C----------------------------------------------------------------
             //----- devide found lines into 2 main group,
-            //----- each group should intersect reference line's coordinates
+            //----- according to intersection to intersect reference line's coordinates
             primaryGroup.clear();
             secondaryGroup.clear();
 
@@ -2016,11 +2032,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             for (int i = 0; i < size; i++)
                 if ( i != index ) {
 
-                    if ( solidSpaceMainTrimmed[index].start.x() > solidSpaceMainTrimmed[i].end.x() ||
+                    if ( solidSpaceMainTrimmed[index].start.x() > solidSpaceMainTrimmed[i].end.x() ||   // no intersection
                          solidSpaceMainTrimmed[index].end.x() < solidSpaceMainTrimmed[i].start.x()
                         )
                         secondaryGroup.append( solidSpaceMainTrimmed[i] );
-                    else
+                    else    // intersection
                         primaryGroup.append( solidSpaceMainTrimmed[i] );
                 }
             //------------------------------------------------------------------------------------
@@ -2035,6 +2051,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             else
                 secondaryLineFound = false;
 
+            //-D----------------------------------------------------------------
             float multiplier = 0.75;
 
             if ( !averaging )
@@ -2053,7 +2070,6 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
             float secondaryLengthThreshold = maxSolidLineLengthSecondary * multiplier;
             //------------------------------------------------------------------------------------
 
-
             //----- primaryGroup:
             //----- average above lenght threshold
             primaryGroupMaxs.clear();
@@ -2066,7 +2082,6 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     majorLines.append( primaryGroup[i] );
                 }
 
-
             //----- secondaryGroup:
             //----- average above lenght threshold
             secondaryGroupMaxs.clear();
@@ -2078,10 +2093,12 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                     // DEBUG
                     majorLines.append( secondaryGroup[i] );
                 }
+            //-D-END----------------------------------------------------------------
 
 
             major2Lines.clear();
 
+            //-E----------------------------------------------------------------
             // * weighted average
             distanceAvgPrimary = 0;
             thetaAvgPrimary = 0;
@@ -2097,7 +2114,6 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 distanceAvgPrimary /= sum;
                 thetaAvgPrimary /= sum;
             }
-            //----------------------------
 
             // * weighted average
             distanceAvgSecondary = 0;
@@ -2114,10 +2130,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 distanceAvgSecondary /= sum;
                 thetaAvgSecondary /= sum;
             }
-            //----------------------------
+            //-E-END---------------------------------------------------------------
 
             if (averaging) {
 
+                //-F----------------------------------------------------------------
 
                 /*
                 //----- average angle and distance within the same angle band of max. lenght and obtain major line
@@ -2189,7 +2206,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 if ( major2Lines.last().length == -1 )  // in case of produced line dont touch the value matrix
                     secondaryLineFound = false;
 
+                //-F-END---------------------------------------------------------------
+
             } else {    // NOT AVERAGING
+
+                //-G----------------------------------------------------------------
 
                 int startX = matrix_width - 1;
                 int endX = 0;
@@ -2223,7 +2244,6 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
                 major2Lines.append( major1 );
 
 
-
                 startX = matrix_width - 1;
                 endX = 0;
                 startY = matrix_height - 1;
@@ -2255,11 +2275,18 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 
                 major2Lines.append( major2 );
 
+                //-G-END---------------------------------------------------------------
+
             }
+
+//cout << major2Lines[0].start.x() << "," << major2Lines[0].start.y() << "," << major2Lines[0].end.x() << "," << major2Lines[0].end.y() << "," << major2Lines[0].distance << "," << major2Lines[0].angle << "," << major2Lines[0].length << endl;
+//cout << major2Lines[1].start.x() << "," << major2Lines[1].start.y() << "," << major2Lines[1].end.x() << "," << major2Lines[1].end.y() << "," << major2Lines[1].distance << "," << major2Lines[1].angle << "," << major2Lines[1].length << endl;
+
         } // solidSpaceMainTrimmed.size()
     } // globalMaxLength
 
 
+    //-H----------------------------------------------------------------
     //----- calculate corners & center
 
     centerDetermined = false;
@@ -2331,8 +2358,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
         trackCenterX++;
         trackCenterY++;
     }
-
-    //------------------------------------------------------------------------------------
+    //-H-END---------------------------------------------------------------
 
 
     //----- alarms
@@ -3402,6 +3428,9 @@ imgProcess::~imgProcess(){
 
     for (int y = 0; y < imageHeight; y++) delete []valueMatrix[y];
     delete []valueMatrix;
+
+    for (int y = 0; y < imageHeight; y++) delete []valueMatrixOrg[y];
+    delete []valueMatrixOrg;
 
     for (int y = 0; y < edgeHeight; y++) delete []edgeMatrix[y];
     delete []edgeMatrix;
