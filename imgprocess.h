@@ -370,6 +370,7 @@ class imgProcess{
         void makeBinaryEdgeMatrix(int threshold);   // converts edge data to binary
         void thickenEdges();                    // thicken edges
 
+        void houghTransformFn(int **matrix, int width, int height);                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransform();                  // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformEdgeMap();           // conduct hough transform & construct hough space matrix for edge image size
         void houghTransformExtended();          // conduct hough transform & construct hough space matrix for org img size

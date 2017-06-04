@@ -850,7 +850,30 @@ void imgProcess::thickenEdges(){
             //else edgeThickenedMatrix[y][x] = 0;
         }
 }
+void imgProcess::houghTransformFn(int **matrix, int width, int height){
 
+    houghDistanceMax = (int) (sqrt(pow(width, 2) + pow(height, 2)));
+
+    houghThetaSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+
+    houghSpace = new int*[houghDistanceMax];
+    for (int i = 0; i < houghDistanceMax; i++)   houghSpace[i] = new int[houghThetaSize];
+    houghSpaceInitSwitch = true;
+
+    for (int y = 0; y < houghDistanceMax; y++)
+        for (int x = 0; x < houghThetaSize; x++) houghSpace[y][x] = 0;
+
+    int distance, theta;
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+            if (matrix[y][x] != 0)
+                for (int i = 0; i < houghThetaSize; i++){
+                    theta = thetaMin + i * thetaStep;
+//                    distance = (int) ((x - centerX) * cos(theta * R2D) + (centerY - y) * sin(theta * R2D));
+                    distance = (int) ((x - centerX) * cos(theta * R2D) + (y - centerY) * sin(theta * R2D));
+                    if (distance >= 0) houghSpace[distance][i]++;
+                }
+}
 
 void imgProcess::houghTransform(){
 
@@ -1639,12 +1662,14 @@ void imgProcess::detectVoidLines(){
         voidSpace.clear();
         int lineY = 0, voidCount = 0;
         int fullX = 0;
-        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
+//        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
+        int fullY = getLineY((fullX - centerX), distanceAvg, thetaAvg);;
         int prevValue = 255, currentValue = 0, state = 0;
         voidLine *line;
 
         for (int x = 0; x < imageWidth + 1; x++){   // +1 for last coordinate
-            lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+//            lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+            lineY = getLineY((x-centerX), distanceAvg, thetaAvg);
 
             if (lineY >= 0 && lineY < imageHeight){
                 if (x == imageWidth)
@@ -1708,12 +1733,14 @@ void imgProcess::detectVoidLinesEdge(){
         voidSpace.clear();
         int lineY = 0, voidCount = 0;
         int fullX = 0;
-        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
+//        int fullY = centerY - getLineY((fullX - centerX), distanceAvg, thetaAvg);;
+        int fullY = getLineY((fullX - centerX), distanceAvg, thetaAvg);;
         int prevValue = 255, currentValue = 0, state = 0;
         voidLine *line;
 
         for (int x = 0; x < edgeWidth + 1; x++){   // +1 for last coordinate
-            lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+//            lineY = centerY - getLineY((x-centerX), distanceAvg, thetaAvg);
+            lineY = getLineY((x-centerX), distanceAvg, thetaAvg);
 
             if (lineY >= 0 && lineY < edgeHeight){
                 if (x == edgeWidth)
@@ -1968,11 +1995,11 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
     //----- find all solid lines in value matrix
     solidSpaceMain.clear();
     float angle = 0;
-    float angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
+    int angleSize = (int) ((thetaMax - thetaMin) / thetaStep) + 1;
 
     int lo = houghLines[0][0] * 0.50;
     int hi = houghLines[0][0] * 1.50;
-//cout << lo << "-" << hi << endl;
+//cout << lo << "-" << houghLines[0][0] << "-" << hi << endl;
 
     //for (int distance = 0; distance < matrix_height; distance++)
         for (int distance = lo; distance < hi; distance++)
