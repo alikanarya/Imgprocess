@@ -1209,13 +1209,20 @@ void imgProcess::constructHoughMatrixPrimaryLines(solidLine line1, solidLine lin
 }
 
 
-void imgProcess::constructHoughMatrixMajor2Lines(){
+void imgProcess::constructHoughMatrixMajor2Lines( bool matrixFlag ){
 
-    int lineY;
+    // matrixFlag: true; value, false; edge
+    int matrix_height;
+
+    matrix_height = edgeHeight;
 
     for (int y = 0; y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             houghMatrix[y][x] = edgeMatrix[y][x];
+
+    //if (matrixFlag) { } else { }    // houghtMattrix definition in constructor, should be revised
+
+    int lineY;
 
     if (major2Lines.size() == 2){
 
@@ -1223,7 +1230,7 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
             lineY = getLineY((x - centerX), major2Lines[0].distance, major2Lines[0].angle);
             //lineY = centerY - getLineY((x - centerX), majorLines[0].distance, majorLines[0].angle);
 
-            if (lineY >= 0 && lineY < edgeHeight)
+            if (lineY >= 0 && lineY < matrix_height)
                 //if (houghMatrix[lineY][x] == 0)
                     houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
@@ -1232,11 +1239,12 @@ void imgProcess::constructHoughMatrixMajor2Lines(){
             lineY = getLineY((x - centerX), major2Lines[1].distance, major2Lines[1].angle);
             //lineY = centerY - getLineY((x - centerX), majorLines[1].distance, majorLines[1].angle);
 
-            if (lineY >= 0 && lineY < edgeHeight)
+            if (lineY >= 0 && lineY < matrix_height)
                 //if (houghMatrix[lineY][x] == 0)
                     houghMatrix[lineY][x] = 2555;       // 2555 special code to differeciate line data, arbitrary
         }
     }
+
 }
 
 
@@ -1647,8 +1655,16 @@ void imgProcess::findSecondLine(){
 
 bool imgProcess::checkPrimaryLine(){
 
-    if (houghLines[0][2] >= voteThreshold)
+    if (houghLines[0][2] >= voteThreshold){
         primaryLineDetected = true;
+        primaryLine.start.setX( 0 );
+        primaryLine.start.setY( -1 );
+        primaryLine.end.setX( imageWidth-1 );
+        primaryLine.end.setY( -1 );
+        primaryLine.length = -1;
+        primaryLine.distance = distanceAvg;
+        primaryLine.angle = thetaAvg;
+    }
     else
         primaryLineDetected = false;
     return primaryLineDetected;
@@ -3230,7 +3246,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
     if ( line1.distance > 0 ) {
 
         for (int x = line1.start.x(); x <= line1.end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), line1.distance, line1.angle) + yOffset;
+            lineY = getLineY((x - centerX), line1.distance, line1.angle) + yOffset - centerY;
 
             if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
                 imgCornerAndPrimaryLines.setPixel( x + xOffset, lineY, valuePrimary );
@@ -3243,7 +3259,7 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
         int endX = line2offset + line2.end.x();
 
         for (int x = startX; x <= endX; x++){
-            lineY = centerY - getLineY((x - centerX), line2.distance, line2.angle) + yOffset;
+            lineY = getLineY((x - centerX), line2.distance, line2.angle) + yOffset - centerY;
 
             if ( x >= 0 && x < imgCornerAndPrimaryLines.width() && lineY >= 0 && lineY < imgCornerAndPrimaryLines.height())
                 imgCornerAndPrimaryLines.setPixel( x + xOffset, lineY, valuePrimary );

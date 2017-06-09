@@ -381,7 +381,7 @@ class imgProcess{
         void constructHoughMatrixAvgLine();
         void constructHoughMatrixPrimaryLine(int startX, int endX);
         void constructHoughMatrixPrimaryLines(solidLine line1, solidLine line2, int line2offset);
-        void constructHoughMatrixMajor2Lines();
+        void constructHoughMatrixMajor2Lines( bool matrixFlag = false );
         void constructHoughExtendedMatrixMajor2Lines();
         void constructHoughMatrixFindX();       // construct hough matrix base on edge matrix with max voted lines coded on it; Finds X values - for perpendicular lines
         int calcVoteAvg();                      // calc. vote ave. of max. voted lines
