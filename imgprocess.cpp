@@ -322,6 +322,22 @@ bool imgProcess::saveArray(int *array, int length, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveMinCostedLinesArray(minCostedLines *array, int length, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        out << "c,cost" << "\n";
+        for(int i = 0; i < length; i++)
+            out << array[i].c << "," << array[i].cost << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
 
 bool imgProcess::saveList(QList<int> array, QString fname){
 
@@ -376,6 +392,23 @@ bool imgProcess::saveList(QList<solidLine> array, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveMinCostedLinesList(QList<minCostedLines> list, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        out << "c,cost\n";
+
+        for(int i = 0; i < list.size(); i++)
+            out << list[i].c << "," << list[i].cost << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
 
 void imgProcess::detectEdgeSobel(){
 
@@ -2448,9 +2481,8 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         else
             slope[i] = 573.0;
     }
-    //------------------------------------------------------------------------------------
 
-
+    //-A----------------------------------------------------------------
 
     // scan image for all angles with c parameters,
     // find the c parameters of each angle according to minimum cost: bestLines array
@@ -2512,9 +2544,12 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             bestLines[m].cost = min;
         }
     }
-    //------------------------------------------------------------------------------------
+    if (_DEBUG)
+        saveMinCostedLinesArray(bestLines, precisionSize, "./data/Algo5_0-bestLines.csv");
+    //------------------------------------------------------------------
 
 
+    //-B----------------------------------------------------------------
     // find global minimum with angle & c among bestLines
     min = 255 * imageHeight;
     index = 0;
@@ -2526,9 +2561,10 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     }
 
     slopeBest = slope[index];
-    //------------------------------------------------------------------------------------
+    //------------------------------------------------------------------
 
 
+    //-C----------------------------------------------------------------
     // re-scan image with best angle & c combination,
     // get lineList with c && cost information
     lineList.clear();
@@ -2559,7 +2595,9 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             lineList.append(z);
         }
     }
-    //------------------------------------------------------------------------------------
+    if (_DEBUG)
+        saveMinCostedLinesList(lineList, "./data/Algo5_1-lineList.csv");
+    //------------------------------------------------------------------
 
 
     //----- alarm preparetion
@@ -2571,12 +2609,14 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
     int maxX = 0;
 
     if (lineList.size() >= 2) {
+
+        //-D----------------------------------------------------------------
         peakPoints.clear();
 
         int derivative = 0;
         int startIndex = -1;
 
-        // search for first signed derivative
+        // search for first signed derivative > unequality of value sums
         for (int i = 0; i < lineList.size() - 1; i++){
 
             derivative = lineList[i+1].cost - lineList[i].cost;
@@ -2594,6 +2634,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
             int sign;
 
+            // to determine sign of first derivative
             if (derivative < 0)
                 sign = -1;
             else
@@ -2603,7 +2644,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
                 derivative = lineList[i+1].cost - lineList[i].cost;
 
-                if (sign < 0){
+                if (sign < 0){  // compare with previous sign
                     if (derivative > 0){
                         peakPoints.append(i);
                         sign = 1;
@@ -2617,6 +2658,12 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
             }
             peakPoints.append(lineList.size() - 1);
 
+            if (_DEBUG)
+                saveList(peakPoints, "./data/Algo5_2-peakPoints.csv");
+            //------------------------------------------------------------------
+
+
+            //-E----------------------------------------------------------------
             // find derivatives of peak points
             int *derivativeArray = new int [ peakPoints.size() ];
             derivativeArray[0] = lineList[ peakPoints[0] ].cost - lineList[ peakPoints[1] ].cost;
@@ -2632,6 +2679,11 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
                     minCostIndex = i;
                 }
 
+            if (_DEBUG) cout << "minCostIndex: " << minCostIndex << " minDerivative: " << derivativeArray[minCostIndex] << endl;
+            //------------------------------------------------------------------
+
+
+            //-F----------------------------------------------------------------
             // calc average brigthness cost and assign valley threshold
             int avgCost = 0;
             for (int i = 0; i < peakPoints.size(); i++)
@@ -2639,6 +2691,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
             avgCost /= peakPoints.size();
 
+            // threshold = abs(avgCost - costOfMin) / 2 + costOfMin
             int threshold = abs(avgCost - lineList[ peakPoints[minCostIndex] ].cost)/2 + lineList[ peakPoints[minCostIndex] ].cost;
 
 
@@ -2676,7 +2729,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
                 leftCornerX = minX;
                 rightCornerX = maxX;
             }
-            //------------------------------------------------------------------------------------
+            //------------------------------------------------------------------
 
             delete []derivativeArray;
 
@@ -2988,7 +3041,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             detected = true;
 
-            int yCoor = imageHeight/2;
+            int yCoor = 0;//imageHeight/2;
 
             if ( !mainEdgesList.isEmpty() ){
 
@@ -3018,7 +3071,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                 } else {
 
-                    trackCenterX = rightCornerX = leftCornerX = imageWidth / 2;     // DETECTION ERROR
+                    trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
 
                 }
                 //------------------------------------------------------------------
@@ -3027,12 +3080,12 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             } else {
 
-                trackCenterX = rightCornerX = leftCornerX = imageWidth / 2;     // DETECTION ERROR
+                trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
 
             }   // if ( !mainEdgesList.isEmpty() )
 
 
-            trackCenterY = rightCornerY = leftCornerY = yCoor;
+            trackCenterY = rightCornerY = leftCornerY = imageHeight / 2;
 
 
             if (DEBUG) {
@@ -3047,7 +3100,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
         } else {
 
-            trackCenterX = rightCornerX = leftCornerX = imageWidth / 2;     // DETECTION ERROR
+            trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
 
         }   // if (!localMaximalist2nd.isEmpty())
 
@@ -3061,7 +3114,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
     } else {
 
-        trackCenterX = rightCornerX = leftCornerX = imageWidth / 2;     // DETECTION ERROR
+        trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
 
     }   // if ( !localMaximalist.isEmpty() )
 
@@ -3178,6 +3231,7 @@ void imgProcess::findMedianValue(){
 
 QImage imgProcess::cornerImage( bool matrixFlag ){
 
+    // matrixFlag; true: value, false: edge
     imgCorner = imgOrginal.copy();
 
 //    if (detected){
@@ -3194,28 +3248,36 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
 
         for (int x = -4; x <= 4; x++){
 
-            X = leftCornerX + x + xOffset;
-            Y = leftCornerY + yOffset;
-            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value );
+            if (leftCornerX != -1 && leftCornerY != -1){
+                X = leftCornerX + x + xOffset;
+                Y = leftCornerY + yOffset;
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                    imgCorner.setPixel( X, Y, value );
+            }
 
-            X = rightCornerX + x + xOffset;
-            Y = rightCornerY + yOffset;
-            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value );
+            if (rightCornerX != -1 && rightCornerY != -1){
+                X = rightCornerX + x + xOffset;
+                Y = rightCornerY + yOffset;
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                    imgCorner.setPixel( X, Y, value );
+            }
         }
 
         for (int y = -4; y <= 4; y++){
 
-            X = leftCornerX + xOffset;
-            Y = leftCornerY + y + yOffset;
-            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value);
+            if (leftCornerX != -1 && leftCornerY != -1){
+                X = leftCornerX + xOffset;
+                Y = leftCornerY + y + yOffset;
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                    imgCorner.setPixel( X, Y, value);
+            }
 
-            X = rightCornerX + xOffset;
-            Y = rightCornerY + y + yOffset;
-            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
-                imgCorner.setPixel( X, Y, value);
+            if (rightCornerX != -1 && rightCornerY != -1){
+                X = rightCornerX + xOffset;
+                Y = rightCornerY + y + yOffset;
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                    imgCorner.setPixel( X, Y, value);
+            }
 
             X = trackCenterX + xOffset;
             Y = trackCenterY + y + yOffset;

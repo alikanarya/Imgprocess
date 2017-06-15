@@ -75,6 +75,7 @@ struct houghData {
 class imgProcess{
 
     public:
+        bool _DEBUG = false;
         QImage imgOrginal;      // orginal image
         QImage imgMono;         // mono image
         QImage imgCorner;       // orginal image with detected corners shown
@@ -350,6 +351,9 @@ class imgProcess{
         bool saveList(QList<int> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
         bool saveList(QList<solidLine> array, QString fname);
+
+        bool saveMinCostedLinesArray(minCostedLines *array, int length, QString fname);
+        bool saveMinCostedLinesList(QList<minCostedLines> list, QString fname);
 
         void detectEdgeSobel();                 // detect edges & construct edge matrix
         void prepareCannyArrays();
