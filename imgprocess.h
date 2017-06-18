@@ -439,6 +439,7 @@ class imgProcess{
         QImage drawLine(minCostedLines *line, float tangent);
         QImage* getImage_cannyThresholds(QImage::Format format);
         QImage* getImage_cannyTracedEdges(QImage::Format format);
+        QImage getImageMainEdges( int number, bool matrixFlag = true );
 
 
         ~imgProcess();                                      // destructor

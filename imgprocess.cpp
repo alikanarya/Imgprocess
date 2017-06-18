@@ -783,7 +783,7 @@ void imgProcess::scoreLineCrossing(bool orientation){
             int lineX;
 
             for (int y = 0; y < edgeHeight; y++){
-                lineX = centerX + getLineX((centerY - y), mainEdgesList[0].distance, mainEdgesList[0].angle);
+                lineX = centerX + getLineX((y - centerY), mainEdgesList[0].distance, mainEdgesList[0].angle);
 
                 if (lineX >= 0 && lineX < edgeWidth)
                     if ( edgeMapMatrix[y][lineX]) mainEdgeScore++;
@@ -3366,6 +3366,82 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
     return imgCornerAndPrimaryLines;
 }
 
+QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
+
+    imgSolidLines = imgOrginal.copy();
+
+    //QRgb valueCorner;
+    QRgb valuePrimary;
+
+    valuePrimary = qRgb(0, 0, 255);     // blue
+
+    int xOffset = 0, yOffset = 0;
+    int width = 0, height = 0;
+
+    if (!matrixFlag){   // edge matrix
+        xOffset = yOffset = 1;
+        width = edgeWidth;
+        height = edgeHeight;
+    } else {
+        width = imageWidth;
+        height = imageHeight;
+    }
+
+    int lineX;
+
+    if (mainEdgesList.size() > number)
+        number = mainEdgesList.size();
+
+    for (int c = 0; c < number; c++){
+
+        for (int y = 0; y < height; y++){
+            //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+            lineX = getLineX((y-centerY), mainEdgesList[c].distance, mainEdgesList[c].angle) - centerX;
+
+            if (lineX >= 0 && lineX < width)
+                imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
+        }
+
+    }
+
+/*
+    // draw corners and center
+    valueCorner = qRgb(0, 255, 0);        // green
+    int X, Y;
+
+    for (int x = -4; x <= 4; x++){
+
+        X = leftCornerX + x + xOffset;
+        Y = leftCornerY + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+        X = rightCornerX + x + xOffset;
+        Y = rightCornerY + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+    }
+
+    for (int y = -4; y <= 4; y++){
+
+        X = leftCornerX + xOffset;
+        Y = leftCornerY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+        X = rightCornerX + xOffset;
+        Y = rightCornerY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+        X = trackCenterX + xOffset;
+        Y = trackCenterY + y + yOffset;
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+    }
+*/
+    return imgSolidLines;
+}
 
 QImage imgProcess::drawSolidLines( QList<solidLine> lineList ){
 
