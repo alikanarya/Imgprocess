@@ -3458,14 +3458,13 @@ QImage imgProcess::drawSolidLines( QList<solidLine> lineList ){
         if ( lineList[c].distance > 0 ) {
 
             for (int x = lineList[c].start.x(); x <= lineList[c].end.x(); x++){
-                lineY = centerY - getLineY((x - centerX), lineList[c].distance, lineList[c].angle);
+                lineY = getLineY((x - centerX), lineList[c].distance, lineList[c].angle) - centerY;
 
                 if ( x >= 0 && x < imgSolidLines.width() && lineY >= 0 && lineY < imgSolidLines.height())
                     imgSolidLines.setPixel( x, lineY, valuePrimary );
             }
         }
     }
-
     return imgSolidLines;
 }
 
