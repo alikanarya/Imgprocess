@@ -3236,7 +3236,7 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
 
 //    if (detected){
         QRgb value;
-        value = qRgb(0, 255, 0);        // green
+        value = qRgb(255, 0, 0);        // red
 
         int xOffset = 0, yOffset = 0;
 
@@ -3443,6 +3443,21 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
     return imgSolidLines;
 }
 
+QImage imgProcess::getImageContrast() {
+
+    QImage img = imgOrginal.copy();
+    QRgb black, white;
+    black = qRgb(0, 0, 0);
+    white = qRgb(255, 255, 255);
+    img.fill(black);
+
+    for(int y = 0; y < imageHeight; y++)
+        for(int x = 0; x < imageWidth; x++)
+            if (contrastMatrix[y][x] == 1) img.setPixel(x, y, white);
+
+    return img;
+}
+
 QImage imgProcess::drawSolidLines( QList<solidLine> lineList ){
 
     imgSolidLines = imgOrginal.copy();
@@ -3473,7 +3488,7 @@ QImage* imgProcess::drawSolidLines2EdgeMatrix( solidLine line, QImage::Format fo
 
     QImage *image = new QImage(edgeWidth, edgeHeight, format);
     QRgb trackValue = qRgb(255, 255, 255);
-    QRgb lineValue = qRgb(0, 0, 255);
+    QRgb lineValue = qRgb(255, 0, 0);
 
     int lineY;
 
@@ -3485,17 +3500,32 @@ QImage* imgProcess::drawSolidLines2EdgeMatrix( solidLine line, QImage::Format fo
     if ( line.distance > 0 ) {
 
         for (int x = line.start.x(); x <= line.end.x(); x++){
-            lineY = centerY - getLineY((x - centerX), line.distance, line.angle);
+            lineY = getLineY((x - centerX), line.distance, line.angle) - centerY;
 
             if ( x >= 0 && x < image->width() && lineY >= 0 && lineY < image->height())
                 image->setPixel( x, lineY, lineValue );
         }
     }
-
-
     return image;
 }
 
+QImage imgProcess::drawLine2OrginalImage( solidLine line, QImage::Format format ){
+
+    QImage image = imgOrginal.copy();
+    QRgb rgbRed;
+    rgbRed = qRgb(255, 0, 0);     // red
+
+    int lineY;
+    if ( line.distance > 0 ) {
+        for (int x = line.start.x(); x <= line.end.x(); x++){
+            lineY = getLineY((x - centerX), line.distance, line.angle) - centerY;
+
+            if ( x >= 0 && x < image.width() && lineY >= 0 && lineY < image.height())
+                image.setPixel( x, lineY, rgbRed );
+        }
+    }
+    return image;
+}
 
 QImage imgProcess::drawLines(){
 

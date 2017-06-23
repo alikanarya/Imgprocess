@@ -412,6 +412,7 @@ class imgProcess{
         void houghTransformContrast();          // conduct hough transform & construct hough space matrix for org img size
         void constructContrastMatrixMajor2Lines();
         void detectContrastCenter();
+        QImage getImageContrast();
 
         // EDGE DETECTION ALGO
         void detectMainEdges(bool thinjoint, bool debug = false);
@@ -434,6 +435,7 @@ class imgProcess{
         QImage cornerAndPrimaryLineImage(solidLine line1, solidLine line2, int line2offset, bool matrixFlag = true );    // produce detected corner and primary lines image based on org. image
         QImage drawSolidLines( QList<solidLine> lineList );
         QImage* drawSolidLines2EdgeMatrix( solidLine line, QImage::Format format );
+        QImage drawLine2OrginalImage( solidLine line, QImage::Format format );
         QImage drawLines();
         QImage drawLines(minCostedLines *lineArray, int size);
         QImage drawLine(minCostedLines *line, float tangent);
