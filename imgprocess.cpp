@@ -2462,6 +2462,7 @@ void imgProcess::detectLongestSolidLines(bool averaging, bool matrixFlag){
 void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
 
     thinJointInitSwitch = true;
+    anglePrecision = precisionSize;
 
     //----- prepare slope array
     slope = new float[precisionSize];
@@ -2560,6 +2561,7 @@ void imgProcess::detectThinJointCenter(int refAngle, int precisionSize){
         }
     }
 
+    slopeBestIndex = index;
     slopeBest = slope[index];
     //------------------------------------------------------------------
 

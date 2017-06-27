@@ -134,11 +134,13 @@ class imgProcess{
         bool centerDetermined;
 
         // THIN JOINT ALGO
+        int anglePrecision;
         bool thinJointInitSwitch;
         float *slope;
         QList<minCostedLines> lineList;
         minCostedLines *bestLines;
         float slopeBest;
+        int slopeBestIndex = 0;
         QList<minCostedLines> deepLines;
         int centerC;
         QList<int> peakPoints;
