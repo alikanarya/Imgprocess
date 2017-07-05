@@ -3248,37 +3248,45 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
 
         int X, Y;
 
-        for (int x = -4; x <= 4; x++){
+        for (int x = -8; x <= 8; x++){
 
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + x + xOffset;
                 Y = leftCornerY + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X, Y, value );
+                    imgCorner.setPixel( X, Y+1, value );
+                }
             }
 
             if (rightCornerX != -1 && rightCornerY != -1){
                 X = rightCornerX + x + xOffset;
                 Y = rightCornerY + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X, Y, value );
+                    imgCorner.setPixel( X, Y+1, value );
+                }
             }
         }
 
-        for (int y = -4; y <= 4; y++){
+        for (int y = -8; y <= 8; y++){
 
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + xOffset;
                 Y = leftCornerY + y + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X, Y, value);
+                    imgCorner.setPixel( X+1, Y, value);
+                }
             }
 
             if (rightCornerX != -1 && rightCornerY != -1){
                 X = rightCornerX + xOffset;
                 Y = rightCornerY + y + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                    imgCorner.setPixel( X-1, Y, value);
                     imgCorner.setPixel( X, Y, value);
+                }
             }
 
             X = trackCenterX + xOffset;
@@ -3331,38 +3339,46 @@ QImage imgProcess::cornerAndPrimaryLineImage( solidLine line1, solidLine line2, 
     }
 
     // draw corners and center
-    valueCorner = qRgb(0, 255, 0);        // green
+    valueCorner = qRgb(255, 0, 0);        // red
     int X, Y;
 
-    for (int x = -4; x <= 4; x++){
+    for (int x = -8; x <= 8; x++){
 
         X = leftCornerX + x + xOffset;
         Y = leftCornerY + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height()){
             imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+            imgCornerAndPrimaryLines.setPixel( X, Y+1, valueCorner );
+        }
 
         X = rightCornerX + x + xOffset;
         Y = rightCornerY + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height()){
             imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+            imgCornerAndPrimaryLines.setPixel( X, Y+1, valueCorner );
+        }
     }
 
-    for (int y = -4; y <= 4; y++){
+    for (int y = -8; y <= 8; y++){
 
         X = leftCornerX + xOffset;
         Y = leftCornerY + y + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height()){
             imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+            imgCornerAndPrimaryLines.setPixel( X+1, Y, valueCorner );
+        }
 
         X = rightCornerX + xOffset;
         Y = rightCornerY + y + yOffset;
         if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+            imgCornerAndPrimaryLines.setPixel( X-1, Y, valueCorner );
             imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
 
         X = trackCenterX + xOffset;
         Y = trackCenterY + y + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height()){
             imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        }
     }
 
     return imgCornerAndPrimaryLines;
