@@ -3391,7 +3391,7 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
     //QRgb valueCorner;
     QRgb valuePrimary;
 
-    valuePrimary = qRgb(0, 0, 255);     // blue
+    valuePrimary = qRgb(255, 0, 0);     // blue
 
     int xOffset = 0, yOffset = 0;
     int width = 0, height = 0;
