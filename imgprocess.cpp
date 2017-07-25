@@ -212,7 +212,8 @@ void imgProcess::gaussianBlur(){
                     sum += gaussianMatrix[i][j] * valueMatrixOrg[y-center+i][x-center+j];
                     //sum += gaussianMask[i][j] * valueMatrix[y-center+i][x-center+j];
 
-            valueMatrix[y][x] = (int) (sum / gaussianMatrixSum);
+            if (gaussianMatrixSum != 0)
+                valueMatrix[y][x] = (int) (sum / gaussianMatrixSum);
 
             if (valueMatrix[y][x] > 255)        valueMatrix[y][x] = 255;
             else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
@@ -3253,7 +3254,7 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + x + xOffset;
                 Y = leftCornerY + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < (imgCorner.height()-1)){
                     imgCorner.setPixel( X, Y, value );
                     imgCorner.setPixel( X, Y+1, value );
                 }
@@ -3262,7 +3263,7 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
             if (rightCornerX != -1 && rightCornerY != -1){
                 X = rightCornerX + x + xOffset;
                 Y = rightCornerY + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < (imgCorner.height()-1)){
                     imgCorner.setPixel( X, Y, value );
                     imgCorner.setPixel( X, Y+1, value );
                 }
@@ -3274,7 +3275,7 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + xOffset;
                 Y = leftCornerY + y + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                if ( X >= 0 && X < (imgCorner.width()-1) && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X, Y, value);
                     imgCorner.setPixel( X+1, Y, value);
                 }
@@ -3283,7 +3284,7 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
             if (rightCornerX != -1 && rightCornerY != -1){
                 X = rightCornerX + xOffset;
                 Y = rightCornerY + y + yOffset;
-                if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                if ( X >= 1 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X-1, Y, value);
                     imgCorner.setPixel( X, Y, value);
                 }
