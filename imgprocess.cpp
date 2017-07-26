@@ -2804,6 +2804,9 @@ void imgProcess::detectContrastCenter(){
 
 void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
+    trackCenterX = rightCornerX = leftCornerX = 0;
+    trackCenterY = rightCornerY = leftCornerY = 0;
+
     // sort wrt distance low > high
     sortHoughLines_toDistance( houghLineNo );
         // ** HOUGH DATA > SORTED HOUGH DATA WRT DISTANCE
@@ -2914,206 +2917,210 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
         findLocalMinimum(houghDataVotes, listHoughData.size(), localMaximalist2nd);
             // ** listHoughData > localMaximalist2nd
-        localMaxima2ndSize = localMaximalist2nd.size();
 
-        if (DEBUG) {
-            rangeArray2nd = new int*[localMaxima2ndSize];
-            for (int i = 0; i < localMaxima2ndSize; i++)    rangeArray2nd[i] = new int[2];
-            rangeArray2ndInitSwitch = true;
-            for (int i = 0; i < localMaxima2ndSize; i++){
-                rangeArray2nd[i][0] = localMaximalist2nd[i].start;
-                rangeArray2nd[i][1] = localMaximalist2nd[i].end;
-            }
-        }
+        if ( !localMaximalist2nd.isEmpty() ){
 
-        // get hough datas of 2nd iter. local maximas
-        QList<houghData> listHoughData2nd;
+            localMaxima2ndSize = localMaximalist2nd.size();
 
-        //-B----------------------------------------------------------------
-        for (int t = 0; t < localMaximalist2nd.size(); t++)
-            for (int ts = localMaximalist2nd[t].start; ts <= localMaximalist2nd[t].end; ts++){
-                houghData hd;
-                hd.distance = listHoughData[ ts ].distance;
-                hd.angle = listHoughData[ ts ].angle;
-                hd.voteValue = listHoughData[ ts ].voteValue;
-                listHoughData2nd.append(hd);
-            }
-        // ** localMaximalist2nd > listHoughData2nd
-        //------------------------------------------------------------------
-
-        listHoughData2ndSize = listHoughData2nd.size();
-
-        if (DEBUG) {
-            listHoughData2ndArray = new int*[listHoughData2ndSize];
-            for (int d = 0; d < listHoughData2ndSize; d++)    listHoughData2ndArray[d] = new int[3];
-            listHoughData2ndArrayInitSwitch = true;
-
-            for (int d = 0; d < listHoughData2ndSize; d++){
-                listHoughData2ndArray[d][0] = listHoughData2nd[d].distance;
-                listHoughData2ndArray[d][1] = listHoughData2nd[d].angle;
-                listHoughData2ndArray[d][2] = listHoughData2nd[d].voteValue;
-            }
-        }
-
-
-        if (!listHoughData2nd.isEmpty()){
-
-            // SELECT MAIN EDGES
-
-//            QList<houghData> mainEdgesList;
-
-            if ( !thinjoint ){
-                //-C----------------------------------------------------------------
-                //
-                // WIDE JOINT
-                //
-                // APPLY MEAN VALUE THRESHOLD
-
-                int sum = 0;
-
-                for (int i = 0; i < listHoughData2nd.size(); i++)
-                    sum += listHoughData2nd[i].voteValue;
-
-                int meanValue = sum / listHoughData2nd.size();
-
-                for (int i = 0; i < listHoughData2nd.size(); i++)
-                    if ( listHoughData2nd[i].voteValue > meanValue ){
-                        houghData hd;
-                        hd.distance =  listHoughData2nd[i].distance;
-                        hd.angle =  listHoughData2nd[i].angle;
-                        hd.voteValue =  listHoughData2nd[i].voteValue;
-                        mainEdgesList.append(hd);
+            if (DEBUG) {
+                rangeArray2nd = new int*[localMaxima2ndSize];
+                for (int i = 0; i < localMaxima2ndSize; i++)    rangeArray2nd[i] = new int[2];
+                rangeArray2ndInitSwitch = true;
+                for (int i = 0; i < localMaxima2ndSize; i++){
+                    rangeArray2nd[i][0] = localMaximalist2nd[i].start;
+                    rangeArray2nd[i][1] = localMaximalist2nd[i].end;
                 }
+            }
 
-                /*
-                if ( mainEdgesList.size() != 0) {
+            // get hough datas of 2nd iter. local maximas
+            QList<houghData> listHoughData2nd;
 
-                    float angleSum = 0, distanceSum = 0;
-                    for (int i = 0; i < mainEdgesList.size(); i++){
-                        angleSum += mainEdgesList[i].angle;
-                        distanceSum += mainEdgesList[i].distance;
+            //-B----------------------------------------------------------------
+            for (int t = 0; t < localMaximalist2nd.size(); t++)
+                for (int ts = localMaximalist2nd[t].start; ts <= localMaximalist2nd[t].end; ts++){
+                    houghData hd;
+                    hd.distance = listHoughData[ ts ].distance;
+                    hd.angle = listHoughData[ ts ].angle;
+                    hd.voteValue = listHoughData[ ts ].voteValue;
+                    listHoughData2nd.append(hd);
+                }
+            // ** localMaximalist2nd > listHoughData2nd
+            //------------------------------------------------------------------
+
+            listHoughData2ndSize = listHoughData2nd.size();
+
+            if (DEBUG) {
+                listHoughData2ndArray = new int*[listHoughData2ndSize];
+                for (int d = 0; d < listHoughData2ndSize; d++)    listHoughData2ndArray[d] = new int[3];
+                listHoughData2ndArrayInitSwitch = true;
+
+                for (int d = 0; d < listHoughData2ndSize; d++){
+                    listHoughData2ndArray[d][0] = listHoughData2nd[d].distance;
+                    listHoughData2ndArray[d][1] = listHoughData2nd[d].angle;
+                    listHoughData2ndArray[d][2] = listHoughData2nd[d].voteValue;
+                }
+            }
+
+
+            if (!listHoughData2nd.isEmpty()){
+
+                // SELECT MAIN EDGES
+
+    //            QList<houghData> mainEdgesList;
+
+                if ( !thinjoint ){
+                    //-C----------------------------------------------------------------
+                    //
+                    // WIDE JOINT
+                    //
+                    // APPLY MEAN VALUE THRESHOLD
+
+                    int sum = 0;
+
+                    for (int i = 0; i < listHoughData2nd.size(); i++)
+                        sum += listHoughData2nd[i].voteValue;
+
+                    int meanValue = sum / listHoughData2nd.size();
+
+                    for (int i = 0; i < listHoughData2nd.size(); i++)
+                        if ( listHoughData2nd[i].voteValue > meanValue ){
+                            houghData hd;
+                            hd.distance =  listHoughData2nd[i].distance;
+                            hd.angle =  listHoughData2nd[i].angle;
+                            hd.voteValue =  listHoughData2nd[i].voteValue;
+                            mainEdgesList.append(hd);
                     }
 
-                    centerLine.angle = angleSum / mainEdgesList.size();
-                    centerLine.distance = distanceSum / mainEdgesList.size();
+                    /*
+                    if ( mainEdgesList.size() != 0) {
 
-                }
-                */
-                //------------------------------------------------------------------
-            } else {
-                //-D----------------------------------------------------------------
-                //
-                // THIN JOINT
-                //
-                // SELECT MAXS
-                //
-
-                int size = thinCornerNum;
-
-                if ( listHoughData2nd.size() < 2 )
-                    size = listHoughData2nd.size();
-
-                int max, index;
-
-                for (int i = 0; i < size; i++){
-                    max = -1, index = 0;
-                    for (int j = 0; j < listHoughData2nd.size(); j++)
-                        if (listHoughData2nd[j].voteValue > max){
-                            max = listHoughData2nd[j].voteValue;
-                            index = j;
+                        float angleSum = 0, distanceSum = 0;
+                        for (int i = 0; i < mainEdgesList.size(); i++){
+                            angleSum += mainEdgesList[i].angle;
+                            distanceSum += mainEdgesList[i].distance;
                         }
 
-                    houghData hd;
-                    hd.distance =  listHoughData2nd[index].distance;
-                    hd.angle =  listHoughData2nd[index].angle;
-                    hd.voteValue =  listHoughData2nd[index].voteValue;
-                    mainEdgesList.append(hd);
-                    listHoughData2nd[index].voteValue = -1;
-                }
+                        centerLine.angle = angleSum / mainEdgesList.size();
+                        centerLine.distance = distanceSum / mainEdgesList.size();
 
-                if ( mainEdgesList.size() != 0) {
-                    centerLine.angle = mainEdgesList[0].angle;
-                    centerLine.distance = mainEdgesList[0].distance;
-                    centerLine.voteValue = mainEdgesList[0].voteValue;
-                }
-                //------------------------------------------------------------------
+                    }
+                    */
+                    //------------------------------------------------------------------
+                } else {
+                    //-D----------------------------------------------------------------
+                    //
+                    // THIN JOINT
+                    //
+                    // SELECT MAXS
+                    //
 
-            }
+                    int size = thinCornerNum;
 
+                    if ( listHoughData2nd.size() < 2 )
+                        size = listHoughData2nd.size();
 
+                    int max, index;
 
-            detected = true;
+                    for (int i = 0; i < size; i++){
+                        max = -1, index = 0;
+                        for (int j = 0; j < listHoughData2nd.size(); j++)
+                            if (listHoughData2nd[j].voteValue > max){
+                                max = listHoughData2nd[j].voteValue;
+                                index = j;
+                            }
 
-            int yCoor = 0;//imageHeight/2;
-
-            if ( !mainEdgesList.isEmpty() ){
-
-                //-E----------------------------------------------------------------
-                QList<int> xCoors;
-
-                for (int i = 0; i < mainEdgesList.size(); i++){
-                    int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
-                    if (xCoor >= 0 && xCoor < imageWidth)
-                        xCoors.append( xCoor );
-                }
-
-                int max = -1, min = 1000;
-
-                if ( !xCoors.isEmpty() ){
-
-                    for (int i = 0; i < xCoors.size(); i++){
-                        if ( xCoors[i] > max)
-                            max = xCoors[i];
-                        if ( xCoors[i] < min)
-                            min = xCoors[i];
+                        houghData hd;
+                        hd.distance =  listHoughData2nd[index].distance;
+                        hd.angle =  listHoughData2nd[index].angle;
+                        hd.voteValue =  listHoughData2nd[index].voteValue;
+                        mainEdgesList.append(hd);
+                        listHoughData2nd[index].voteValue = -1;
                     }
 
-                    trackCenterX = (max + min) / 2;
-                    rightCornerX = max;
-                    leftCornerX = min;
+                    if ( mainEdgesList.size() != 0) {
+                        centerLine.angle = mainEdgesList[0].angle;
+                        centerLine.distance = mainEdgesList[0].distance;
+                        centerLine.voteValue = mainEdgesList[0].voteValue;
+                    }
+                    //------------------------------------------------------------------
+
+                }
+
+                detected = true;
+
+                int yCoor = 0;//imageHeight/2;
+
+                if ( !mainEdgesList.isEmpty() ){
+
+                    //-E----------------------------------------------------------------
+                    QList<int> xCoors;
+
+                    for (int i = 0; i < mainEdgesList.size(); i++){
+                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        if (xCoor >= 0 && xCoor < imageWidth)
+                            xCoors.append( xCoor );
+                    }
+
+                    int max = -1, min = 1000;
+
+                    if ( !xCoors.isEmpty() ){
+
+                        for (int i = 0; i < xCoors.size(); i++){
+                            if ( xCoors[i] > max)
+                                max = xCoors[i];
+                            if ( xCoors[i] < min)
+                                min = xCoors[i];
+                        }
+
+                        trackCenterX = (max + min) / 2;
+                        rightCornerX = max;
+                        leftCornerX = min;
+
+                    } else {
+
+                        trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
+
+                    }
+                    //------------------------------------------------------------------
+
+                    xCoors.empty();
 
                 } else {
 
                     trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
 
-                }
-                //------------------------------------------------------------------
+                }   // if ( !mainEdgesList.isEmpty() )
 
-                xCoors.empty();
+
+                trackCenterY = rightCornerY = leftCornerY = imageHeight / 2;
+
+
+                if (DEBUG) {
+    //                codeLineData(valueMatrix, imageWidth, imageHeight, listHoughData2nd, false);
+                    codeLineData(valueMatrix, imageWidth, imageHeight, mainEdgesList, false);
+                }
+
+                //----- alarms
+                //------------------------------------------------------------------------------------
+
+                // clear vars
 
             } else {
-
                 trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
-
-            }   // if ( !mainEdgesList.isEmpty() )
-
-
-            trackCenterY = rightCornerY = leftCornerY = imageHeight / 2;
-
-
-            if (DEBUG) {
-//                codeLineData(valueMatrix, imageWidth, imageHeight, listHoughData2nd, false);
-                codeLineData(valueMatrix, imageWidth, imageHeight, mainEdgesList, false);
-            }
-
-            //----- alarms
-            //------------------------------------------------------------------------------------
+            }   // if (!listHoughData2nd.isEmpty())
 
             // clear vars
+            listHoughData2nd.empty();
 
         } else {
-
             trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
-
         }   // if (!localMaximalist2nd.isEmpty())
-
 
         // clear vars
         delete distArray;
         delete houghDataVotes;
         listHoughData.empty();
         localMaximalist2nd.empty();
-        listHoughData2nd.empty();
 
     } else {
 
@@ -3406,59 +3413,64 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
         height = imageHeight;
     }
 
-    int lineX;
+    if ( !mainEdgesList.isEmpty() ){
 
-    if (mainEdgesList.size() > number)
-        number = mainEdgesList.size();
+        int lineX;
 
-    for (int c = 0; c < number; c++){
+        if (number > mainEdgesList.size())
+            number = mainEdgesList.size();
 
-        for (int y = 0; y < height; y++){
-            //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
-            lineX = getLineX((y-centerY), mainEdgesList[c].distance, mainEdgesList[c].angle) - centerX;
+        for (int c = 0; c < number; c++){
 
-            if (lineX >= 0 && lineX < width)
-                imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
+            for (int y = 0; y < height; y++){
+                //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+                lineX = getLineX((y-centerY), mainEdgesList[c].distance, mainEdgesList[c].angle) - centerX;
+
+                if (lineX >= 0 && lineX < width)
+                    imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
+            }
+
         }
 
+    /*
+        // draw corners and center
+        valueCorner = qRgb(0, 255, 0);        // green
+        int X, Y;
+
+        for (int x = -4; x <= 4; x++){
+
+            X = leftCornerX + x + xOffset;
+            Y = leftCornerY + yOffset;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+            X = rightCornerX + x + xOffset;
+            Y = rightCornerY + yOffset;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        }
+
+        for (int y = -4; y <= 4; y++){
+
+            X = leftCornerX + xOffset;
+            Y = leftCornerY + y + yOffset;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+            X = rightCornerX + xOffset;
+            Y = rightCornerY + y + yOffset;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+
+            X = trackCenterX + xOffset;
+            Y = trackCenterY + y + yOffset;
+            if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
+                imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
+        }
+    */
+
     }
 
-/*
-    // draw corners and center
-    valueCorner = qRgb(0, 255, 0);        // green
-    int X, Y;
-
-    for (int x = -4; x <= 4; x++){
-
-        X = leftCornerX + x + xOffset;
-        Y = leftCornerY + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-
-        X = rightCornerX + x + xOffset;
-        Y = rightCornerY + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-    }
-
-    for (int y = -4; y <= 4; y++){
-
-        X = leftCornerX + xOffset;
-        Y = leftCornerY + y + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-
-        X = rightCornerX + xOffset;
-        Y = rightCornerY + y + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-
-        X = trackCenterX + xOffset;
-        Y = trackCenterY + y + yOffset;
-        if ( X >= 0 && X < imgCornerAndPrimaryLines.width() && Y >= 0 && Y < imgCornerAndPrimaryLines.height())
-            imgCornerAndPrimaryLines.setPixel( X, Y, valueCorner );
-    }
-*/
     return imgSolidLines;
 }
 
