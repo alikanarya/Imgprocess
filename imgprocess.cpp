@@ -219,12 +219,25 @@ void imgProcess::gaussianBlur(){
             else if (valueMatrix[y][x] < 0)     valueMatrix[y][x] = 0;
         }
     }
-/*
+
+    //to flaten boundary noise except corners
     for (int y = 0; y < imageHeight; y++)
-        for (int x = 0; x < imageWidth; x++)
-            if (x<gaussianMatrixSize || x>=(imageWidth-gaussianMatrixSize) || y<gaussianMatrixSize || y>=(imageHeight-gaussianMatrixSize))
-                valueMatrix[y][x] = 0;
-*/
+        for (int x = 0; x < imageWidth; x++){
+            if ( x<center && (y>=center || y <(imageHeight-center)) )
+                valueMatrix[y][x] = valueMatrix[y][center];
+            if ( x>=(imageWidth-center) && (y>=center || y <(imageHeight-center)) )
+                valueMatrix[y][x] = valueMatrix[y][imageWidth-center-1];
+
+            if ( y<center && (x>=center || x <(imageWidth-center)) )
+                valueMatrix[y][x] = valueMatrix[center][x];
+            if ( y>=(imageHeight-center) && (x>=center || x <(imageWidth-center)) )
+                valueMatrix[y][x] = valueMatrix[imageHeight-center-1][x];
+        }
+
+/*corners
+ *             if ( (x<center || x>=(imageWidth-center)) &&
+                 (y<center || y>=(imageHeight-center)) )*/
+
 }
 
 int imgProcess::getMatrixPoint(int *matrix, int width, int x, int y){
