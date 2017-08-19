@@ -3049,19 +3049,19 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         mainEdgesList.append(hd);
                         listHoughData2nd[index].voteValue = -1;
                     }
-
+                    /*
                     if ( mainEdgesList.size() != 0) {
                         centerLine.angle = mainEdgesList[0].angle;
                         centerLine.distance = mainEdgesList[0].distance;
                         centerLine.voteValue = mainEdgesList[0].voteValue;
-                    }
+                    }*/
                     //------------------------------------------------------------------
 
                 }
 
                 detected = true;
 
-                int yCoor = 0;//imageHeight/2;
+                int yCoor = imageHeight/2;
 
                 if ( !mainEdgesList.isEmpty() ){
 
@@ -3069,12 +3069,13 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     QList<int> xCoors;
 
                     for (int i = 0; i < mainEdgesList.size(); i++){
-                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+//                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        int xCoor = centerX + getLineX((centerY - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
                         if (xCoor >= 0 && xCoor < imageWidth)
                             xCoors.append( xCoor );
                     }
 
-                    int max = -1, min = 1000;
+                    int max = -1, min = 2000;
 
                     if ( !xCoors.isEmpty() ){
 
@@ -3089,6 +3090,9 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         rightCornerX = max;
                         leftCornerX = min;
 
+                        centerLine.angle = mainEdgesList[0].angle;
+                        centerLine.distance = trackCenterX; // since we look to perfect vertical lines
+                        centerLine.voteValue = mainEdgesList[0].voteValue;
                     } else {
 
                         trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
@@ -3411,8 +3415,10 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
 
     //QRgb valueCorner;
     QRgb valuePrimary;
+    QRgb valueCenter;
 
-    valuePrimary = qRgb(255, 0, 0);     // blue
+    valuePrimary = qRgb(255, 0, 0);     // red
+    valueCenter = qRgb(0, 255, 0);     // green
 
     int xOffset = 0, yOffset = 0;
     int width = 0, height = 0;
@@ -3442,7 +3448,14 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
                 if (lineX >= 0 && lineX < width)
                     imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
             }
+        }
 
+        for (int y = 0; y < height; y++){
+            //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+            lineX = getLineX((y-centerY), centerLine.distance, centerLine.angle) - centerX;
+
+            if (lineX >= 0 && lineX < width)
+                imgSolidLines.setPixel( lineX + xOffset, y, valueCenter );
         }
 
     /*
