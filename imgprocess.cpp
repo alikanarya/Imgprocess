@@ -2946,7 +2946,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             }
 
             // get hough datas of 2nd iter. local maximas
-            QList<houghData> listHoughData2nd;
+            //QList<houghData> listHoughData2nd;
+            listHoughData2nd.clear();
 
             //-B----------------------------------------------------------------
             for (int t = 0; t < localMaximalist2nd.size(); t++)
@@ -3091,7 +3092,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         leftCornerX = min;
 
                         centerLine.angle = mainEdgesList[0].angle;
-                        centerLine.distance = trackCenterX; // since we look to perfect vertical lines
+                        centerLine.distance = mainEdgesList[0].distance;
+                        //centerLine.distance = trackCenterX; // since we look to perfect vertical lines
                         centerLine.voteValue = mainEdgesList[0].voteValue;
                     } else {
 
@@ -3413,6 +3415,13 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
 
     imgSolidLines = imgOrginal.copy();
 
+    int size;
+    if (number == 0)                    // only center line
+        size = 0;
+    else
+        size = number;                  // number of major lines + center line
+
+
     //QRgb valueCorner;
     QRgb valuePrimary;
     QRgb valueCenter;
@@ -3436,10 +3445,10 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
 
         int lineX;
 
-        if (number > mainEdgesList.size())
-            number = mainEdgesList.size();
+        if (size > mainEdgesList.size())
+            size = mainEdgesList.size();
 
-        for (int c = 0; c < number; c++){
+        for (int c = 0; c < size; c++){
 
             for (int y = 0; y < height; y++){
                 //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
@@ -3496,7 +3505,57 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
     */
 
     }
+    return imgSolidLines;
+}
 
+QImage imgProcess::getImageMainEdges_2ndList( bool enableCenter, bool matrixFlag ) {
+
+    imgSolidLines = imgOrginal.copy();
+
+    //QRgb valueCorner;
+    QRgb valuePrimary;
+    QRgb valueCenter;
+
+    valuePrimary = qRgb(255, 0, 0);     // red
+    valueCenter = qRgb(0, 255, 0);     // green
+
+    int xOffset = 0, yOffset = 0;
+    int width = 0, height = 0;
+
+    if (!matrixFlag){   // edge matrix
+        xOffset = yOffset = 1;
+        width = edgeWidth;
+        height = edgeHeight;
+    } else {
+        width = imageWidth;
+        height = imageHeight;
+    }
+
+    if ( !listHoughData2nd.isEmpty() ){
+
+        int lineX;
+
+        for (int c = 0; c < listHoughData2nd.size(); c++){
+
+            for (int y = 0; y < height; y++){
+                //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+                lineX = getLineX((y-centerY), listHoughData2nd[c].distance, listHoughData2nd[c].angle) - centerX;
+
+                if (lineX >= 0 && lineX < width)
+                    imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
+            }
+        }
+
+        if (enableCenter){
+            for (int y = 0; y < height; y++){
+                //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
+                lineX = getLineX((y-centerY), centerLine.distance, centerLine.angle) - centerX;
+
+                if (lineX >= 0 && lineX < width)
+                    imgSolidLines.setPixel( lineX + xOffset, y, valueCenter );
+            }
+        }
+    }
     return imgSolidLines;
 }
 

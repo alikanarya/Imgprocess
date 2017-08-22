@@ -167,6 +167,7 @@ class imgProcess{
         int listHoughData2ndSize;
         int **listHoughData2ndArray;
         bool listHoughData2ndArrayInitSwitch;
+        QList<houghData> listHoughData2nd;
 
         int localMaxima3rdSize;
         int **rangeArray3rd;
@@ -444,6 +445,7 @@ class imgProcess{
         QImage* getImage_cannyThresholds(QImage::Format format);
         QImage* getImage_cannyTracedEdges(QImage::Format format);
         QImage getImageMainEdges( int number, bool matrixFlag = true );
+        QImage getImageMainEdges_2ndList( bool enableCenter, bool matrixFlag = true );
 
 
         ~imgProcess();                                      // destructor
