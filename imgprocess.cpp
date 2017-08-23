@@ -3070,8 +3070,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     QList<int> xCoors;
 
                     for (int i = 0; i < mainEdgesList.size(); i++){
-//                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
-                        int xCoor = centerX + getLineX((centerY - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        //int xCoor = centerX + getLineX((centerY - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
                         if (xCoor >= 0 && xCoor < imageWidth)
                             xCoors.append( xCoor );
                     }
@@ -3150,6 +3150,58 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
     // clear vars
     delete voteArray;
     localMaximalist.empty();
+}
+
+
+void imgProcess::detectScanHorizontal(int y){
+
+    horLineVotes = new float*[edgeWidth];
+    for (int j = 0; j < edgeWidth; j++)   horLineVotes[j] = new float[3];
+    horLineVotesInitSwitch = true;
+
+    int max, maxDistance, lineY;
+    float angle = 0, maxTheta = 0;
+    float sinM = sin(thetaMax*R2D);
+    float res = 0;
+    if (sinM >= 0.001)
+        res = cos(thetaMax*R2D) / sinM;
+
+    bool flag = true;
+    for (int x = 0; x < edgeWidth; x++){
+
+        max = 0;
+        maxDistance = 0;
+        maxTheta = 0;
+
+        for (int distance = 0; distance < houghDistanceMax; distance++)
+            for (int i = 0; i < houghThetaSize; i++){
+
+                angle = thetaMin + i * thetaStep;
+
+                if (abs(angle)>=1)
+                    lineY = getLineY((x - centerX), distance, angle) - centerY;
+                else if (abs(x-distance) <=2.6)
+                    lineY = y;
+                else
+                    flag = false;
+
+                //if (lineY == y){
+                if (abs(lineY-y) <= 58 && flag){
+                    if (houghSpace[distance][i] > max){
+                        max = houghSpace[distance][i];
+                        maxDistance = distance;
+                        maxTheta = angle;
+                    }
+                }
+                flag = true;
+            }
+
+        horLineVotes[x][0] = maxDistance;                               // distance
+        horLineVotes[x][1] = maxTheta;                                     // angle
+        horLineVotes[x][2] = max;                                       // vote value
+
+    }
+
 }
 
 
@@ -3912,6 +3964,11 @@ imgProcess::~imgProcess(){
     if ( gaussianMatrixInitSwitch ) {
         for (int y = 0; y < gaussianMatrixSize; y++) delete []gaussianMatrix[y];
         delete []gaussianMatrix;
+    }
+
+    if ( horLineVotesInitSwitch ) {
+        for (int y = 0; y < edgeWidth; y++) delete []horLineVotes[y];
+        delete []horLineVotes;
     }
 
     mainEdgesList.empty();

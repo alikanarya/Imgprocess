@@ -105,9 +105,9 @@ class imgProcess{
         bool detected;                      // false for any known un-matched criteria
         int voidIndex;                      // index no of <void space list> holding primary void line data
         int secondLineIndex;
-        int trackCenterX, trackCenterY;     // coor. of center beteen corners
-        int leftCornerX, leftCornerY;
-        int rightCornerX, rightCornerY;
+        int trackCenterX = -1, trackCenterY = -1;     // coor. of center beteen corners
+        int leftCornerX = -1, leftCornerY = -1;
+        int rightCornerX = -1, rightCornerY = -1;
         int leftMostCornerX, leftMostCornerY;
         int rightMostCornerX, rightMostCornerY;
         QList<voidLine *> voidSpace;        // list to hold found void lines
@@ -230,6 +230,9 @@ class imgProcess{
 
         float **houghLinesSorted;           // sort houghLines wrt distance
         bool houghLinesSortedInitSwitch;    // to delete in destructor
+
+        float **horLineVotes;               // max vote values on hor line
+        bool horLineVotesInitSwitch = false;// to delete in destructor
 
         int *histogram;                     // histogram array
         bool histogramInitSwitch;           // to delete in destructor
@@ -419,6 +422,9 @@ class imgProcess{
 
         // EDGE DETECTION ALGO
         void detectMainEdges(bool thinjoint, bool debug = false);
+
+        // HORIZONTAL LINE SCAN WITH MAX VOTES
+        void detectScanHorizontal(int y);
 
         bool sortHoughLines_toDistance(int _size);
 
