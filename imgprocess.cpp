@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "math.h"
+#include <QDebug>
 
 #include "imgprocess_msg.h"
 #include "../_Modules/Algo/localMinimum.h"
@@ -3159,20 +3160,44 @@ void imgProcess::detectScanHorizontal(int y){
     for (int j = 0; j < edgeWidth; j++)   horLineVotes[j] = new float[3];
     horLineVotesInitSwitch = true;
 
-    int max, maxDistance, lineY;
+    int dist, max, maxDistance, lineY;
     float angle = 0, maxTheta = 0;
     float sinM = sin(thetaMax*R2D);
     float res = 0;
     if (sinM >= 0.001)
         res = cos(thetaMax*R2D) / sinM;
 
-    bool flag = true;
-    for (int x = 0; x < edgeWidth; x++){
 
+    for (int x = 0; x < edgeWidth; x++){
         max = 0;
         maxDistance = 0;
         maxTheta = 0;
+        //if (edgeMapMatrix[y][x]){
+            for (int i = 0; i < houghThetaSize; i++){
+                angle = thetaMin + i * thetaStep;
+                dist = (int) ((x - centerX) * cos(angle * R2D) + (y - centerY) * sin(angle * R2D));
+                //qDebug() << "dist: " << dist << " angIdx: " << i;
+                if (dist >= 0){
+                    if (houghSpace[dist][i] > max){
+                        max = houghSpace[dist][i];
+                        maxDistance = dist;
+                        maxTheta = angle;
+                    }
+                }
+            }
+            horLineVotes[x][0] = maxDistance;   // distance
+            horLineVotes[x][1] = maxTheta;      // angle
+            horLineVotes[x][2] = max;           // vote value
+        /*} else {
+            horLineVotes[x][0] = 0;
+            horLineVotes[x][1] = 0;
+            horLineVotes[x][2] = 0;
+        }*/
+    }
 
+/*
+    bool flag = true;
+    for (int x = 0; x < edgeWidth; x++){
         for (int distance = 0; distance < houghDistanceMax; distance++)
             for (int i = 0; i < houghThetaSize; i++){
 
@@ -3199,8 +3224,8 @@ void imgProcess::detectScanHorizontal(int y){
         horLineVotes[x][0] = maxDistance;                               // distance
         horLineVotes[x][1] = maxTheta;                                     // angle
         horLineVotes[x][2] = max;                                       // vote value
-
     }
+    */
 
 }
 
