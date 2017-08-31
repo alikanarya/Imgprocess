@@ -3160,13 +3160,8 @@ void imgProcess::detectScanHorizontal(int y){
     for (int j = 0; j < edgeWidth; j++)   horLineVotes[j] = new float[3];
     horLineVotesInitSwitch = true;
 
-    int dist, max, maxDistance, lineY;
+    int dist, max, maxDistance;
     float angle = 0, maxTheta = 0;
-    float sinM = sin(thetaMax*R2D);
-    float res = 0;
-    if (sinM >= 0.001)
-        res = cos(thetaMax*R2D) / sinM;
-
 
     for (int x = 0; x < edgeWidth; x++){
         max = 0;
@@ -3194,38 +3189,6 @@ void imgProcess::detectScanHorizontal(int y){
             horLineVotes[x][2] = 0;
         }*/
     }
-
-/*
-    bool flag = true;
-    for (int x = 0; x < edgeWidth; x++){
-        for (int distance = 0; distance < houghDistanceMax; distance++)
-            for (int i = 0; i < houghThetaSize; i++){
-
-                angle = thetaMin + i * thetaStep;
-
-                if (abs(angle)>=1)
-                    lineY = getLineY((x - centerX), distance, angle) - centerY;
-                else if (abs(x-distance) <=2.6)
-                    lineY = y;
-                else
-                    flag = false;
-
-                //if (lineY == y){
-                if (abs(lineY-y) <= 58 && flag){
-                    if (houghSpace[distance][i] > max){
-                        max = houghSpace[distance][i];
-                        maxDistance = distance;
-                        maxTheta = angle;
-                    }
-                }
-                flag = true;
-            }
-
-        horLineVotes[x][0] = maxDistance;                               // distance
-        horLineVotes[x][1] = maxTheta;                                     // angle
-        horLineVotes[x][2] = max;                                       // vote value
-    }
-    */
 
 }
 
