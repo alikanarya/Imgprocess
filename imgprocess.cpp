@@ -142,6 +142,19 @@ void imgProcess::constructValueMaxMatrix(QImage image){
 }
 
 
+void imgProcess::normalizeValueMatrix(double factor){
+
+    valueMatrixNorm = new double*[imageHeight];
+    for (int j = 0; j < imageHeight; j++)   valueMatrixNorm[j] = new double[imageWidth];
+    valueMatrixNormInitSwitch = true;
+
+    for (int y = 0; y < imageHeight; y++)
+        for (int x = 0; x < imageWidth; x++){
+            valueMatrixNorm[y][x] = valueMatrix[y][x] / factor;
+        }
+}
+
+
 float imgProcess::gaussianFn(int x,int y, float stddev){
 
     if (stddev != 0)
@@ -276,6 +289,27 @@ bool imgProcess::saveMatrix(int **matrix, int width, int height, QString fname, 
 
 
 bool imgProcess::saveMatrix(float **matrix, int width, int height, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width; x++){
+                out << matrix[y][x];
+                if (x != (width - 1)) out << ",";
+            }
+            out << "\n";
+        }
+        file.close();
+    } else saveStatus = false;
+    return saveStatus;
+}
+
+
+bool imgProcess::saveMatrix(double **matrix, int width, int height, QString fname){
 
     QFile file(fname);
     bool saveStatus = true;
@@ -3790,6 +3824,49 @@ QImage* imgProcess::getImage_cannyTracedEdges( QImage::Format format ){
 }
 
 
+double imgProcess::membershipFn(double in, double k){
+
+    return ( 1 / (1+abs(in-k)) );
+}
+
+
+double imgProcess::entropyFn(double in){
+
+    return ( -1 * in * log(in) );
+}
+
+
+double imgProcess::calcEntropyMatrix(int windowSize){
+
+    FEM_height = imageHeight - windowSize + 1;
+    FEM_width = imageWidth - windowSize + 1;
+
+    int winHalf = (windowSize - 1) / 2;
+    int winSqr = pow(windowSize,2);
+
+    fuzzyEntropyMatrix = new double*[FEM_height];
+    for (int j = 0; j < FEM_height; j++)   fuzzyEntropyMatrix[j] = new double[FEM_width];
+    fuzzyEntropyMatrixInitSwitch = true;
+
+    double globalSum = 0;
+    double sum;
+
+    for (int y = 0; y < FEM_height; y++)
+        for (int x = 0; x < FEM_width; x++){
+            sum = 0;
+
+            for (int yy = y-winHalf; yy <= (y+winHalf); yy++)
+                for (int xx = x-winHalf; xx <= (x+winHalf); xx++)
+                    sum += entropyFn( membershipFn(valueMatrixNorm[yy+winHalf][xx+winHalf], valueMatrixNorm[y+winHalf][x+winHalf]) );
+
+            fuzzyEntropyMatrix[y][x] = sum / winSqr;
+            globalSum += fuzzyEntropyMatrix[y][x];
+        }
+
+    return globalSum;
+}
+
+
 imgProcess::~imgProcess(){
 
     for (int y = 0; y < imageHeight; y++) delete []valueMatrix[y];
@@ -3957,6 +4034,16 @@ imgProcess::~imgProcess(){
     if ( horLineVotesInitSwitch ) {
         for (int y = 0; y < edgeWidth; y++) delete []horLineVotes[y];
         delete []horLineVotes;
+    }
+
+    if ( valueMatrixNormInitSwitch ) {
+        for (int y = 0; y < imageHeight; y++) delete []valueMatrixNorm[y];
+        delete []valueMatrixNorm;
+    }
+
+    if ( fuzzyEntropyMatrixInitSwitch ) {
+        for (int y = 0; y < FEM_height; y++) delete []fuzzyEntropyMatrix[y];
+        delete []fuzzyEntropyMatrix;
     }
 
     mainEdgesList.empty();

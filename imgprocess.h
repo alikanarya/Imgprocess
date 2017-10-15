@@ -237,6 +237,14 @@ class imgProcess{
         int *histogram;                     // histogram array
         bool histogramInitSwitch;           // to delete in destructor
 
+        double **valueMatrixNorm;           // normalised value matrix
+        bool valueMatrixNormInitSwitch;     // to delete in destructor
+
+        double **fuzzyEntropyMatrix;
+        bool fuzzyEntropyMatrixInitSwitch;     // to delete in destructor
+        int FEM_width = 1;
+        int FEM_height = 1;
+
         // user information
         QString statusMessage;              // general message var about processing
         int angleAvg;                       // average angle degree wrt center point (-90)
@@ -346,12 +354,14 @@ class imgProcess{
         void constructValueMaxMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
 
+        void normalizeValueMatrix(double factor);
         float gaussianFn(int x,int y, float stddev);
         // saves a int matrix with given filename
         // saving with X and _ pointers (not used)
         bool saveMatrix(int **matrix, int width, int height, QString fname, int threshold = 255, bool xSwitch = false);
 
         bool saveMatrix(float **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
+        bool saveMatrix(double **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
         bool saveMatrix(bool **matrix, int width, int height, QString fname);  // saves a boolean matrix with given filename
         bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
         bool saveList(QList<int> array, QString fname);
@@ -453,6 +463,10 @@ class imgProcess{
         QImage getImageMainEdges( int number, bool matrixFlag = true );
         QImage getImageMainEdges_2ndList( bool enableCenter, bool matrixFlag = true );
 
+
+        double membershipFn(double in, double k);
+        double entropyFn(double in);
+        double calcEntropyMatrix(int windowSize);
 
         ~imgProcess();                                      // destructor
 };
