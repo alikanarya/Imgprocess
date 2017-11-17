@@ -195,53 +195,53 @@ class imgProcess{
         int **valueMatrixOrg;                  // image data matrix
         int **edgeMatrix;                   // edge image data matrix
         int **edgeGradientMatrix;           // edge gradient data matrix
-        bool edgeGradientMatrixInitSwitch;
+        bool edgeGradientMatrixInitSwitch = false;
         int **edgeSuppressedMatrix;
-        bool edgeSuppressedMatrixInitSwitch;
+        bool edgeSuppressedMatrixInitSwitch = false;
         int **edgeStrongMatrix;
-        bool edgeStrongMatrixInitSwitch;
+        bool edgeStrongMatrixInitSwitch = false;
         int **edgeWeakMatrix;
-        bool edgeWeakMatrixInitSwitch;
+        bool edgeWeakMatrixInitSwitch = false;
         bool **edgeMapMatrix;
-        bool edgeMapMatrixInitSwitch;
+        bool edgeMapMatrixInitSwitch = false;
         bool **edgeVisitMatrix;
-        bool edgeVisitMatrixInitSwitch;
+        bool edgeVisitMatrixInitSwitch = false;
         bool **edgeW2SMapMatrix;
-        bool edgeW2SMapMatrixInitSwitch;
+        bool edgeW2SMapMatrixInitSwitch = false;
 
         int valueSelection;
         bool **edgeMapValueMatrix;
-        bool edgeMapValueMatrixInitSwitch;
+        bool edgeMapValueMatrixInitSwitch = false;
         bool **edgeMapRedMatrix;
-        bool edgeMapRedMatrixInitSwitch;
+        bool edgeMapRedMatrixInitSwitch = false;
         bool **edgeMapGreenMatrix;
-        bool edgeMapGreenMatrixInitSwitch;
+        bool edgeMapGreenMatrixInitSwitch = false;
         bool **edgeMapBlueMatrix;
-        bool edgeMapBlueMatrixInitSwitch;
+        bool edgeMapBlueMatrixInitSwitch = false;
 
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
         int **houghSpace;                   // line votes: line search matrix, depends max. distance & angle scale
-        bool houghSpaceInitSwitch;          // to delete in destructor
+        bool houghSpaceInitSwitch = false;          // to delete in destructor
 
         float **houghLines;                 // line data of max. voted lines; distance/angle/vote value
-        bool houghLinesInitSwitch;          // to delete in destructor
+        bool houghLinesInitSwitch = false;          // to delete in destructor
 
         float **houghLinesSorted;           // sort houghLines wrt distance
-        bool houghLinesSortedInitSwitch;    // to delete in destructor
+        bool houghLinesSortedInitSwitch = false;    // to delete in destructor
 
         float **horLineVotes;               // max vote values on hor line
         bool horLineVotesInitSwitch = false;// to delete in destructor
 
         int *histogram;                     // histogram array
-        bool histogramInitSwitch;           // to delete in destructor
+        bool histogramInitSwitch = false;           // to delete in destructor
 
         double **valueMatrixNorm;           // normalised value matrix
-        bool valueMatrixNormInitSwitch;     // to delete in destructor
+        bool valueMatrixNormInitSwitch = false;     // to delete in destructor
 
         double **fuzzyEntropyMatrix;
-        bool fuzzyEntropyMatrixInitSwitch;     // to delete in destructor
+        bool fuzzyEntropyMatrixInitSwitch = false;     // to delete in destructor
         int FEM_width = 1;
         int FEM_height = 1;
 
@@ -254,7 +254,7 @@ class imgProcess{
         float stdDev = 0.84089642;
         float **gaussianMatrix;
         float gaussianMatrixSum = 1;
-        bool gaussianMatrixInitSwitch;
+        bool gaussianMatrixInitSwitch = false;
 
 
         // constructor
