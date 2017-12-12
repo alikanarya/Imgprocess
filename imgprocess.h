@@ -419,6 +419,7 @@ class imgProcess{
                                                 // MUST BE BIGGEST VOID SPACE THROUGHOUT THE LINE
 
         solidLine detectLongestSolidLine(float distance, float angle, bool flag, int xStartOffset, int xEndOffset);  // detect longest solid(continuous) line from hough space via given distance angle&distance, flag: false->edgeThickened, true->value
+        solidLine detectLongestSolidLineVert(float distance, float angle, int yStartOffset, int yEndOffset);  // detect longest solid(continuous) line (vertical) from hough space via given distance angle&distance
         void detectLongestSolidLines(bool averaging = true, bool matrixFlag = true);    // detect longest solid(continuous) lines from value(true) or edge(false) matrix
 
         void detectThinJointCenter(int refAngle, int precisionSize);

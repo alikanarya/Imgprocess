@@ -1956,6 +1956,114 @@ void imgProcess::detectPrimaryVoid(){
 }
 
 
+solidLine imgProcess::detectLongestSolidLineVert(float distance, float angle, int yStartOffset, int yEndOffset) {
+
+    solidSpace.clear();
+
+    int width, height;
+
+    width = edgeWidth;
+    height = edgeHeight;
+
+    int lineX = 0, lineLength = 0;
+    int prevX = 0, prevY = 0, state = 0;
+
+    bool prevValue = false; // begin with empty
+    bool currentValue = false;
+
+    solidLine *line;
+
+    for (int y = yStartOffset; y <= (yEndOffset + 1); y++){   // +1 for last coordinate to catch last line shape
+
+        lineX = centerX + getLineX((y - centerY), distance, angle);
+
+        if (lineX >= 0 && lineX < width){
+
+            if (y == (yEndOffset+1) )
+                currentValue = false;   // end with empty
+            else {
+                currentValue = edgeMapMatrix[y][lineX];
+            }
+
+            if (!prevValue && currentValue){
+                state = 1;  // void to full
+            } else
+            if (prevValue && !currentValue){
+                state = 0;  // full to void
+            } else
+            if (!prevValue && !currentValue){
+                state = 3;  // void unchanged
+            } else
+            if (prevValue && currentValue){
+                state = 4;  // full unchanged
+            } else
+                state = 5;  // not recognized
+
+            if (state == 1){    // if solid line is STARTED get coor. with prev. coor (last full point coor)
+                line = new solidLine();
+                line->start.setX(lineX);
+                line->start.setY(y);
+                lineLength++;
+            }
+
+            if (state == 4){    // calc. solid line length - SOLID CONTINUES
+                lineLength++;
+            }
+
+            if (state == 0){    // if solid line is END get coor. of end point & append solid line data to list
+                line->end.setX(prevX);
+                line->end.setY(prevY);
+                line->length = lineLength;
+                line->angle = angle;
+                line->distance = distance;
+                solidSpace.append(line);
+                lineLength = 0;
+            }
+
+            prevValue = currentValue;
+            prevX = lineX;
+            prevY = y;
+        }
+    }
+
+
+    // find longest line in solid space
+    solidLine longestLine;
+
+    // no solid line
+    longestLine.start.setX( -1 );
+    longestLine.start.setY( -1 );
+    longestLine.end.setX( -1 );
+    longestLine.end.setY( -1 );
+    longestLine.length = -1;
+    longestLine.distance = distance;
+    longestLine.angle = angle;
+
+    int index = 0, maxLength = 0;
+
+    if (solidSpace.size() != 0){
+
+        for (int i = 0; i < solidSpace.size(); i++){
+            if (solidSpace[i]->length > maxLength){
+                index = i;
+                maxLength = solidSpace[i]->length;
+            }
+        }
+
+        if (maxLength != 0){
+            longestLine.start.setX( solidSpace[index]->start.x() );
+            longestLine.start.setY( solidSpace[index]->start.y() );
+            longestLine.end.setX( solidSpace[index]->end.x() );
+            longestLine.end.setY( solidSpace[index]->end.y() );
+            longestLine.length = solidSpace[index]->length;
+        }
+    }
+
+    for (int i = 0; i < solidSpace.size(); i++) delete solidSpace[i];
+
+    return longestLine;
+}
+
 solidLine imgProcess::detectLongestSolidLine(float distance, float angle, bool flag, int xOffset, int xEndOffset) {
 
     solidSpace.clear();
