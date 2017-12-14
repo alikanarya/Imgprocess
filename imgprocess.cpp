@@ -3106,7 +3106,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             listHoughData2ndSize = listHoughData2nd.size();
 
-            if (DEBUG) {
+            //if (DEBUG) {
                 listHoughData2ndArray = new int*[listHoughData2ndSize];
                 for (int d = 0; d < listHoughData2ndSize; d++)    listHoughData2ndArray[d] = new int[3];
                 listHoughData2ndArrayInitSwitch = true;
@@ -3116,7 +3116,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     listHoughData2ndArray[d][1] = listHoughData2nd[d].angle;
                     listHoughData2ndArray[d][2] = listHoughData2nd[d].voteValue;
                 }
-            }
+            //}
 
 
             if (!listHoughData2nd.isEmpty()){
