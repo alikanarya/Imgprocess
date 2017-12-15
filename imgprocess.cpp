@@ -3295,6 +3295,32 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
     localMaximalist.empty();
 }
 
+houghData imgProcess::detectMainEdgesSolidLine(float rate, int &solidLineLength, bool thinjoint, bool debug){
+
+    detectMainEdges(thinjoint, debug);
+
+    mainEdgesList.clear();
+
+    houghData hd;
+    hd.distance = -1, hd.angle = -1, hd.voteValue = -1;
+    int max = -1, length, index = 0;
+    for (int i = 0; i < listHoughData2ndSize; i++) {
+        length = detectLongestSolidLineVert( listHoughData2ndArray[i][0], listHoughData2ndArray[i][1], 0, edgeHeight-1 ).length;
+        if ( length > max ) {
+            max = length;
+            index = i;
+        }
+    }
+    if (max != -1){
+        hd.distance = centerLine.distance = listHoughData2ndArray[index][0];
+        hd.angle = centerLine.angle = listHoughData2ndArray[index][1];
+        hd.voteValue = centerLine.voteValue = listHoughData2ndArray[index][2];
+        mainEdgesList.append(hd);
+    }
+    solidLineLength = max;
+
+    return hd;
+}
 
 void imgProcess::detectScanHorizontal(int y){
 
