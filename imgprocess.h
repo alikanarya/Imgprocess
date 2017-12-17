@@ -188,6 +188,8 @@ class imgProcess{
         int mainEdgeScore;
         float mainEdgeScorePercent;
 
+        int solidLineLength = 0;
+
         int errorEdgeLimit;
         int errorAngleLimit;
 
@@ -433,7 +435,7 @@ class imgProcess{
 
         // EDGE DETECTION ALGO
         void detectMainEdges(bool thinjoint, bool debug = false);
-        houghData detectMainEdgesSolidLine(float rate, int &solidLineLength, bool thinjoint, bool debug = false);
+        houghData detectMainEdgesSolidLine(float rate, bool thinjoint, bool debug = false);
 
         // HORIZONTAL LINE SCAN WITH MAX VOTES
         void detectScanHorizontal(int y);

@@ -3295,7 +3295,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
     localMaximalist.empty();
 }
 
-houghData imgProcess::detectMainEdgesSolidLine(float rate, int &solidLineLength, bool thinjoint, bool debug){
+houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool debug){
 
     detectMainEdges(thinjoint, debug);
 
@@ -3311,13 +3311,24 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, int &solidLineLength,
             index = i;
         }
     }
-    if (max != -1){
+
+    solidLineLength = max;
+
+    if (solidLineLength != -1){
         hd.distance = centerLine.distance = listHoughData2ndArray[index][0];
         hd.angle = centerLine.angle = listHoughData2ndArray[index][1];
         hd.voteValue = centerLine.voteValue = listHoughData2ndArray[index][2];
         mainEdgesList.append(hd);
+
+        detected = true;
+        int yCoor = edgeHeight/2;
+        trackCenterX = rightCornerX = leftCornerX = centerX + 1 + getLineX((centerY + 1 - yCoor), hd.distance, hd.angle);
+        mainEdgeScorePercent = abs ( solidLineLength * sin (R2D * (90 - hd.angle)) * 100.0 / edgeHeight );
+
+    } else {
+        detected = false;
+        trackCenterX = rightCornerX = leftCornerX = 0;
     }
-    solidLineLength = max;
 
     return hd;
 }
@@ -3671,8 +3682,9 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
             //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
             lineX = getLineX((y-centerY), centerLine.distance, centerLine.angle) - centerX;
 
-            if (lineX >= 0 && lineX < width)
-                imgSolidLines.setPixel( lineX + xOffset, y, valueCenter );
+            if (lineX > 0 && lineX < (width-1))
+                for (int xx = -1; xx <= 1; xx++)
+                    imgSolidLines.setPixel( lineX + xOffset + xx, y, valueCenter );
         }
 
     /*
