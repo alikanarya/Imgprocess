@@ -3322,7 +3322,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
         detected = true;
         int yCoor = edgeHeight/2;
-        trackCenterX = rightCornerX = leftCornerX = centerX + 1 + getLineX((centerY + 1 - yCoor), hd.distance, hd.angle);
+//        trackCenterX = rightCornerX = leftCornerX = centerX + 1 + getLineX((centerY + 1 - yCoor), hd.distance, hd.angle);
+        trackCenterX = rightCornerX = leftCornerX = getLineX((yCoor - centerY), hd.distance, hd.angle) - centerX + 1;
         mainEdgeScorePercent = abs ( solidLineLength * sin (R2D * (90 - hd.angle)) * 100.0 / edgeHeight );
 
     } else {
