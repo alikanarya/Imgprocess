@@ -3331,6 +3331,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         trackCenterX = rightCornerX = leftCornerX = 0;
     }
 
+    valueHistogram(false);
     return hd;
 }
 
@@ -3440,17 +3441,30 @@ int* imgProcess::edgeSobelHistogram(){
 }
 
 
-int* imgProcess::valueHistogram(){
+int* imgProcess::valueHistogram(bool axis){
 
-    histogram = new int[imageHeight];
+    int traceAxis, valueAxis;
+    if (!axis){ // along X
+        traceAxis = imageWidth;
+        valueAxis = imageHeight;
+    } else {    // along Y
+        traceAxis = imageHeight;
+        valueAxis = imageWidth;
+    }
+    histogram = new int[traceAxis];
     histogramInitSwitch = true;
 
     int sum;
 
-    for(int y = 0; y < imageHeight; y++){
+    for(int t = 0; t < traceAxis; t++){
         sum = 0;
-        for(int x = 0; x < imageWidth; x++) sum += valueMatrix[y][x];
-        histogram[y] = sum / imageWidth;
+        for(int v = 0; v < valueAxis; v++) {
+            if (!axis)
+                sum += valueMatrix[v][t];   //[y][x]
+            else
+                sum += valueMatrix[t][v];   //[y][x]
+        }
+        histogram[t] = sum / traceAxis;
     }
     return histogram;
 }

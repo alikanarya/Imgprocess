@@ -450,7 +450,7 @@ class imgProcess{
         int getLineY(int x, float distance, float theta);   // get hough line Y coor from X coor
         int getLineX(int y, float distance, float theta);   // get hough line X coor from Y coor
         int* edgeSobelHistogram();                          // produce edge matrix Y histogram accor. X values
-        int* valueHistogram();                              // produce value matrix Y histogram accor. X values
+        int* valueHistogram(bool axis = false);              // produce value matrix histogram, false: along X, true: along Y
 
         void findMedianValue();
 
