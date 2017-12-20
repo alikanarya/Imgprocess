@@ -3331,7 +3331,9 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         trackCenterX = rightCornerX = leftCornerX = 0;
     }
 
-    valueHistogram(false);
+    valueHistogramGray(false);
+    findLocalMinimum(histogram, histogramSize, histogramPeaks);
+
     return hd;
 }
 
@@ -3453,6 +3455,7 @@ int* imgProcess::valueHistogram(bool axis){
     }
     histogram = new int[traceAxis];
     histogramInitSwitch = true;
+    histogramSize = traceAxis;
 
     int sum;
 
@@ -3466,6 +3469,61 @@ int* imgProcess::valueHistogram(bool axis){
         }
         histogram[t] = sum / traceAxis;
     }
+    return histogram;
+}
+
+int* imgProcess::valueHistogramGray(bool axis){
+
+    QImage image = imgOrginal.convertToFormat(QImage::Format_Grayscale8);
+    image.save("gray.jpg");
+    QRgb rgbValue;
+    QColor *color;
+    int colorValue;
+
+    int **_valueMatrix = new int*[image.height()];
+    for (int i = 0; i < image.height(); i++) _valueMatrix[i] = new int[image.width()];
+
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++){
+            rgbValue = image.pixel(x,y);
+            color = new QColor(rgbValue);
+            colorValue = color->value();
+
+            if ( colorValue > 255) colorValue = 255;
+            else if (colorValue < 0)  colorValue = 0;
+
+            _valueMatrix[y][x] = colorValue;
+            delete color;
+        }
+
+    int traceAxis, valueAxis;
+    if (!axis){ // along X
+        traceAxis = imageWidth;
+        valueAxis = imageHeight;
+    } else {    // along Y
+        traceAxis = imageHeight;
+        valueAxis = imageWidth;
+    }
+    histogram = new int[traceAxis];
+    histogramInitSwitch = true;
+    histogramSize = traceAxis;
+
+    int sum;
+
+    for(int t = 0; t < traceAxis; t++){
+        sum = 0;
+        for(int v = 0; v < valueAxis; v++) {
+            if (!axis)
+                sum += _valueMatrix[v][t];   //[y][x]
+            else
+                sum += _valueMatrix[t][v];   //[y][x]
+        }
+        histogram[t] = sum / traceAxis;
+    }
+
+    for (int y = 0; y < image.height(); y++) delete []_valueMatrix[y];
+    delete []_valueMatrix;
+
     return histogram;
 }
 

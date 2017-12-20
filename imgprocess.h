@@ -3,6 +3,7 @@
 
 #include "imgprocess_msg.h"
 //#include "../_Modules/Algo/localMinimum.h"
+#include "../_Modules/Algo/datatypes.h"
 
 #include <QImage>
 #include <QColor>
@@ -237,7 +238,9 @@ class imgProcess{
         bool horLineVotesInitSwitch = false;// to delete in destructor
 
         int *histogram;                     // histogram array
+        int histogramSize = 0;              // histogram array
         bool histogramInitSwitch = false;           // to delete in destructor
+        QList<range> histogramPeaks;
 
         double **valueMatrixNorm;           // normalised value matrix
         bool valueMatrixNormInitSwitch = false;     // to delete in destructor
@@ -451,6 +454,7 @@ class imgProcess{
         int getLineX(int y, float distance, float theta);   // get hough line X coor from Y coor
         int* edgeSobelHistogram();                          // produce edge matrix Y histogram accor. X values
         int* valueHistogram(bool axis = false);              // produce value matrix histogram, false: along X, true: along Y
+        int* valueHistogramGray(bool axis = false);              // produce value matrix histogram, false: along X, true: along Y
 
         void findMedianValue();
 
