@@ -238,9 +238,12 @@ class imgProcess{
         bool horLineVotesInitSwitch = false;// to delete in destructor
 
         int *histogram;                     // histogram array
-        int histogramSize = 0;              // histogram array
+        int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         QList<range> histogramPeaks;
+        QList<int> histogramDerivative;
+        float histogramMaxThreshold = 0.75;
+        QList<int> histogramMaxPeaksList;
 
         double **valueMatrixNorm;           // normalised value matrix
         bool valueMatrixNormInitSwitch = false;     // to delete in destructor

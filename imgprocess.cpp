@@ -3332,7 +3332,38 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
     }
 
     valueHistogramGray(false);
+
+    histogramPeaks.clear();
     findLocalMinimum(histogram, histogramSize, histogramPeaks);
+
+    histogramDerivative.clear();
+    for (int i=1; i<histogramPeaks.size(); i++) {
+        histogramDerivative.append( histogram[histogramPeaks[i].start] - histogram[histogramPeaks[i-1].start] );
+    }
+
+    max = -1;
+    int peaksIndex = 0;
+    for (int i=0; i<histogramDerivative.size(); i++) {
+        if ( abs(histogramDerivative[i]) > max ){
+            max = abs(histogramDerivative[i]);
+            if (histogramDerivative[i] < 0)    // trend decreasing
+                peaksIndex = i;
+            else            // trend increasing
+                peaksIndex = i+1;
+        }
+    }
+
+    histogramMaxPeaksList.clear();
+    int threshold = max * histogramMaxThreshold;
+    qDebug() << max << "-" << peaksIndex << "-" << threshold;
+    for (int i=0; i<histogramDerivative.size(); i++) {
+        if ( abs(histogramDerivative[i]) > threshold ) {
+            if (histogramDerivative[i] < 0)    // trend decreasing
+                histogramMaxPeaksList.append(i);
+            else                                // trend increasing
+                histogramMaxPeaksList.append(i+1);
+        }
+    }
 
     return hd;
 }
