@@ -3355,7 +3355,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
     histogramMaxPeaksList.clear();
     int threshold = max * histogramMaxThreshold;
-    qDebug() << max << "-" << peaksIndex << "-" << threshold;
+    //qDebug() << max << "-" << peaksIndex << "-" << threshold;
     for (int i=0; i<histogramDerivative.size(); i++) {
         if ( abs(histogramDerivative[i]) > threshold ) {
             if (histogramDerivative[i] < 0)    // trend decreasing
@@ -3506,7 +3506,7 @@ int* imgProcess::valueHistogram(bool axis){
 int* imgProcess::valueHistogramGray(bool axis){
 
     QImage image = imgOrginal.convertToFormat(QImage::Format_Grayscale8);
-    image.save("gray.jpg");
+    //image.save("gray.jpg");
     QRgb rgbValue;
     QColor *color;
     int colorValue;
