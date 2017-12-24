@@ -3331,7 +3331,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         trackCenterX = rightCornerX = leftCornerX = 0;
     }
 
-    valueHistogramGray(false);
+    valueHistogram(false);
+//    valueHistogramGray(false);
 
     histogramPeaks.clear();
     findLocalMinimum(histogram, histogramSize, histogramPeaks);
