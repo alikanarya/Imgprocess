@@ -3334,6 +3334,42 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
     valueHistogram(false);
 //    valueHistogramGray(false);
 
+    histogramFiltered = new int[histogramSize];
+    histogramFilteredInitSwitch = true;
+
+    int noiseDia = (maFilterKernelSize-1)/2;
+
+    /* Moving Average Filter
+    float sum;
+    for (int x = 0; x < histogramSize; x++){
+        if (x < noiseDia || x > (histogramSize-noiseDia))
+           histogramFiltered[x] = histogram[x] ;
+        else {
+            sum = 0;
+            for (int k = x-noiseDia; k <= x+noiseDia; k++)
+                sum += histogram[k];
+            histogramFiltered[x] = sum /  maFilterKernelSize;
+        }
+    }
+    */
+
+    // Recursive Moving Average Filter
+    float initialAvg = 0;
+    for (int x = 0; x < maFilterKernelSize; x++)
+        initialAvg += histogram[x];
+    initialAvg /= maFilterKernelSize;
+
+    for (int x = 0; x < histogramSize; x++){
+        if (x < noiseDia || x > (histogramSize-noiseDia))
+           histogramFiltered[x] = histogram[x] ;
+        else if (x == noiseDia){
+            histogramFiltered[x] = initialAvg ;
+        } else {
+            histogramFiltered[x] = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
+        }
+    }
+
+
     histogramPeaks.clear();
     findLocalMinimum(histogram, histogramSize, histogramPeaks);
 
@@ -4150,6 +4186,10 @@ imgProcess::~imgProcess(){
 
     if ( histogramInitSwitch ) {
         delete []histogram;
+    }
+
+    if ( histogramFilteredInitSwitch ) {
+        delete []histogramFiltered;
     }
 
     if ( voidSpace.size() > 0 ) {
