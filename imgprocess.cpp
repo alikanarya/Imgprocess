@@ -3339,19 +3339,20 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
     int noiseDia = (maFilterKernelSize-1)/2;
 
-    /* Moving Average Filter
+    // Moving Average Filter
+    histogramFilteredX = new int[histogramSize];
     float sum;
     for (int x = 0; x < histogramSize; x++){
         if (x < noiseDia || x > (histogramSize-noiseDia))
-           histogramFiltered[x] = histogram[x] ;
+           histogramFilteredX[x] = histogram[x] ;
         else {
             sum = 0;
             for (int k = x-noiseDia; k <= x+noiseDia; k++)
                 sum += histogram[k];
-            histogramFiltered[x] = sum /  maFilterKernelSize;
+            histogramFilteredX[x] = sum /  maFilterKernelSize;
         }
     }
-    */
+    //
 
     // Recursive Moving Average Filter
     float initialAvg = 0;

@@ -246,6 +246,7 @@ class imgProcess{
         QList<int> histogramDerivative;
         float histogramMaxThreshold = 0.75;
         QList<int> histogramMaxPeaksList;
+        int *histogramFilteredX;             // histogram array after noise reduction
 
         int maFilterKernelSize = 11;
 
