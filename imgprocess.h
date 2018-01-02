@@ -243,6 +243,7 @@ class imgProcess{
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
         QList<range> histogramPeaks;
+        QList<range> histogramMins;
         QList<int> histogramDerivative;
         float histogramMaxThreshold = 0.75;
         QList<int> histogramMaxPeaksList;

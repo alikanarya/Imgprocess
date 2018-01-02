@@ -3372,7 +3372,10 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
 
     histogramPeaks.clear();
-    findLocalMinimum(histogram, histogramSize, histogramPeaks);
+    findLocalMinimum(histogramFiltered, histogramSize, histogramPeaks);
+    histogramMins.clear();
+    findMinimums(histogramFiltered, histogramSize, histogramMins);
+
 
     histogramDerivative.clear();
     for (int i=1; i<histogramPeaks.size(); i++) {
