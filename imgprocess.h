@@ -244,6 +244,7 @@ class imgProcess{
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
         QList<range> histogramPeaks;
         QList<range> histogramMins;
+        QList<range> histogramExtremes;
         QList<int> histogramDerivative;
         float histogramMaxThreshold = 0.75;
         QList<int> histogramMaxPeaksList;
@@ -484,6 +485,8 @@ class imgProcess{
         double membershipFn(double in, double k);
         double entropyFn(double in);
         double calcEntropyMatrix(int windowSize);
+        void findMaxs(int *array, int array_size, QList<range> &list);
+        void findMins(int *array, int array_size, QList<range> &list);
 
         ~imgProcess();                                      // destructor
 };

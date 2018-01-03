@@ -3372,9 +3372,50 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
 
     histogramPeaks.clear();
-    findLocalMinimum(histogramFiltered, histogramSize, histogramPeaks);
+    findMaxs(histogramFiltered, histogramSize, histogramPeaks);
+
+    for (int i=0; i<histogramPeaks.size(); i++)
+    qDebug() << "hp" << QString::number(histogramPeaks[i].start) << ", " << QString::number(histogramPeaks[i].end) << ", " << QString::number(histogramFiltered[ histogramPeaks[i].start ]);
+
     histogramMins.clear();
-    findMinimums(histogramFiltered, histogramSize, histogramMins);
+    findMins(histogramFiltered, histogramSize, histogramMins);
+
+    for (int i=0; i<histogramMins.size(); i++)
+    qDebug() << "hm" << QString::number(histogramMins[i].start) << ", " << QString::number(histogramMins[i].end) << ", " << QString::number(histogramFiltered[ histogramMins[i].start ]);
+
+    histogramExtremes.clear();
+    int peaksIdx = 0;
+    int minsIdx = 0;
+    int x = 0;
+    do {
+        if (peaksIdx < histogramPeaks.size()){
+            if ( histogramPeaks[peaksIdx].start <= x && x <= histogramPeaks[peaksIdx].end ){
+                x = histogramPeaks[peaksIdx].end;
+                range p;
+                p.start = histogramPeaks[peaksIdx].start;
+                p.end = histogramPeaks[peaksIdx].end;
+                qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                histogramExtremes.append(p);
+                peaksIdx++;
+            }
+        }
+
+        if (minsIdx < histogramMins.size()){
+            if ( histogramMins[minsIdx].start <= x && x <= histogramMins[minsIdx].end ){
+                range p;
+                p.start = histogramMins[minsIdx].start;
+                p.end = histogramMins[minsIdx].end;
+                qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                histogramExtremes.append(p);
+                x = histogramMins[minsIdx].end;
+                minsIdx++;
+            }
+        }
+        x++;
+    } while (x < histogramSize);
+
+    //for (int i=0; i<histogramExtremes.size(); i++)
+        //qDebug() << QString::number(histogramExtremes[i].start) << ", " << QString::number(histogramExtremes[i].end) << ", " << QString::number(histogramFiltered[ histogramExtremes[i].start ]);
 
 
     histogramDerivative.clear();
@@ -3535,9 +3576,9 @@ int* imgProcess::valueHistogram(bool axis){
         sum = 0;
         for(int v = 0; v < valueAxis; v++) {
             if (!axis)
-                sum += valueMatrix[v][t];   //[y][x]
+                sum += valueMatrixOrg[v][t];   //[y][x]
             else
-                sum += valueMatrix[t][v];   //[y][x]
+                sum += valueMatrixOrg[t][v];   //[y][x]
         }
         histogram[t] = sum / traceAxis;
     }
@@ -4155,6 +4196,110 @@ double imgProcess::calcEntropyMatrix(int windowSize){
         }
 
     return globalSum;
+}
+
+void imgProcess::findMaxs(int *array, int array_size, QList<range> &list){
+    list.empty();
+
+    int startIndex = 0;
+    int refPoint, prevPoint;
+
+    for (int i = 0; i < array_size; i++){
+
+        if (i == 0){
+            refPoint =  array[i];
+            prevPoint = 0;
+        } else {
+            refPoint =  array[i];
+            prevPoint =  array[i-1];
+        }
+
+        if ( refPoint > prevPoint ){
+            startIndex = i;
+
+            if (i == (array_size - 1)){
+                range x;
+                x.start = startIndex;
+                x.end = startIndex;
+                list.append(x);
+            }
+
+            for (int j = startIndex + 1; j < array_size; j++){
+                if ( array[i] < array[j] ){  // < next, not maximum point
+                    break;
+                }
+                else
+                if ( array[i] > array[j] ){  // > next, maximum point
+
+                    i = j;
+
+                    range x;
+                    x.start = startIndex;
+                    x.end = j - 1;
+                    list.append(x);
+                    break;
+                } else if (j == (array_size - 1)) {
+                    range x;
+                    x.start = startIndex;
+                    x.end = j;
+                    list.append(x);
+                    break;
+                }
+            }
+        }
+    } // main for
+}
+
+void imgProcess::findMins(int *array, int array_size, QList<range> &list){
+    list.empty();
+
+    int startIndex = 0;
+    int refPoint, prevPoint;
+
+    for (int i = 0; i < array_size; i++){
+
+        if (i == 0){
+            refPoint =  array[i];
+            prevPoint = 0;
+        } else {
+            refPoint =  array[i];
+            prevPoint =  array[i-1];
+        }
+
+        if ( refPoint < prevPoint ){
+            startIndex = i;
+
+            if (i == (array_size - 1)){
+                range x;
+                x.start = startIndex;
+                x.end = startIndex;
+                list.append(x);
+            }
+
+            for (int j = startIndex + 1; j < array_size; j++){
+                if ( array[i] > array[j] ){  // < next, not maximum point
+                    break;
+                }
+                else
+                if ( array[i] < array[j] ){  // > next, maximum point
+
+                    i = j;
+
+                    range x;
+                    x.start = startIndex;
+                    x.end = j - 1;
+                    list.append(x);
+                    break;
+                } else if (j == (array_size - 1)) {
+                    range x;
+                    x.start = startIndex;
+                    x.end = j;
+                    list.append(x);
+                    break;
+                }
+            }
+        }
+    } // main for
 }
 
 
