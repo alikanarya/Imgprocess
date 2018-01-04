@@ -3374,14 +3374,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
     histogramPeaks.clear();
     findMaxs(histogramFiltered, histogramSize, histogramPeaks);
 
-    for (int i=0; i<histogramPeaks.size(); i++)
-    qDebug() << "hp" << QString::number(histogramPeaks[i].start) << ", " << QString::number(histogramPeaks[i].end) << ", " << QString::number(histogramFiltered[ histogramPeaks[i].start ]);
-
     histogramMins.clear();
     findMins(histogramFiltered, histogramSize, histogramMins);
-
-    for (int i=0; i<histogramMins.size(); i++)
-    qDebug() << "hm" << QString::number(histogramMins[i].start) << ", " << QString::number(histogramMins[i].end) << ", " << QString::number(histogramFiltered[ histogramMins[i].start ]);
 
     histogramExtremes.clear();
     int peaksIdx = 0;
@@ -3394,7 +3388,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                 range p;
                 p.start = histogramPeaks[peaksIdx].start;
                 p.end = histogramPeaks[peaksIdx].end;
-                qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
                 histogramExtremes.append(p);
                 peaksIdx++;
             }
@@ -3405,7 +3399,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                 range p;
                 p.start = histogramMins[minsIdx].start;
                 p.end = histogramMins[minsIdx].end;
-                qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
                 histogramExtremes.append(p);
                 x = histogramMins[minsIdx].end;
                 minsIdx++;
