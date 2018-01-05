@@ -3339,7 +3339,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
     int noiseDia = (maFilterKernelSize-1)/2;
 
-    // Moving Average Filter
+    /* Moving Average Filter
     histogramFilteredX = new int[histogramSize];
     float sum;
     for (int x = 0; x < histogramSize; x++){
@@ -3352,7 +3352,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
             histogramFilteredX[x] = sum /  maFilterKernelSize;
         }
     }
-    //
+    */
 
     // Recursive Moving Average Filter
     float initialAvg = 0;
@@ -3408,15 +3408,104 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         x++;
     } while (x < histogramSize);
 
+    max = -1000;
+    for (int i=0; i<histogramExtremes.size(); i++) {
+        if ( histogramFiltered[ histogramExtremes[i].start ] > max )
+            max = histogramFiltered[ histogramExtremes[i].start ];
+    }
+
+    float maxThreshold = max * histogramMaxThreshold;
+    histogramMaxPeaksList.clear();
+    for (int i=0; i<histogramExtremes.size(); i++) {
+        if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
+            histogramMaxPeaksList.append(i);
+    }
+
+    histogramMaxPointLen.clear();
+    histogramMaxPointAng.clear();
+    int startIndex;
+    double angThresh = abs( tan(histogramAngleThreshold*R2D) );
+    double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
+    double tangent = 0, tangentMax = 0;
+    double len = 0, lenMax = 0;
+    bool loopFlag;
+
+    for (int i=0; i<histogramMaxPeaksList.size(); i++) {
+        startIndex = histogramMaxPeaksList[i];
+        yRef = histogramFiltered[ histogramExtremes[startIndex].start ];
+
+        xRef = histogramExtremes[startIndex].end;
+        index = startIndex;
+        loopFlag = true;
+        // right direction
+        do {
+            index++;
+            if (index < histogramExtremes.size()) {
+                yNext = histogramFiltered[ histogramExtremes[index].start ];
+                if ( yNext < yRef) {
+                    xNext = histogramExtremes[index].start;
+                    tangent = (xNext - xRef) / (yRef - yNext);
+                    if ( abs(tangent) < angThresh ) {
+                        len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
+
+                        if (len > lenMax) {
+                            lenMax = len;
+                            tangentMax = tangent;
+                        }
+                    } else {
+                        loopFlag = false;
+                    }
+                } else {
+                    loopFlag = false;
+                }
+            } else {
+                loopFlag = false;
+            }
+        } while(loopFlag);
+
+        xRef = histogramExtremes[startIndex].start;
+        index = startIndex;
+        loopFlag = true;
+        // left direction
+        do {
+            index--;
+            if (index < 0) {
+                yNext = histogramFiltered[ histogramExtremes[index].end ];
+                if ( yNext < yRef) {
+                    xNext = histogramExtremes[index].end;
+                    tangent = (xNext - xRef) / (yRef - yNext);
+                    if ( abs(tangent) < angThresh ) {
+                        len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
+
+                        if (len > lenMax) {
+                            lenMax = len;
+                            tangentMax = tangent;
+                        }
+                    } else {
+                        loopFlag = false;
+                    }
+                } else {
+                    loopFlag = false;
+                }
+            } else {
+                loopFlag = false;
+            }
+        } while(loopFlag);
+
+        histogramMaxPointLen.append(lenMax);
+        histogramMaxPointAng.append(tangentMax);
+
+    } // for
+
     //for (int i=0; i<histogramExtremes.size(); i++)
         //qDebug() << QString::number(histogramExtremes[i].start) << ", " << QString::number(histogramExtremes[i].end) << ", " << QString::number(histogramFiltered[ histogramExtremes[i].start ]);
 
 
+    /*
     histogramDerivative.clear();
     for (int i=1; i<histogramPeaks.size(); i++) {
         histogramDerivative.append( histogram[histogramPeaks[i].start] - histogram[histogramPeaks[i-1].start] );
     }
-
     max = -1;
     int peaksIndex = 0;
     for (int i=0; i<histogramDerivative.size(); i++) {
@@ -3428,7 +3517,6 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                 peaksIndex = i+1;
         }
     }
-
     histogramMaxPeaksList.clear();
     int threshold = max * histogramMaxThreshold;
     //qDebug() << max << "-" << peaksIndex << "-" << threshold;
@@ -3440,6 +3528,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                 histogramMaxPeaksList.append(i+1);
         }
     }
+    */
 
     return hd;
 }
