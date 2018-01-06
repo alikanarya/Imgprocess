@@ -3434,6 +3434,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         startIndex = histogramMaxPeaksList[i];
         yRef = histogramFiltered[ histogramExtremes[startIndex].start ];
 
+        lenMax = 0, tangentMax = 0;
+
         xRef = histogramExtremes[startIndex].end;
         index = startIndex;
         loopFlag = true;
