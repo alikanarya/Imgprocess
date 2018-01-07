@@ -3424,6 +3424,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
     histogramMaxPointLen.clear();
     histogramMaxPointAng.clear();
     int startIndex;
+    int maxPoint, pairPoint;
     double angThresh = abs( tan(histogramAngleThreshold*R2D) );
     double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
     double tangent = 0, tangentMax = 0;
@@ -3434,7 +3435,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         startIndex = histogramMaxPeaksList[i];
         yRef = histogramFiltered[ histogramExtremes[startIndex].start ];
 
-        lenMax = 0, tangentMax = 0;
+        lenMax = 0, tangentMax = 0; maxPoint = 0;
 
         xRef = histogramExtremes[startIndex].end;
         index = startIndex;
@@ -3451,6 +3452,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                         len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
                         if (len > lenMax) {
+                            maxPoint = startIndex;
+                            pairPoint = index;
                             lenMax = len;
                             tangentMax = tangent;
                         }
@@ -3471,7 +3474,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         // left direction
         do {
             index--;
-            if (index < 0) {
+            if (index >= 0) {
                 yNext = histogramFiltered[ histogramExtremes[index].end ];
                 if ( yNext < yRef) {
                     xNext = histogramExtremes[index].end;
@@ -3480,6 +3483,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
                         len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
                         if (len > lenMax) {
+                            maxPoint = startIndex;
+                            pairPoint = index;
                             lenMax = len;
                             tangentMax = tangent;
                         }
@@ -3494,8 +3499,18 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
             }
         } while(loopFlag);
 
-        histogramMaxPointLen.append(lenMax);
-        histogramMaxPointAng.append(tangentMax);
+        if (lenMax != 0) {
+            if (tangentMax>=0) {
+                histogramMaxPoint.append( QPoint( histogramExtremes[maxPoint].end, histogramFiltered[ histogramExtremes[maxPoint].end ]) );
+                histogramMaxPointPair.append( QPoint( histogramExtremes[pairPoint].start, histogramFiltered[ histogramExtremes[pairPoint].start ]) );
+            } else {
+                histogramMaxPoint.append( QPoint( histogramExtremes[maxPoint].start, histogramFiltered[ histogramExtremes[maxPoint].start ]) );
+                histogramMaxPointPair.append( QPoint( histogramExtremes[pairPoint].end, histogramFiltered[ histogramExtremes[pairPoint].end ]) );
+            }
+
+            histogramMaxPointLen.append(lenMax);
+            histogramMaxPointAng.append(tangentMax);
+        }
 
     } // for
 

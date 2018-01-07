@@ -246,9 +246,11 @@ class imgProcess{
         QList<range> histogramMins;
         QList<range> histogramExtremes;
         QList<int> histogramDerivative;
-        double histogramMaxThreshold = 0.5;
+        double histogramMaxThreshold = 0.75;
         double histogramAngleThreshold = 10;
         QList<int> histogramMaxPeaksList;
+        QList<QPoint> histogramMaxPoint;
+        QList<QPoint> histogramMaxPointPair;
         QList<double> histogramMaxPointLen;
         QList<double> histogramMaxPointAng;
         int *histogramFilteredX;             // histogram array after noise reduction
