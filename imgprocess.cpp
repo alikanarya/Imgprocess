@@ -3331,8 +3331,15 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         trackCenterX = rightCornerX = leftCornerX = 0;
     }
 
-    valueHistogram(false);
-//    valueHistogramGray(false);
+    return hd;
+}
+
+void imgProcess::histogramAnalysis(bool colored){
+
+    if (colored)
+        valueHistogram(false);
+    else
+        valueHistogramGray(false);
 
     histogramFiltered = new int[histogramSize];
     histogramFilteredInitSwitch = true;
@@ -3408,7 +3415,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
         x++;
     } while (x < histogramSize);
 
-    max = -1000;
+    int max = -1000;
     for (int i=0; i<histogramExtremes.size(); i++) {
         if ( histogramFiltered[ histogramExtremes[i].start ] > max )
             max = histogramFiltered[ histogramExtremes[i].start ];
@@ -3423,7 +3430,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
     histogramMaxPointLen.clear();
     histogramMaxPointAng.clear();
-    int startIndex;
+    int startIndex, index;
     int maxPoint, pairPoint;
     double angThresh = abs( tan(histogramAngleThreshold*R2D) );
     double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
@@ -3517,37 +3524,6 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
     //for (int i=0; i<histogramExtremes.size(); i++)
         //qDebug() << QString::number(histogramExtremes[i].start) << ", " << QString::number(histogramExtremes[i].end) << ", " << QString::number(histogramFiltered[ histogramExtremes[i].start ]);
 
-
-    /*
-    histogramDerivative.clear();
-    for (int i=1; i<histogramPeaks.size(); i++) {
-        histogramDerivative.append( histogram[histogramPeaks[i].start] - histogram[histogramPeaks[i-1].start] );
-    }
-    max = -1;
-    int peaksIndex = 0;
-    for (int i=0; i<histogramDerivative.size(); i++) {
-        if ( abs(histogramDerivative[i]) > max ){
-            max = abs(histogramDerivative[i]);
-            if (histogramDerivative[i] < 0)    // trend decreasing
-                peaksIndex = i;
-            else            // trend increasing
-                peaksIndex = i+1;
-        }
-    }
-    histogramMaxPeaksList.clear();
-    int threshold = max * histogramMaxThreshold;
-    //qDebug() << max << "-" << peaksIndex << "-" << threshold;
-    for (int i=0; i<histogramDerivative.size(); i++) {
-        if ( abs(histogramDerivative[i]) > threshold ) {
-            if (histogramDerivative[i] < 0)    // trend decreasing
-                histogramMaxPeaksList.append(i);
-            else                                // trend increasing
-                histogramMaxPeaksList.append(i+1);
-        }
-    }
-    */
-
-    return hd;
 }
 
 void imgProcess::detectScanHorizontal(int y){
