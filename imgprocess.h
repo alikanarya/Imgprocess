@@ -247,7 +247,7 @@ class imgProcess{
         QList<range> histogramExtremes;
         QList<int> histogramDerivative;
         double histogramMaxThreshold = 0.75;
-        double histogramAngleThreshold = 10;
+        double histogramAngleThreshold = 11;
         QList<int> histogramMaxPeaksList;
         QList<QPoint> histogramMaxPoint;
         QList<QPoint> histogramMaxPointPair;
