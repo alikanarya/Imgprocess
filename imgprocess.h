@@ -242,6 +242,7 @@ class imgProcess{
         int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
+        double histogramAvg;
         QList<range> histogramPeaks;
         QList<range> histogramMins;
         QList<range> histogramExtremes;

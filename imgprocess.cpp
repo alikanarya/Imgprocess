@@ -3367,6 +3367,7 @@ void imgProcess::histogramAnalysis(bool colored){
         initialAvg += histogram[x];
     initialAvg /= maFilterKernelSize;
 
+    histogramAvg = 0;
     for (int x = 0; x < histogramSize; x++){
         if (x < noiseDia || x > (histogramSize-noiseDia))
            histogramFiltered[x] = histogram[x] ;
@@ -3375,7 +3376,13 @@ void imgProcess::histogramAnalysis(bool colored){
         } else {
             histogramFiltered[x] = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
         }
+        histogramAvg += histogramFiltered[x];
     }
+
+    if (histogramSize != 0)
+        histogramAvg /= histogramSize;
+    else
+        histogramAvg = -1;
 
 
     histogramPeaks.clear();
@@ -3415,13 +3422,16 @@ void imgProcess::histogramAnalysis(bool colored){
         x++;
     } while (x < histogramSize);
 
+    /*
     int max = -1000;
     for (int i=0; i<histogramExtremes.size(); i++) {
         if ( histogramFiltered[ histogramExtremes[i].start ] > max )
             max = histogramFiltered[ histogramExtremes[i].start ];
     }
-
     float maxThreshold = max * histogramMaxThreshold;
+    */
+
+    float maxThreshold = histogramAvg;
     histogramMaxPeaksList.clear();
     for (int i=0; i<histogramExtremes.size(); i++) {
         if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
