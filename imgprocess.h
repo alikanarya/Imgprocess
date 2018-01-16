@@ -239,6 +239,7 @@ class imgProcess{
 
         int *histogram;                     // histogram array
         int *histogramFiltered;             // histogram array after noise reduction
+        int *histogramD;                    // histogram derivative
         int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor

@@ -3369,13 +3369,15 @@ void imgProcess::histogramAnalysis(bool colored){
 
     histogramAvg = 0;
     for (int x = 0; x < histogramSize; x++){
-        if (x < noiseDia || x > (histogramSize-noiseDia))
+        if ( x < noiseDia )
            histogramFiltered[x] = histogram[x] ;
-        else if (x == noiseDia){
+        else if ( x == noiseDia )
             histogramFiltered[x] = initialAvg ;
-        } else {
+        else if ( x > (histogramSize-noiseDia) )
+           histogramFiltered[x] = histogramFiltered[x-1] ;
+        else
             histogramFiltered[x] = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
-        }
+
         histogramAvg += histogramFiltered[x];
     }
 
@@ -3383,8 +3385,28 @@ void imgProcess::histogramAnalysis(bool colored){
         histogramAvg /= histogramSize;
     else
         histogramAvg = -1;
+//-------------------------------------------------------
+
+    histogramD = new int[histogramSize]; histogramD[0]=0;
+    for (int i=1; i<histogramSize; i++)
+        histogramD[i] = histogramFiltered[i] - histogramFiltered[i-1];
+
+    // Moving Average Filter
+    histogramFilteredX = new int[histogramSize];
+    float sum;
+    for (int x = 0; x < histogramSize; x++){
+        if (x < noiseDia || x > (histogramSize-noiseDia))
+           histogramFilteredX[x] = histogramD[x] ;
+        else {
+            sum = 0;
+            for (int k = x-noiseDia; k <= x+noiseDia; k++)
+                sum += histogramD[k];
+            histogramFilteredX[x] = sum /  maFilterKernelSize;
+        }
+    }
 
 
+//-------------------------------------------------------
     histogramPeaks.clear();
     findMaxs(histogramFiltered, histogramSize, histogramPeaks);
 
