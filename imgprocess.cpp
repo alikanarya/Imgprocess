@@ -3385,8 +3385,8 @@ void imgProcess::histogramAnalysis(bool colored){
         histogramAvg /= histogramSize;
     else
         histogramAvg = -1;
-//-------------------------------------------------------
 
+/*-derivative------------------------------------------------------
     histogramD = new int[histogramSize]; histogramD[0]=0;
     for (int i=1; i<histogramSize; i++)
         histogramD[i] = histogramFiltered[i] - histogramFiltered[i-1];
@@ -3404,9 +3404,8 @@ void imgProcess::histogramAnalysis(bool colored){
             histogramFilteredX[x] = sum /  maFilterKernelSize;
         }
     }
+/-------------------------------------------------------*/
 
-
-//-------------------------------------------------------
     histogramPeaks.clear();
     findMaxs(histogramFiltered, histogramSize, histogramPeaks);
 
@@ -3443,6 +3442,29 @@ void imgProcess::histogramAnalysis(bool colored){
         }
         x++;
     } while (x < histogramSize);
+
+    int deltaXThreshold = 10;
+    int deltaYThreshold = 10;
+    int deltaX, deltaY;
+    histogramExtremesFiltered.clear();
+
+    range zeroPoint;
+    zeroPoint.start = histogramExtremes[0].start;
+    zeroPoint.end = histogramExtremes[0].end;
+    histogramExtremesFiltered.append(zeroPoint);
+
+    for (int i=0; i<histogramExtremes.size()-1; i++) {
+        deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
+        deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
+        if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
+            range nextPoint;
+            nextPoint.start = histogramExtremes[i+1].start;
+            nextPoint.end = histogramExtremes[i+1].end;
+            histogramExtremesFiltered.append(nextPoint);
+        }
+        //qDebug() << deltaX << " " << deltaY;
+    }
+
 
     /*
     int max = -1000;
