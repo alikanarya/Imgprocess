@@ -3445,22 +3445,29 @@ void imgProcess::histogramAnalysis(bool colored){
 
     int deltaXThreshold = 10;
     int deltaYThreshold = 10;
-    int deltaX, deltaY;
+    int deltaX, deltaY, lenX;
     histogramExtremesFiltered.clear();
 
     range zeroPoint;
     zeroPoint.start = histogramExtremes[0].start;
     zeroPoint.end = histogramExtremes[0].end;
     histogramExtremesFiltered.append(zeroPoint);
+    int hisExtFltIndex = 0;
 
     for (int i=0; i<histogramExtremes.size()-1; i++) {
         deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
         deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
+
         if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
+
+            lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
+            histogramExtremesFiltered[hisExtFltIndex].end = histogramExtremes[i].end;
+
             range nextPoint;
             nextPoint.start = histogramExtremes[i+1].start;
             nextPoint.end = histogramExtremes[i+1].end;
             histogramExtremesFiltered.append(nextPoint);
+            hisExtFltIndex++;
         }
         //qDebug() << deltaX << " " << deltaY;
     }
