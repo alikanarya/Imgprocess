@@ -3336,17 +3336,19 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool 
 
 void imgProcess::histogramAnalysis(bool colored){
 
+    // CALCULATE HISTOGRAM
     if (colored)
         valueHistogram(false);
     else
         valueHistogramGray(false);
+
 
     histogramFiltered = new int[histogramSize];
     histogramFilteredInitSwitch = true;
 
     int noiseDia = (maFilterKernelSize-1)/2;
 
-    /* Moving Average Filter
+    /* MOVING AVERAGE FILTER
     histogramFilteredX = new int[histogramSize];
     float sum;
     for (int x = 0; x < histogramSize; x++){
@@ -3361,7 +3363,7 @@ void imgProcess::histogramAnalysis(bool colored){
     }
     */
 
-    // Recursive Moving Average Filter
+    // RECURSIVE MOVING AVERAGE FILTER
     float initialAvg = 0;
     for (int x = 0; x < maFilterKernelSize; x++)
         initialAvg += histogram[x];
@@ -3412,6 +3414,7 @@ void imgProcess::histogramAnalysis(bool colored){
     histogramMins.clear();
     findMins(histogramFiltered, histogramSize, histogramMins);
 
+    //--- MERGE PEAK AND MIN POINTS -----------------------------------------------------
     histogramExtremes.clear();
     int peaksIdx = 0;
     int minsIdx = 0;
@@ -3442,7 +3445,9 @@ void imgProcess::histogramAnalysis(bool colored){
         }
         x++;
     } while (x < histogramSize);
+    //-----------------------------------------------------------------------------------
 
+    //--- MERGE CLOSE POINTS ------------------------------------------------------------
     int deltaXThreshold = 10;
     int deltaYThreshold = 10;
     int deltaX, deltaY, lenX;
@@ -3471,7 +3476,7 @@ void imgProcess::histogramAnalysis(bool colored){
         }
         //qDebug() << deltaX << " " << deltaY;
     }
-
+    //-----------------------------------------------------------------------------------
 
     /*
     int max = -1000;
@@ -3482,13 +3487,21 @@ void imgProcess::histogramAnalysis(bool colored){
     float maxThreshold = max * histogramMaxThreshold;
     */
 
+    //--- FIND THE PEAKS ABOVE AVERAGE --------------------------------------------------
     float maxThreshold = histogramAvg;
     histogramMaxPeaksList.clear();
-    for (int i=0; i<histogramExtremes.size(); i++) {
-        if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
+    for (int i=0; i<histogramExtremesFiltered.size(); i++) {
+        if ( histogramFiltered[ histogramExtremesFiltered[i].start ] > maxThreshold )
             histogramMaxPeaksList.append(i);
     }
+    /*for (int i=0; i<histogramExtremes.size(); i++) {
+        if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
+            histogramMaxPeaksList.append(i);
+    }*/
+    //-----------------------------------------------------------------------------------
 
+
+    //--- CALCULATE THE ANGLE(TANGENT) BETWEEN PEAK POINTS TO FIND THE STEEPEST DECENTS -
     histogramMaxPointLen.clear();
     histogramMaxPointAng.clear();
     int startIndex, index;
@@ -3501,20 +3514,20 @@ void imgProcess::histogramAnalysis(bool colored){
 
     for (int i=0; i<histogramMaxPeaksList.size(); i++) {
         startIndex = histogramMaxPeaksList[i];
-        yRef = histogramFiltered[ histogramExtremes[startIndex].start ];
+        yRef = histogramFiltered[ histogramExtremesFiltered[startIndex].start ];
 
         lenMax = 0, tangentMax = 0; maxPoint = 0;
 
-        xRef = histogramExtremes[startIndex].end;
+        xRef = histogramExtremesFiltered[startIndex].end;
         index = startIndex;
         loopFlag = true;
         // right direction
         do {
             index++;
-            if (index < histogramExtremes.size()) {
-                yNext = histogramFiltered[ histogramExtremes[index].start ];
+            if (index < histogramExtremesFiltered.size()) {
+                yNext = histogramFiltered[ histogramExtremesFiltered[index].start ];
                 if ( yNext < yRef) {
-                    xNext = histogramExtremes[index].start;
+                    xNext = histogramExtremesFiltered[index].start;
                     tangent = (xNext - xRef) / (yRef - yNext);
                     if ( abs(tangent) < angThresh ) {
                         len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
@@ -3536,16 +3549,16 @@ void imgProcess::histogramAnalysis(bool colored){
             }
         } while(loopFlag);
 
-        xRef = histogramExtremes[startIndex].start;
+        xRef = histogramExtremesFiltered[startIndex].start;
         index = startIndex;
         loopFlag = true;
         // left direction
         do {
             index--;
             if (index >= 0) {
-                yNext = histogramFiltered[ histogramExtremes[index].end ];
+                yNext = histogramFiltered[ histogramExtremesFiltered[index].end ];
                 if ( yNext < yRef) {
-                    xNext = histogramExtremes[index].end;
+                    xNext = histogramExtremesFiltered[index].end;
                     tangent = (xNext - xRef) / (yRef - yNext);
                     if ( abs(tangent) < angThresh ) {
                         len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
@@ -3569,11 +3582,11 @@ void imgProcess::histogramAnalysis(bool colored){
 
         if (lenMax != 0) {
             if (tangentMax>=0) {
-                histogramMaxPoint.append( QPoint( histogramExtremes[maxPoint].end, histogramFiltered[ histogramExtremes[maxPoint].end ]) );
-                histogramMaxPointPair.append( QPoint( histogramExtremes[pairPoint].start, histogramFiltered[ histogramExtremes[pairPoint].start ]) );
+                histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].end, histogramFiltered[ histogramExtremesFiltered[maxPoint].end ]) );
+                histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].start, histogramFiltered[ histogramExtremesFiltered[pairPoint].start ]) );
             } else {
-                histogramMaxPoint.append( QPoint( histogramExtremes[maxPoint].start, histogramFiltered[ histogramExtremes[maxPoint].start ]) );
-                histogramMaxPointPair.append( QPoint( histogramExtremes[pairPoint].end, histogramFiltered[ histogramExtremes[pairPoint].end ]) );
+                histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].start, histogramFiltered[ histogramExtremesFiltered[maxPoint].start ]) );
+                histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].end, histogramFiltered[ histogramExtremesFiltered[pairPoint].end ]) );
             }
 
             histogramMaxPointLen.append(lenMax);
@@ -3581,6 +3594,8 @@ void imgProcess::histogramAnalysis(bool colored){
         }
 
     } // for
+    //-----------------------------------------------------------------------------------
+
 
     //for (int i=0; i<histogramExtremes.size(); i++)
         //qDebug() << QString::number(histogramExtremes[i].start) << ", " << QString::number(histogramExtremes[i].end) << ", " << QString::number(histogramFiltered[ histogramExtremes[i].start ]);
