@@ -3370,6 +3370,7 @@ void imgProcess::histogramAnalysis(bool colored){
     initialAvg /= maFilterKernelSize;
 
     histogramAvg = 0;
+    histogramMin = 2000, histogramMax = 0;
     for (int x = 0; x < histogramSize; x++){
         if ( x < noiseDia )
            histogramFiltered[x] = histogram[x] ;
@@ -3381,6 +3382,10 @@ void imgProcess::histogramAnalysis(bool colored){
             histogramFiltered[x] = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
 
         histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
     }
 
     if (histogramSize != 0)
@@ -3595,6 +3600,52 @@ void imgProcess::histogramAnalysis(bool colored){
 
     } // for
     //-----------------------------------------------------------------------------------
+
+    bandCheck_errorState = 0;
+    bool state = false;
+    double histRange = histogramMax - histogramMin;
+
+    if ( histogramMaxPointLen.size() < 2 ) {    // MAX POINT NUMBER SHOULD BE >=2
+        state = false;
+        bandCheck_errorState = 1;
+    } else {
+        QList<double> lenRate;
+        double rate;
+        int cnt = 0;
+        for (int i=0; i<histogramMaxPointLen.size(); i++){
+            rate = histogramMaxPointLen[i]/histRange;
+            lenRate.append( rate );
+            qDebug() << rate;
+            if ( rate > lenRateThr ) cnt++;
+        }
+
+        if (cnt < 2) {                          // LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+            state = false;
+            bandCheck_errorState = 2;
+        } else {
+            QList<int> lenRateSorted;
+            double max = 0;
+            int index;
+
+            for (int i=0; i<lenRate.size(); i++) {
+                max = 0;
+                for (int j=0; j<lenRate.size(); j++) {
+                    if (lenRate[j] > max) {
+                        max = lenRate[j];
+                        index = j;
+                    }
+                }
+                lenRateSorted.append( index );
+                lenRate[index] = 0;
+                qDebug() << index;
+            }
+
+
+
+
+        }
+
+    }
 
 
     //for (int i=0; i<histogramExtremes.size(); i++)

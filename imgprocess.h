@@ -244,6 +244,7 @@ class imgProcess{
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
         double histogramAvg;
+        int histogramMin, histogramMax;
         QList<range> histogramPeaks;
         QList<range> histogramMins;
         QList<range> histogramExtremes;
@@ -257,8 +258,9 @@ class imgProcess{
         QList<double> histogramMaxPointLen;
         QList<double> histogramMaxPointAng;
         int *histogramFilteredX;             // histogram array after noise reduction
-
+        double lenRateThr = 0.50;
         int maFilterKernelSize = 11;
+        int bandCheck_errorState;
 
         double **valueMatrixNorm;           // normalised value matrix
         bool valueMatrixNormInitSwitch = false;     // to delete in destructor
