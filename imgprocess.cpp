@@ -3640,7 +3640,33 @@ void imgProcess::histogramAnalysis(bool colored){
                 qDebug() << index;
             }
 
+            int x0 = histogramMaxPoint[ lenRateSorted[0] ].x();
+            int x1 = histogramMaxPoint[ lenRateSorted[1] ].x();
+            int leftIndex = 0, rightIndex = 0;
+            if (x0 < x1) {
+                leftIndex = lenRateSorted[0];
+                rightIndex = lenRateSorted[1];
+            } else {
+                leftIndex = lenRateSorted[1];
+                rightIndex = lenRateSorted[0];
+            }
 
+            if ( histogramMaxPointAng[ leftIndex ] >=0 &&        // 1st (LEFT) ANGLE SHOULD BE RIGHT, 2nd (RIGHT) ANGLE SHOULD BE LEFT   \  /
+                 histogramMaxPointAng[ rightIndex ] <= 0 ) {
+
+                bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
+                bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth / 2;
+                int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
+                bandShape = (1.0*bottomWidth) / bandWidth;
+                qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
+                            histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
+                            " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
+
+
+            } else {
+                state = false;
+                bandCheck_errorState = 3;
+            }
 
 
         }

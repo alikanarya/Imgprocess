@@ -261,6 +261,9 @@ class imgProcess{
         double lenRateThr = 0.50;
         int maFilterKernelSize = 11;
         int bandCheck_errorState;
+        int bandWidth = 0;
+        double bandShape = 0; // 1: rectengular
+        int bandCenter = 0;
 
         double **valueMatrixNorm;           // normalised value matrix
         bool valueMatrixNormInitSwitch = false;     // to delete in destructor
