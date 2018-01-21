@@ -264,6 +264,9 @@ class imgProcess{
         int bandWidth = 0;
         double bandShape = 0; // 1: rectengular
         int bandCenter = 0;
+        double bandWidthMin = 0.25;
+        double bandShapeMin = 0.5;
+        double bandCenterMax = 0.1;
 
         double **valueMatrixNorm;           // normalised value matrix
         bool valueMatrixNormInitSwitch = false;     // to delete in destructor

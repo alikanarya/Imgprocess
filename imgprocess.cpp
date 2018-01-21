@@ -3602,7 +3602,7 @@ void imgProcess::histogramAnalysis(bool colored){
     //-----------------------------------------------------------------------------------
 
     bandCheck_errorState = 0;
-    bool state = false;
+    bool state = true;
     double histRange = histogramMax - histogramMin;
 
     if ( histogramMaxPointLen.size() < 2 ) {    // MAX POINT NUMBER SHOULD BE >=2
@@ -3615,7 +3615,7 @@ void imgProcess::histogramAnalysis(bool colored){
         for (int i=0; i<histogramMaxPointLen.size(); i++){
             rate = histogramMaxPointLen[i]/histRange;
             lenRate.append( rate );
-            qDebug() << rate;
+            //qDebug() << rate;
             if ( rate > lenRateThr ) cnt++;
         }
 
@@ -3637,7 +3637,7 @@ void imgProcess::histogramAnalysis(bool colored){
                 }
                 lenRateSorted.append( index );
                 lenRate[index] = 0;
-                qDebug() << index;
+                //qDebug() << index;
             }
 
             int x0 = histogramMaxPoint[ lenRateSorted[0] ].x();
@@ -3655,23 +3655,36 @@ void imgProcess::histogramAnalysis(bool colored){
                  histogramMaxPointAng[ rightIndex ] <= 0 ) {
 
                 bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
-                bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth / 2;
+                bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
                 int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
                 bandShape = (1.0*bottomWidth) / bandWidth;
+                /*
                 qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
                             histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
                             " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
-
-
+                            */
+                if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
+                    state = false;
+                    bandCheck_errorState = 4;
+                } else {
+                    if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
+                        state = false;
+                        bandCheck_errorState = 5;
+                    } else {
+                        if ( bandShape < bandShapeMin ) {
+                            state = false;
+                            bandCheck_errorState = 6;
+                        }
+                    }
+                }
             } else {
                 state = false;
                 bandCheck_errorState = 3;
             }
-
-
         }
-
     }
+
+    //qDebug() << "fail code: " << bandCheck_errorState << " state: " << state;
 
 
     //for (int i=0; i<histogramExtremes.size(); i++)
