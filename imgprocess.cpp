@@ -8,6 +8,7 @@
 
 #include "imgprocess_msg.h"
 #include "../_Modules/Algo/localMinimum.h"
+#include "../_Modules/Algo/natural_breaks.h"
 
 #include <iostream>
 using namespace std;
@@ -3074,6 +3075,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
         findLocalMinimum(houghDataVotes, listHoughData.size(), localMaximalist2nd);
             // ** listHoughData > localMaximalist2nd
 
+        QList<QPoint> pointList;
+
         if ( !localMaximalist2nd.isEmpty() ){
 
             localMaxima2ndSize = localMaximalist2nd.size();
@@ -3093,6 +3096,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             listHoughData2nd.clear();
 
             //-B----------------------------------------------------------------
+
             for (int t = 0; t < localMaximalist2nd.size(); t++)
                 for (int ts = localMaximalist2nd[t].start; ts <= localMaximalist2nd[t].end; ts++){
                     houghData hd;
@@ -3103,6 +3107,13 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                 }
             // ** localMaximalist2nd > listHoughData2nd
             //------------------------------------------------------------------
+
+            int lineX, y = imageHeight/2;
+            for (int i=0; i < listHoughData2nd.size(); i++) {
+                lineX = getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle) - centerX;
+                QPoint p(lineX, listHoughData2nd[i].voteValue);
+                pointList.append(p);
+            }
 
             listHoughData2ndSize = listHoughData2nd.size();
 
@@ -3208,6 +3219,39 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                 int yCoor = imageHeight/2;
 
                 if ( !mainEdgesList.isEmpty() ){
+
+
+                    const int n = listHoughData2nd.size();
+                    const int k = 3;
+
+                    //std::cout << "Generating random numbers..." << std::endl;
+
+                    std::vector<double> values;
+                    values.reserve(n);
+
+
+
+                    for (int i=0; i!=n; ++i) {
+                        qDebug() << pointList[i].x() << " " << pointList[i].y() ;
+                    }
+
+                    for (int i=0; i!=n; ++i) {
+                        values.push_back( pointList[i].x() );
+                    }
+
+                    assert(values.size() == n);
+
+                    ValueCountPairContainer sortedUniqueValueCounts;
+                    GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+
+                    LimitsContainer resultingbreaksArray;
+                    ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, k, sortedUniqueValueCounts);
+
+                    for (double breakValue: resultingbreaksArray)
+                        qDebug() << breakValue;
+
+
+
 
                     //-E----------------------------------------------------------------
                     QList<int> xCoors;
