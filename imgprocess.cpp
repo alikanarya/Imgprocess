@@ -3222,21 +3222,33 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
 
                     const int n = listHoughData2nd.size();
-                    const int k = 3;
+                    const int k = 4;
 
-                    //std::cout << "Generating random numbers..." << std::endl;
+
+                    QList<QPoint> pointListSorted;
+                    int minx, idx;
+                    for (int i=0; i<n; i++) {
+                        minx = 2000, idx = 0;
+                        for (int j=0; j<n; j++) {
+                            if ( pointList[j].x() < minx ) {
+                                minx = pointList[j].x();
+                                idx = j;
+                            }
+                        }
+                        QPoint p( pointList[idx].x(), pointList[idx].y() );
+                        pointListSorted.append(p);
+                        pointList[idx].setX(2000);
+                    }
+                    for (int i=0; i<n; i++) {
+                        qDebug() << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+                    }
+
 
                     std::vector<double> values;
                     values.reserve(n);
 
-
-
                     for (int i=0; i!=n; ++i) {
-                        qDebug() << pointList[i].x() << " " << pointList[i].y() ;
-                    }
-
-                    for (int i=0; i!=n; ++i) {
-                        values.push_back( pointList[i].x() );
+                        values.push_back( pointListSorted[i].x() );
                     }
 
                     assert(values.size() == n);
@@ -3247,9 +3259,53 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     LimitsContainer resultingbreaksArray;
                     ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, k, sortedUniqueValueCounts);
 
+                    int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
+                    double sum = 0, sampleAve = 0, sampleVar = 0;
+
                     for (double breakValue: resultingbreaksArray)
                         qDebug() << breakValue;
 
+                    QList<int> sampleList;
+                    do {
+                        if ( breaksArrayIdx < resultingbreaksArray.size() ) {
+                            if ( pointListSorted[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
+                                breaksArrayIdx++;
+                                qDebug() << sum << " " << sampleNo;
+                                if (sampleNo != 0) {
+                                    sampleAve = sum / sampleNo;
+                                    double powSum = 0;
+                                    for (int c=0; c<sampleList.size(); c++)
+                                        powSum += pow(sampleAve-sampleList[c], 2);
+                                    powSum /= sampleNo;
+                                    sampleVar = sqrt(powSum);
+                                    qDebug() << sampleVar;
+                                }
+                                sampleList.clear();
+                                sum = 0;
+                                sampleNo = 0;
+                            } else {
+                                sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
+                                sum += pointListSorted[ pointListSortedIdx ].x();
+                                sampleNo++;
+                                pointListSortedIdx++;
+                            }
+                        } else {
+                            sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
+                            sum += pointListSorted[ pointListSortedIdx ].x();
+                            sampleNo++;
+                            pointListSortedIdx++;
+                        }
+                    } while( pointListSortedIdx < pointListSorted.size() );
+                    qDebug() << sum << " " << sampleNo;
+                    if (sampleNo != 0) {
+                        sampleAve = sum / sampleNo;
+                        double powSum = 0;
+                        for (int c=0; c<sampleList.size(); c++)
+                            powSum += pow(sampleAve-sampleList[c], 2);
+                        powSum /= sampleNo;
+                        sampleVar = sqrt(powSum);
+                        qDebug() << sampleVar;
+                    }
 
 
 
