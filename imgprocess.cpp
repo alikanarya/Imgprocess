@@ -3110,6 +3110,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
             int lineX, y = imageHeight/2;
             for (int i=0; i < listHoughData2nd.size(); i++) {
+                //lineX = centerX + 1 + getLineX((centerY + 1 - y), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
                 lineX = getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle) - centerX;
                 QPoint p(lineX, listHoughData2nd[i].voteValue);
                 pointList.append(p);
@@ -3216,13 +3217,11 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                 detected = true;
 
-                int yCoor = imageHeight/2;
-
                 if ( !mainEdgesList.isEmpty() ){
 
 
                     const int n = listHoughData2nd.size();
-                    const int k = 4;
+                    int k = 4;
 
 
                     QList<QPoint> pointListSorted;
@@ -3253,64 +3252,112 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                     assert(values.size() == n);
 
-                    ValueCountPairContainer sortedUniqueValueCounts;
-                    GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+                    k = 2;
+                    bool cont;
+                    double varLimit = 10;
+                    QList<QPoint> mainPointsList;
+                    int maxValue, maxIdx;
 
-                    LimitsContainer resultingbreaksArray;
-                    ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, k, sortedUniqueValueCounts);
-
-                    int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
-                    double sum = 0, sampleAve = 0, sampleVar = 0;
-
-                    for (double breakValue: resultingbreaksArray)
-                        qDebug() << breakValue;
-
-                    QList<int> sampleList;
                     do {
-                        if ( breaksArrayIdx < resultingbreaksArray.size() ) {
-                            if ( pointListSorted[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
-                                breaksArrayIdx++;
-                                qDebug() << sum << " " << sampleNo;
-                                if (sampleNo != 0) {
-                                    sampleAve = sum / sampleNo;
-                                    double powSum = 0;
-                                    for (int c=0; c<sampleList.size(); c++)
-                                        powSum += pow(sampleAve-sampleList[c], 2);
-                                    powSum /= sampleNo;
-                                    sampleVar = sqrt(powSum);
-                                    qDebug() << sampleVar;
+                        cont = false;
+                        mainPointsList.clear();
+                        ValueCountPairContainer sortedUniqueValueCounts;
+                        GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+
+                        LimitsContainer resultingbreaksArray;
+                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, k, sortedUniqueValueCounts);
+
+                        int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
+                        double sum = 0, sampleAve = 0, sampleVar = 0;
+
+                        for (double breakValue: resultingbreaksArray)
+                            qDebug() << breakValue;
+
+                        QList<int> sampleList;
+                        maxValue = 0; maxIdx = 0;
+                        do {
+                            if ( breaksArrayIdx < resultingbreaksArray.size() ) {
+
+                                if ( pointListSorted[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
+
+                                    breaksArrayIdx++;
+                                    //qDebug() << sum << " " << sampleNo;
+                                    if (sampleNo != 0) {
+                                        sampleAve = sum / sampleNo;
+                                        double powSum = 0;
+                                        for (int c=0; c<sampleList.size(); c++)
+                                            powSum += pow(sampleAve-sampleList[c], 2);
+                                        powSum /= sampleNo;
+                                        sampleVar = sqrt(powSum);
+                                        if (sampleVar > varLimit) cont = true;
+
+                                        QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
+                                        mainPointsList.append(p);
+                                        maxValue = 0; maxIdx = 0;
+
+                                        qDebug() << sampleVar;
+                                    }
+                                    sampleList.clear();
+                                    sum = 0;
+                                    sampleNo = 0;
+                                } else {
+                                    sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
+                                    sum += pointListSorted[ pointListSortedIdx ].x();
+
+                                    if ( pointListSorted[ pointListSortedIdx ].y() > maxValue ) {
+                                        maxValue = pointListSorted[ pointListSortedIdx ].y();
+                                        maxIdx = pointListSortedIdx;
+                                    }
+
+                                    sampleNo++;
+                                    pointListSortedIdx++;
                                 }
-                                sampleList.clear();
-                                sum = 0;
-                                sampleNo = 0;
                             } else {
+                                // for last break
                                 sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
                                 sum += pointListSorted[ pointListSortedIdx ].x();
+
+                                if ( pointListSorted[ pointListSortedIdx ].y() > maxValue ) {
+                                    maxValue = pointListSorted[ pointListSortedIdx ].y();
+                                    maxIdx = pointListSortedIdx;
+                                }
+
                                 sampleNo++;
                                 pointListSortedIdx++;
                             }
-                        } else {
-                            sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
-                            sum += pointListSorted[ pointListSortedIdx ].x();
-                            sampleNo++;
-                            pointListSortedIdx++;
+
+                        } while( pointListSortedIdx < pointListSorted.size() );
+
+                        //qDebug() << sum << " " << sampleNo;
+                        if (sampleNo != 0) {
+                            sampleAve = sum / sampleNo;
+                            double powSum = 0;
+                            for (int c=0; c<sampleList.size(); c++)
+                                powSum += pow(sampleAve-sampleList[c], 2);
+                            powSum /= sampleNo;
+                            sampleVar = sqrt(powSum);
+                            if (sampleVar > varLimit) cont = true;
+
+                            QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
+                            mainPointsList.append(p);
+                            maxValue = 0; maxIdx = 0;
+
+                            qDebug() << sampleVar;
                         }
-                    } while( pointListSortedIdx < pointListSorted.size() );
-                    qDebug() << sum << " " << sampleNo;
-                    if (sampleNo != 0) {
-                        sampleAve = sum / sampleNo;
-                        double powSum = 0;
-                        for (int c=0; c<sampleList.size(); c++)
-                            powSum += pow(sampleAve-sampleList[c], 2);
-                        powSum /= sampleNo;
-                        sampleVar = sqrt(powSum);
-                        qDebug() << sampleVar;
-                    }
+                        k++;
+
+                    } while (cont && k<pointListSorted.size() );
+
+                    for (int c=0; c<mainPointsList.size(); c++)
+                        qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y();
+
+
 
 
 
                     //-E----------------------------------------------------------------
                     QList<int> xCoors;
+                    int yCoor = imageHeight/2;
 
                     for (int i = 0; i < mainEdgesList.size(); i++){
                         int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
