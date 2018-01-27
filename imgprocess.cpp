@@ -3111,7 +3111,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             int lineX, y = imageHeight/2;
             for (int i=0; i < listHoughData2nd.size(); i++) {
                 //lineX = centerX + 1 + getLineX((centerY + 1 - y), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
-                lineX = getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle) - centerX;
+                lineX = centerX + 1 + getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
                 QPoint p(lineX, listHoughData2nd[i].voteValue);
                 pointList.append(p);
             }
@@ -3236,7 +3236,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         }
                         QPoint p( pointList[idx].x(), pointList[idx].y() );
                         pointListSorted.append(p);
-                        pointList[idx].setX(2000);
+                        pointList[idx].setX(2000+idx);
                     }
                     for (int i=0; i<n; i++) {
                         qDebug() << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
@@ -3270,8 +3270,8 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
                         double sum = 0, sampleAve = 0, sampleVar = 0;
 
-                        for (double breakValue: resultingbreaksArray)
-                            qDebug() << breakValue;
+                        qDebug() << "-----------";
+                        for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
                         QList<int> sampleList;
                         maxValue = 0; maxIdx = 0;
@@ -3295,7 +3295,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                                         mainPointsList.append(p);
                                         maxValue = 0; maxIdx = 0;
 
-                                        qDebug() << sampleVar;
+                                        //qDebug() << sampleVar;
                                     }
                                     sampleList.clear();
                                     sum = 0;
@@ -3342,28 +3342,59 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                             mainPointsList.append(p);
                             maxValue = 0; maxIdx = 0;
 
-                            qDebug() << sampleVar;
+                            //qDebug() << sampleVar;
                         }
                         k++;
 
                     } while (cont && k<pointListSorted.size() );
 
-                    for (int c=0; c<mainPointsList.size(); c++)
-                        qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y();
+                    int _idx = 0;
+                    QPoint max1(0,-1);
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        //qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y();
+                        if ( mainPointsList[c].y() > max1.y() ) {
+                            max1.setY( mainPointsList[c].y() );
+                            max1.setX( mainPointsList[c].x() );
+                            _idx = c;
+                        }
+                    }
+                    mainPointsList[_idx].setY(-1);
 
+                    _idx = 0;
+                    QPoint max2(0,-1);
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        if ( mainPointsList[c].y() > max2.y() ) {
+                            max2.setY( mainPointsList[c].y() );
+                            max2.setX( mainPointsList[c].x() );
+                            _idx = c;
+                        }
+                    }
+                    mainPointsList[_idx].setY(-1);
 
+                    //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
+                    //qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
 
+                    if ( max1.x() > max2.x()) {
+                        leftCornerX = max2.x();
+                        rightCornerX = max1.x();
+                    } else {
+                        leftCornerX = max1.x();
+                        rightCornerX = max2.x();
+                    }
 
+                    trackCenterX = (leftCornerX + rightCornerX)/2.0;
 
-                    //-E----------------------------------------------------------------
+                    /*-E----------------------------------------------------------------
                     QList<int> xCoors;
                     int yCoor = imageHeight/2;
 
                     for (int i = 0; i < mainEdgesList.size(); i++){
-                        int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        int xCoor = centerX + 1 + getLineX( (yCoor-centerY), mainEdgesList[i].distance, mainEdgesList[i].angle);
+                        //int xCoor = centerX + 1 + getLineX((centerY + 1 - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
                         //int xCoor = centerX + getLineX((centerY - yCoor), mainEdgesList[i].distance, mainEdgesList[i].angle);
                         if (xCoor >= 0 && xCoor < imageWidth)
                             xCoors.append( xCoor );
+                        //qDebug() << "xCoor: " << xCoors[i];
                     }
 
                     int max = -1, min = 2000;
@@ -3385,6 +3416,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         centerLine.distance = mainEdgesList[0].distance;
                         //centerLine.distance = trackCenterX; // since we look to perfect vertical lines
                         centerLine.voteValue = mainEdgesList[0].voteValue;
+
                     } else {
 
                         trackCenterX = rightCornerX = leftCornerX = 0;     // DETECTION ERROR
@@ -3393,6 +3425,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     //------------------------------------------------------------------
 
                     xCoors.empty();
+                    */
 
                 } else {
 
@@ -4068,13 +4101,15 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
         }
 
         int X, Y;
-
-        for (int x = -8; x <= 8; x++){
+        int deltaX = imageWidth * 0.03;
+        int deltaY = imageHeight * 0.03;
+        for (int x = -1*deltaX; x <= deltaX; x++){
 
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + x + xOffset;
                 Y = leftCornerY + yOffset;
                 if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < (imgCorner.height()-1)){
+                    imgCorner.setPixel( X, Y-1, value );
                     imgCorner.setPixel( X, Y, value );
                     imgCorner.setPixel( X, Y+1, value );
                 }
@@ -4084,18 +4119,20 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
                 X = rightCornerX + x + xOffset;
                 Y = rightCornerY + yOffset;
                 if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < (imgCorner.height()-1)){
+                    imgCorner.setPixel( X, Y-1, value );
                     imgCorner.setPixel( X, Y, value );
                     imgCorner.setPixel( X, Y+1, value );
                 }
             }
         }
 
-        for (int y = -8; y <= 8; y++){
+        for (int y = -1*deltaY; y <= deltaY; y++){
 
             if (leftCornerX != -1 && leftCornerY != -1){
                 X = leftCornerX + xOffset;
                 Y = leftCornerY + y + yOffset;
                 if ( X >= 0 && X < (imgCorner.width()-1) && Y >= 0 && Y < imgCorner.height()){
+                    imgCorner.setPixel( X-1, Y, value);
                     imgCorner.setPixel( X, Y, value);
                     imgCorner.setPixel( X+1, Y, value);
                 }
@@ -4107,13 +4144,17 @@ QImage imgProcess::cornerImage( bool matrixFlag ){
                 if ( X >= 1 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
                     imgCorner.setPixel( X-1, Y, value);
                     imgCorner.setPixel( X, Y, value);
+                    imgCorner.setPixel( X+1, Y, value);
                 }
             }
 
             X = trackCenterX + xOffset;
             Y = trackCenterY + y + yOffset;
-            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height())
+            if ( X >= 0 && X < imgCorner.width() && Y >= 0 && Y < imgCorner.height()){
+                imgCorner.setPixel( X-1, Y, value);
                 imgCorner.setPixel( X, Y, value);
+                imgCorner.setPixel( X+1, Y, value);
+            }
         }
     //}
     return imgCorner;
