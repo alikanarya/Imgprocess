@@ -3223,8 +3223,10 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     const int n = listHoughData2nd.size();
                     int k = 4;
 
+                    qDebug() << "pointList:";  for (int i=0; i<n; i++) qDebug() << i << " " << pointList[i].x() << " " << pointList[i].y() ;
 
                     QList<QPoint> pointListSorted;
+                    QList<int> pointListMap;
                     int minx, idx;
                     for (int i=0; i<n; i++) {
                         minx = 2000, idx = 0;
@@ -3236,19 +3238,19 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                         }
                         QPoint p( pointList[idx].x(), pointList[idx].y() );
                         pointListSorted.append(p);
-                        pointList[idx].setX(2000+idx);
+                        pointListMap.append(idx);
+                        pointList[idx].setX(2000);
                     }
-                    for (int i=0; i<n; i++) {
-                        qDebug() << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
-                    }
+                    qDebug() << "pointListSorted:";
+                    for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+
 
 
                     std::vector<double> values;
                     values.reserve(n);
 
-                    for (int i=0; i!=n; ++i) {
+                    for (int i=0; i!=n; ++i)
                         values.push_back( pointListSorted[i].x() );
-                    }
 
                     assert(values.size() == n);
 
@@ -3348,10 +3350,19 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                     } while (cont && k<pointListSorted.size() );
 
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        int refId = -1;
+                        for (int id=0; id<pointList.size(); id++) {
+                            if ( mainPointsList[c].x() == pointListSorted[id].x() && mainPointsList[c].y() == pointListSorted[id].y() )
+                                refId = pointListMap[id];
+
+                        }
+                        qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
+                    }
+
                     int _idx = 0;
                     QPoint max1(0,-1);
                     for (int c=0; c<mainPointsList.size(); c++) {
-                        //qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y();
                         if ( mainPointsList[c].y() > max1.y() ) {
                             max1.setY( mainPointsList[c].y() );
                             max1.setX( mainPointsList[c].x() );
