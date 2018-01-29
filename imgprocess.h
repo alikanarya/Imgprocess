@@ -154,6 +154,8 @@ class imgProcess{
         int tHi, tLo;
         int hiValue, loValue, medianValue;
         int thinCornerNum;
+        bool wideJoint = false;
+        bool naturalBreaks = false;
 
         int localMaximaSize;
         int **rangeArray;
