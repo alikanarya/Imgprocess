@@ -154,8 +154,6 @@ class imgProcess{
         int tHi, tLo;
         int hiValue, loValue, medianValue;
         int thinCornerNum;
-        bool wideJoint = false;
-        bool naturalBreaks = false;
 
         int localMaximaSize;
         int **rangeArray;
@@ -192,6 +190,13 @@ class imgProcess{
         float mainEdgeScorePercent;
 
         int solidLineLength = 0;
+
+        // NATURAL BREAKS VARS
+        QList<QPoint> pointListSorted;
+        QList<QPoint> mainPointsList;
+        int naturalBreaksNumber = 0;
+        QPoint natBreaksMax1;   // x,voteValue
+        QPoint natBreaksMax2;   // x,voteValue
 
         int errorEdgeLimit;
         int errorAngleLimit;

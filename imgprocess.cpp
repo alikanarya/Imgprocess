@@ -3135,9 +3135,9 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
             if ( !listHoughData2nd.isEmpty() && method != -1 ) { // BYPASS FOR SOLID LINE ALGO
 
-                QList<QPoint> pointListSorted;
+                pointListSorted.clear();
                 QList<int> pointListMap;
-                QList<QPoint> mainPointsList;
+                mainPointsList.clear();
 
                 if ( method == 0 ) { // NATURAL BREAKS
                     //------------------------------------------------------------------
@@ -3148,9 +3148,9 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                     //
 
                     const int n = listHoughData2nd.size();
-                    int k = 4;
+                    naturalBreaksNumber = 4;
 
-                    qDebug() << "pointList:";  for (int i=0; i<n; i++) qDebug() << i << " " << pointList[i].x() << " " << pointList[i].y() ;
+                    // ** qDebug() << "pointList:";  for (int i=0; i<n; i++) qDebug() << i << " " << pointList[i].x() << " " << pointList[i].y() ;
 
                     // *** Sort point list wrt x position
                     int minx, idx;
@@ -3167,8 +3167,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                         pointListMap.append(idx);
                         pointList[idx].setX(2000);
                     }
-                    qDebug() << "pointListSorted:";
-                    for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+                    // ** qDebug() << "pointListSorted:"; for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
                     // ***
 
                     // *** Preparation for Natural Breaks Algorithm
@@ -3183,7 +3182,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                     // *** Automatic scan to find optimum breaks (k) number (size)
                     // *** using standard deviations of the regions > mainPointsList
-                    k = 2;
+                    naturalBreaksNumber = 2;
                     bool cont;
                     double varLimit = 10;
                     int maxValue, maxIdx;
@@ -3195,13 +3194,12 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                         GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
 
                         LimitsContainer resultingbreaksArray;
-                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, k, sortedUniqueValueCounts);
+                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
 
                         int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
                         double sum = 0, sampleAve = 0, sampleVar = 0;
 
-                        qDebug() << "-----------";
-                        for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
+                        // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
                         QList<int> sampleList;
                         maxValue = 0; maxIdx = 0;
@@ -3274,9 +3272,9 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                             //qDebug() << sampleVar;
                         }
-                        k++;
+                        naturalBreaksNumber++;
 
-                    } while (cont && k<pointListSorted.size() );
+                    } while (cont && naturalBreaksNumber<pointListSorted.size() );
                     // ***
 
 
@@ -3291,6 +3289,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                 if ( method == 0 ) {    // NATURAL BREAKS
 
+                    mainEdgesList.clear();
                     for (int c=0; c<mainPointsList.size(); c++) {
                         int refId = -1;
                         for (int id=0; id<pointList.size(); id++) {
@@ -3298,9 +3297,12 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                                 refId = pointListMap[id];
 
                         }
-                        qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
-                        //qDebug() << "d/a/v: " << listHoughData2nd[refId].distance << " / " << listHoughData2nd[refId].angle << " / " << listHoughData2nd[refId].voteValue;
-                        qDebug() << "d/a/v: " << listHoughData2ndArray[refId][0] << " / " << listHoughData2ndArray[refId][1] << " / " << listHoughData2ndArray[refId][2];
+                        houghData hd;
+                        hd.distance =  listHoughData2ndArray[refId][0];
+                        hd.angle =  listHoughData2ndArray[refId][1];
+                        hd.voteValue =  listHoughData2ndArray[refId][2];
+                        mainEdgesList.append(hd);
+                        //qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
                     }
 
                     // *** Find maximum (votes) 2 points
@@ -3313,6 +3315,8 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             _idx = c;
                         }
                     }
+                    natBreaksMax1.setX( mainPointsList[_idx].x() );
+                    natBreaksMax1.setY( mainPointsList[_idx].y() );
                     mainPointsList[_idx].setY(-1);
 
                     _idx = 0;
@@ -3324,6 +3328,8 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             _idx = c;
                         }
                     }
+                    natBreaksMax2.setX( mainPointsList[_idx].x() );
+                    natBreaksMax2.setY( mainPointsList[_idx].y() );
                     mainPointsList[_idx].setY(-1);
 
                     //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
@@ -3341,6 +3347,9 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                     trackCenterX = (leftCornerX + rightCornerX)/2.0;
 
+                    centerLine.angle = 0;
+                    centerLine.distance = trackCenterX;
+                    centerLine.voteValue = 0;
                 }
 
                 if ( method == 1 ) {    // MEAN VALUE
@@ -3825,7 +3834,8 @@ void imgProcess::histogramAnalysis(bool colored){
     bool state = true;
     double histRange = histogramMax - histogramMin;
 
-    if ( histogramMaxPointLen.size() < 2 ) {    // MAX POINT NUMBER SHOULD BE >=2
+    // ** MAX POINT NUMBER SHOULD BE >=2
+    if ( histogramMaxPointLen.size() < 2 ) {
         state = false;
         bandCheck_errorState = 1;
     } else {
@@ -3839,7 +3849,8 @@ void imgProcess::histogramAnalysis(bool colored){
             if ( rate > lenRateThr ) cnt++;
         }
 
-        if (cnt < 2) {                          // LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+        // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+        if (cnt < 2) {
             state = false;
             bandCheck_errorState = 2;
         } else {
@@ -3871,7 +3882,8 @@ void imgProcess::histogramAnalysis(bool colored){
                 rightIndex = lenRateSorted[0];
             }
 
-            if ( histogramMaxPointAng[ leftIndex ] >=0 &&        // 1st (LEFT) ANGLE SHOULD BE RIGHT, 2nd (RIGHT) ANGLE SHOULD BE LEFT   \  /
+            // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
+            if ( histogramMaxPointAng[ leftIndex ] >=0 &&
                  histogramMaxPointAng[ rightIndex ] <= 0 ) {
 
                 bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
@@ -3883,14 +3895,18 @@ void imgProcess::histogramAnalysis(bool colored){
                             histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
                             " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
                             */
+
+                // ** BAND WIDTH SHOULD BE WIDE ENOUGH
                 if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
                     state = false;
                     bandCheck_errorState = 4;
                 } else {
+                    // ** BAND CENTER SHOULD BE CLOSE ENOUGH TO CENTER (CONSTANT)
                     if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
                         state = false;
                         bandCheck_errorState = 5;
                     } else {
+                        // ** BAND SHAPE SHOULD NOT BE TRIANGULAR, SHOULD BE CLOSE TO RECTANGLE
                         if ( bandShape < bandShapeMin ) {
                             state = false;
                             bandCheck_errorState = 6;
@@ -4300,9 +4316,11 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
     //QRgb valueCorner;
     QRgb valuePrimary;
     QRgb valueCenter;
+    QRgb valueBlue;
 
     valuePrimary = qRgb(255, 0, 0);     // red
-    valueCenter = qRgb(0, 255, 0);     // green
+    valueCenter = qRgb(0, 255, 0);      // green
+    valueBlue = qRgb(0, 0, 255);        // blue
 
     int xOffset = 0, yOffset = 0;
     int width = 0, height = 0;
@@ -4329,8 +4347,13 @@ QImage imgProcess::getImageMainEdges( int number, bool matrixFlag ){
                 //lineY = centerY - getLineY((x-centerX), houghLines[i][0], houghLines[i][1]);
                 lineX = getLineX((y-centerY), mainEdgesList[c].distance, mainEdgesList[c].angle) - centerX;
 
-                if (lineX >= 0 && lineX < width)
-                    imgSolidLines.setPixel( lineX + xOffset, y, valuePrimary );
+                if (lineX > 0 && lineX < (width-1) )
+                    for (int xx = -1; xx <= 1; xx++) {
+                        if ( naturalBreaksNumber != 0 && (natBreaksMax1.y() == mainEdgesList[c].voteValue || natBreaksMax2.y() == mainEdgesList[c].voteValue) )
+                            imgSolidLines.setPixel( lineX + xOffset + xx, y, valueBlue );
+                        else
+                            imgSolidLines.setPixel( lineX + xOffset + xx, y, valuePrimary );
+                    }
             }
         }
 
