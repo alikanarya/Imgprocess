@@ -465,8 +465,8 @@ class imgProcess{
         QImage getImageContrast();
 
         // EDGE DETECTION ALGO
-        void detectMainEdges(bool thinjoint, bool debug = false);
-        houghData detectMainEdgesSolidLine(float rate, bool thinjoint, bool debug = false);
+        void detectMainEdges(int method, bool debug = false);
+        houghData detectMainEdgesSolidLine(float rate, bool debug = false);
 
         void histogramAnalysis(bool colored);
 

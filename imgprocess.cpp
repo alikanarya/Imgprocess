@@ -2959,7 +2959,7 @@ void imgProcess::detectContrastCenter(){
 }
 
 
-void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
+void imgProcess::detectMainEdges(int method, bool DEBUG){
 
     trackCenterX = rightCornerX = leftCornerX = 0;
     trackCenterY = rightCornerY = leftCornerY = 0;
@@ -3108,12 +3108,14 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             // ** localMaximalist2nd > listHoughData2nd
             //------------------------------------------------------------------
 
-            int lineX, y = imageHeight/2;
-            for (int i=0; i < listHoughData2nd.size(); i++) {
-                //lineX = centerX + 1 + getLineX((centerY + 1 - y), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
-                lineX = centerX + 1 + getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
-                QPoint p(lineX, listHoughData2nd[i].voteValue);
-                pointList.append(p);
+            if (method == 0) {
+                int lineX, y = imageHeight/2;
+                for (int i=0; i < listHoughData2nd.size(); i++) {
+                    //lineX = centerX + 1 + getLineX((centerY + 1 - y), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
+                    lineX = centerX + 1 + getLineX((y-centerY), listHoughData2nd[i].distance, listHoughData2nd[i].angle);
+                    QPoint p(lineX, listHoughData2nd[i].voteValue);
+                    pointList.append(p);
+                }
             }
 
             listHoughData2ndSize = listHoughData2nd.size();
@@ -3131,13 +3133,13 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
             //}
 
 
-            if (!listHoughData2nd.isEmpty()){
+            if ( !listHoughData2nd.isEmpty() && method != -1 ) { // BYPASS FOR SOLID LINE ALGO
 
                 QList<QPoint> pointListSorted;
                 QList<int> pointListMap;
                 QList<QPoint> mainPointsList;
 
-                if ( naturalBreaks ) {
+                if ( method == 0 ) { // NATURAL BREAKS
                     //------------------------------------------------------------------
                     //
                     // NATURAL BREAKS ALGORITM
@@ -3287,109 +3289,100 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
 
                 bool xCoorCalcEnable = false;
 
-                if ( wideJoint ){
-                    //-C----------------------------------------------------------------
-                    //
-                    // WIDE JOINT
-                    //
+                if ( method == 0 ) {    // NATURAL BREAKS
 
-                    if (naturalBreaks) {
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        int refId = -1;
+                        for (int id=0; id<pointList.size(); id++) {
+                            if ( mainPointsList[c].x() == pointListSorted[id].x() && mainPointsList[c].y() == pointListSorted[id].y() )
+                                refId = pointListMap[id];
 
-                        for (int c=0; c<mainPointsList.size(); c++) {
-                            int refId = -1;
-                            for (int id=0; id<pointList.size(); id++) {
-                                if ( mainPointsList[c].x() == pointListSorted[id].x() && mainPointsList[c].y() == pointListSorted[id].y() )
-                                    refId = pointListMap[id];
-
-                            }
-                            qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
-                            //qDebug() << "d/a/v: " << listHoughData2nd[refId].distance << " / " << listHoughData2nd[refId].angle << " / " << listHoughData2nd[refId].voteValue;
-                            qDebug() << "d/a/v: " << listHoughData2ndArray[refId][0] << " / " << listHoughData2ndArray[refId][1] << " / " << listHoughData2ndArray[refId][2];
                         }
+                        qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
+                        //qDebug() << "d/a/v: " << listHoughData2nd[refId].distance << " / " << listHoughData2nd[refId].angle << " / " << listHoughData2nd[refId].voteValue;
+                        qDebug() << "d/a/v: " << listHoughData2ndArray[refId][0] << " / " << listHoughData2ndArray[refId][1] << " / " << listHoughData2ndArray[refId][2];
+                    }
 
-                        // *** Find maximum (votes) 2 points
-                        int _idx = 0;
-                        QPoint max1(0,-1);
-                        for (int c=0; c<mainPointsList.size(); c++) {
-                            if ( mainPointsList[c].y() > max1.y() ) {
-                                max1.setY( mainPointsList[c].y() );
-                                max1.setX( mainPointsList[c].x() );
-                                _idx = c;
-                            }
+                    // *** Find maximum (votes) 2 points
+                    int _idx = 0;
+                    QPoint max1(0,-1);
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        if ( mainPointsList[c].y() > max1.y() ) {
+                            max1.setY( mainPointsList[c].y() );
+                            max1.setX( mainPointsList[c].x() );
+                            _idx = c;
                         }
-                        mainPointsList[_idx].setY(-1);
+                    }
+                    mainPointsList[_idx].setY(-1);
 
-                        _idx = 0;
-                        QPoint max2(0,-1);
-                        for (int c=0; c<mainPointsList.size(); c++) {
-                            if ( mainPointsList[c].y() > max2.y() ) {
-                                max2.setY( mainPointsList[c].y() );
-                                max2.setX( mainPointsList[c].x() );
-                                _idx = c;
-                            }
+                    _idx = 0;
+                    QPoint max2(0,-1);
+                    for (int c=0; c<mainPointsList.size(); c++) {
+                        if ( mainPointsList[c].y() > max2.y() ) {
+                            max2.setY( mainPointsList[c].y() );
+                            max2.setX( mainPointsList[c].x() );
+                            _idx = c;
                         }
-                        mainPointsList[_idx].setY(-1);
+                    }
+                    mainPointsList[_idx].setY(-1);
 
-                        //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
-                        //qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
+                    //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
+                    //qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
 
-                        // *** Determine left & right corners
-                        if ( max1.x() > max2.x()) {
-                            leftCornerX = max2.x();
-                            rightCornerX = max1.x();
-                        } else {
-                            leftCornerX = max1.x();
-                            rightCornerX = max2.x();
-                        }
-                        // ***
-
-                        trackCenterX = (leftCornerX + rightCornerX)/2.0;
-
+                    // *** Determine left & right corners
+                    if ( max1.x() > max2.x()) {
+                        leftCornerX = max2.x();
+                        rightCornerX = max1.x();
                     } else {
+                        leftCornerX = max1.x();
+                        rightCornerX = max2.x();
+                    }
+                    // ***
 
-                        // APPLY MEAN VALUE THRESHOLD to listHoughData2nd to build mainEdgeList lines
+                    trackCenterX = (leftCornerX + rightCornerX)/2.0;
 
-                        int sum = 0;
+                }
 
-                        for (int i = 0; i < listHoughData2nd.size(); i++)
-                            sum += listHoughData2nd[i].voteValue;
+                if ( method == 1 ) {    // MEAN VALUE
 
-                        int meanValue = sum / listHoughData2nd.size();
+                    // APPLY MEAN VALUE THRESHOLD to listHoughData2nd to build mainEdgeList lines
 
-                        for (int i = 0; i < listHoughData2nd.size(); i++)
-                            if ( listHoughData2nd[i].voteValue > meanValue ){
-                                houghData hd;
-                                hd.distance =  listHoughData2nd[i].distance;
-                                hd.angle =  listHoughData2nd[i].angle;
-                                hd.voteValue =  listHoughData2nd[i].voteValue;
-                                mainEdgesList.append(hd);
+                    int sum = 0;
+
+                    for (int i = 0; i < listHoughData2nd.size(); i++)
+                        sum += listHoughData2nd[i].voteValue;
+
+                    int meanValue = sum / listHoughData2nd.size();
+
+                    for (int i = 0; i < listHoughData2nd.size(); i++)
+                        if ( listHoughData2nd[i].voteValue > meanValue ){
+                            houghData hd;
+                            hd.distance =  listHoughData2nd[i].distance;
+                            hd.angle =  listHoughData2nd[i].angle;
+                            hd.voteValue =  listHoughData2nd[i].voteValue;
+                            mainEdgesList.append(hd);
+                    }
+
+                    /* Average of mainEdgeList lines is the **centerLine**
+                    if ( mainEdgesList.size() != 0) {
+
+                        float angleSum = 0, distanceSum = 0;
+                        for (int i = 0; i < mainEdgesList.size(); i++){
+                            angleSum += mainEdgesList[i].angle;
+                            distanceSum += mainEdgesList[i].distance;
                         }
 
-                        /* Average of mainEdgeList lines is the **centerLine**
-                        if ( mainEdgesList.size() != 0) {
+                        centerLine.angle = angleSum / mainEdgesList.size();
+                        centerLine.distance = distanceSum / mainEdgesList.size();
+                    }
+                    */
 
-                            float angleSum = 0, distanceSum = 0;
-                            for (int i = 0; i < mainEdgesList.size(); i++){
-                                angleSum += mainEdgesList[i].angle;
-                                distanceSum += mainEdgesList[i].distance;
-                            }
+                    xCoorCalcEnable = true;
+                }
 
-                            centerLine.angle = angleSum / mainEdgesList.size();
-                            centerLine.distance = distanceSum / mainEdgesList.size();
-                        }
-                        */
+                if ( method == 2 ) {    // GET NUMBER OF MAXs
 
-                        xCoorCalcEnable = true;
-                    } // naturalBreaks
-
-                    //------------------------------------------------------------------
-                } else {
-                    //-D----------------------------------------------------------------
-                    //
-                    // THIN JOINT
-                    //
                     // SELECT size (thinCornerNum) NUMBER of MAXS to build mainEdgeList
-                    //
 
                     int size = thinCornerNum;
 
@@ -3423,6 +3416,7 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
                     xCoorCalcEnable = true;
                     //------------------------------------------------------------------
                 }
+
                 // TRACK CENTER DETECTION - END
 
 
@@ -3521,9 +3515,9 @@ void imgProcess::detectMainEdges(bool thinjoint, bool DEBUG){
     localMaximalist.empty();
 }
 
-houghData imgProcess::detectMainEdgesSolidLine(float rate, bool thinjoint, bool debug){
+houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
 
-    detectMainEdges(thinjoint, debug);
+    detectMainEdges(-1, debug);
 
     mainEdgesList.clear();
 
