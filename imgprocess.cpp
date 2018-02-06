@@ -3576,39 +3576,20 @@ void imgProcess::histogramAnalysis(bool colored){
     histogramFilteredInitSwitch = true;
 
     int noiseDia = (maFilterKernelSize-1)/2;
+    histogramAvg = 0;
+    histogramMin = 2000, histogramMax = 0;
 
-    /* MOVING AVERAGE FILTER
-    histogramFilteredX = new int[histogramSize];
+    // MOVING AVERAGE FILTER
     float sum;
     for (int x = 0; x < histogramSize; x++){
         if (x < noiseDia || x > (histogramSize-noiseDia))
-           histogramFilteredX[x] = histogram[x] ;
+           histogramFiltered[x] = histogram[x] ;
         else {
             sum = 0;
             for (int k = x-noiseDia; k <= x+noiseDia; k++)
                 sum += histogram[k];
-            histogramFilteredX[x] = sum /  maFilterKernelSize;
+            histogramFiltered[x] = (sum*1.0) /  maFilterKernelSize;
         }
-    }
-    */
-
-    // RECURSIVE MOVING AVERAGE FILTER
-    float initialAvg = 0;
-    for (int x = 0; x < maFilterKernelSize; x++)
-        initialAvg += histogram[x];
-    initialAvg /= maFilterKernelSize;
-
-    histogramAvg = 0;
-    histogramMin = 2000, histogramMax = 0;
-    for (int x = 0; x < histogramSize; x++){
-        if ( x < noiseDia )
-           histogramFiltered[x] = histogram[x] ;
-        else if ( x == noiseDia )
-            histogramFiltered[x] = initialAvg ;
-        else if ( x > (histogramSize-noiseDia) )
-           histogramFiltered[x] = histogramFiltered[x-1] ;
-        else
-            histogramFiltered[x] = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
 
         histogramAvg += histogramFiltered[x];
         if (histogramFiltered[x] < histogramMin)
@@ -3617,8 +3598,39 @@ void imgProcess::histogramAnalysis(bool colored){
             histogramMax = histogramFiltered[x];
     }
 
+
+    /* RECURSIVE MOVING AVERAGE FILTER
+    float initialAvg = 0;
+    for (int x = 0; x < maFilterKernelSize; x++)
+        initialAvg += histogram[x];
+    initialAvg /= maFilterKernelSize;
+
+    double value;
+    for (int x = 0; x < histogramSize; x++){
+        if ( x < noiseDia )
+           histogramFiltered[x] = histogram[x] ;
+        else if ( x == noiseDia )
+            histogramFiltered[x] = initialAvg ;
+        else if ( x > (histogramSize-noiseDia) )
+            histogramFiltered[x] = histogramFiltered[x-1] ;
+        else {
+            value = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
+            if (value>=0 && value <= 255)
+                histogramFiltered[x] = value;
+            else
+                histogramFiltered[x] = histogramFiltered[x-1];
+        }
+
+        histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
+    }
+    */
+
     if (histogramSize != 0)
-        histogramAvg /= histogramSize;
+        histogramAvg /= (1.0*histogramSize);
     else
         histogramAvg = -1;
 
