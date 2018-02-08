@@ -83,7 +83,7 @@ class imgProcess{
         QImage imgCornerAndPrimaryLines;    // orginal image with detected corners and primary lines shown
         QImage imgSolidLines;
 
-        const int imageWidth, imageHeight;  // org. image
+        int imageWidth, imageHeight;  // org. image
         int edgeWidth, edgeHeight;          // edge detected image
 
         // hough transform vars
@@ -297,6 +297,8 @@ class imgProcess{
 
 
         // constructor
+        imgProcess();
+
         imgProcess(QImage &image, const int width, const int height) : imageWidth(width), imageHeight(height) {
 
             imgOrginal = image;     // passes image to class not copy of it

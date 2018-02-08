@@ -13,6 +13,9 @@
 #include <iostream>
 using namespace std;
 
+imgProcess::imgProcess(){
+}
+
 void imgProcess::toMono(){
 
     imgMono = imgOrginal.convertToFormat(QImage::Format_Mono,Qt::ThresholdDither);
@@ -3635,6 +3638,8 @@ void imgProcess::histogramAnalysis(bool colored){
     else
         histogramAvg = -1;
 
+    double yScaleFactor = (1.0*histogramSize) / (histogramMax-histogramMin);
+
 // *-derivative------------------------------------------------------
     histogramDIdx.clear();
     histogramDSum.clear();
@@ -4091,7 +4096,7 @@ int* imgProcess::valueHistogram(bool axis){
             else
                 sum += valueMatrixOrg[t][v];   //[y][x]
         }
-        histogram[t] = sum / traceAxis;
+        histogram[t] = (1.0*sum) / valueAxis;
     }
     return histogram;
 }
@@ -4142,7 +4147,7 @@ int* imgProcess::valueHistogramGray(bool axis){
             else
                 sum += _valueMatrix[t][v];   //[y][x]
         }
-        histogram[t] = sum / traceAxis;
+        histogram[t] = sum / valueAxis;
     }
 
     for (int y = 0; y < image.height(); y++) delete []_valueMatrix[y];
