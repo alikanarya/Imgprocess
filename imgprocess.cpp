@@ -3643,14 +3643,55 @@ void imgProcess::histogramAnalysis(bool colored){
 // *-derivative------------------------------------------------------
     histogramDIdx.clear();
     histogramDSum.clear();
-    histogramD = new int[histogramSize]; histogramD[histogramSize-1]=0;
+    histogramD = new int[histogramSize]; histogramD[0]=0;
+    histogramDD = new int[histogramSize]; histogramDD[0]=0; histogramDD[1]=0;
 
-    for (int i=0; i<histogramSize-1; i++)
-        histogramD[i] = histogramFiltered[i+1] - histogramFiltered[i];
+    int histDmin = 3000, histDmax = -3000;
+    for (int i=1; i<histogramSize; i++) {
+        histogramD[i] = histogramFiltered[i] - histogramFiltered[i-1];
+        if (histogramD[i] < histDmin)   histDmin = histogramD[i];
+        if (histogramD[i] > histDmax)   histDmax = histogramD[i];
+    }
 
+    for (int i=2; i<histogramSize; i++) {
+        histogramDD[i] = abs(histogramD[i] - histogramD[i-1]);
+    }
+
+    ddPeaks.clear();
+    findMaxs(histogramDD, histogramSize, ddPeaks);
+
+    histogramExtremes.clear();
+    for (int i=1; i<ddPeaks.size(); i++) {
+        if (histogramDD[ddPeaks[i].start] > 5) {
+            range p;
+            p.start = ddPeaks[i].start;
+            p.end = ddPeaks[i].end;
+            histogramExtremes.append(p);
+        }
+    }
+
+/*
     int sum = 0;
     bool signFlag = false;
+
+    int pastSize = 10;
+    int pastSum;
+    double pastAvg;
+    bool dChangeFlag = false;
+    int histDThresh = abs((histDmax-histDmin)*0.2);
+
     for (int i=1; i<histogramSize; i++) {
+
+        if (i>=pastSize) {
+            pastSum = 0;
+            for (int j=1; j<=pastSize; j++)
+                pastSum += histogramD[i-j];
+            pastAvg = abs((1.0*pastSum)/pastSize);
+            if (pastAvg>histDThresh) {
+                if ( abs(histogramD[i]) > (pastAvg*1.5) || abs(histogramD[i]) < (pastAvg*0.5) )
+                    dChangeFlag = true;
+            }
+        }
         if ( (histogramD[i]*histogramD[i-1]) == 0 ) {
             if ( (histogramD[i]==0 && histogramD[i-1]!=0) || (histogramD[i]!=0 && histogramD[i-1]==0) )
                 signFlag = true;
@@ -3662,11 +3703,12 @@ void imgProcess::histogramAnalysis(bool colored){
             sum += histogramD[i];
             signFlag = false;
         }
-        if ( signFlag ) {
+        if ( signFlag || dChangeFlag) {
             histogramDIdx.append(i);
             histogramDSum.append(sum);
             sum = 0;
             signFlag = false;
+            dChangeFlag = false;
         }
     }
 
@@ -3677,7 +3719,7 @@ void imgProcess::histogramAnalysis(bool colored){
         p.end = histogramDIdx[i];
         histogramExtremes.append(p);
     }
-
+*/
 //-------------------------------------------------------*/
 /*
     histogramPeaks.clear();

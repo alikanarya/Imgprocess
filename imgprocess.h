@@ -247,6 +247,7 @@ class imgProcess{
         int *histogram;                     // histogram array
         int *histogramFiltered;             // histogram array after noise reduction
         int *histogramD;                    // histogram derivative
+        int *histogramDD;                   // histogram 2nd derivative
         int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
@@ -258,6 +259,8 @@ class imgProcess{
         QList<range> histogramExtremesFiltered;
         QList<int> histogramDIdx;
         QList<int> histogramDSum;
+        QList<range> ddPeaks;
+
         double histogramMaxThreshold = 0.75;
         double histogramAngleThreshold = 11;
         QList<int> histogramMaxPeaksList;
