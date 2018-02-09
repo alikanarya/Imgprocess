@@ -3638,7 +3638,14 @@ void imgProcess::histogramAnalysis(bool colored){
     else
         histogramAvg = -1;
 
-    double yScaleFactor = (1.0*histogramSize) / (histogramMax-histogramMin);
+    double yScaleFactor = (255.0) / (histogramMax-histogramMin);
+
+    for (int x = 0; x < histogramSize; x++){
+        histogramFiltered[x] = yScaleFactor * histogramFiltered[x];
+    }
+    histogramMin = yScaleFactor * histogramMin;
+    histogramMax = yScaleFactor * histogramMax;
+    histogramAvg = yScaleFactor * histogramAvg;
 
 // *-derivative------------------------------------------------------
     histogramDIdx.clear();
@@ -3646,15 +3653,18 @@ void imgProcess::histogramAnalysis(bool colored){
     histogramD = new int[histogramSize]; histogramD[0]=0;
     histogramDD = new int[histogramSize]; histogramDD[0]=0; histogramDD[1]=0;
 
-    int histDmin = 3000, histDmax = -3000;
+    histogramDMin = 3000, histogramDMax = -3000;
     for (int i=1; i<histogramSize; i++) {
         histogramD[i] = histogramFiltered[i] - histogramFiltered[i-1];
-        if (histogramD[i] < histDmin)   histDmin = histogramD[i];
-        if (histogramD[i] > histDmax)   histDmax = histogramD[i];
+        if (histogramD[i] < histogramDMin)   histogramDMin = histogramD[i];
+        if (histogramD[i] > histogramDMax)   histogramDMax = histogramD[i];
     }
 
+    histogramDDMin = 3000, histogramDDMax = -3000;
     for (int i=2; i<histogramSize; i++) {
         histogramDD[i] = abs(histogramD[i] - histogramD[i-1]);
+        if (histogramDD[i] < histogramDDMin)   histogramDDMin = histogramDD[i];
+        if (histogramDD[i] > histogramDDMax)   histogramDDMax = histogramDD[i];
     }
 
     ddPeaks.clear();
@@ -3662,7 +3672,7 @@ void imgProcess::histogramAnalysis(bool colored){
 
     histogramExtremes.clear();
     for (int i=1; i<ddPeaks.size(); i++) {
-        if (histogramDD[ddPeaks[i].start] > 5) {
+        if (histogramDD[ddPeaks[i].start] > histDDLimit) {
             range p;
             p.start = ddPeaks[i].start;
             p.end = ddPeaks[i].end;
