@@ -3970,7 +3970,6 @@ void imgProcess::histogramAnalysis(bool colored){
                         values.push_back( histogramMaxPoint[i].x() );
 
                     assert(values.size() == n);
-                    // ***
 
                     // *** Automatic scan to find optimum breaks (k) number (size)
                     // *** using standard deviations of the regions > mainPointsList
@@ -3979,6 +3978,7 @@ void imgProcess::histogramAnalysis(bool colored){
                     double varLimit = 10;
                     int maxValue, maxIdx;
 
+                    breakPointList.clear();
                     do {
                         cont = false;
                         mainPointsList.clear();
@@ -3993,6 +3993,7 @@ void imgProcess::histogramAnalysis(bool colored){
 
                         // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
+                        breakPointList.clear();
                         QList<int> sampleList;
                         maxValue = 0; maxIdx = 0;
                         do {
@@ -4011,10 +4012,11 @@ void imgProcess::histogramAnalysis(bool colored){
                                         sampleVar = sqrt(powSum);
                                         if (sampleVar > varLimit) cont = true;
 
-                                        QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                                        //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                                        breakPointList.append( sampleList[0] );
+                                        QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
                                         mainPointsList.append(p);
                                         maxValue = 0; maxIdx = 0;
-
                                         //qDebug() << sampleVar;
                                     }
                                     sampleList.clear();
@@ -4024,8 +4026,8 @@ void imgProcess::histogramAnalysis(bool colored){
                                     sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
                                     sum += histogramMaxPoint[ pointListSortedIdx ].x();
 
-                                    if ( histogramMaxPoint[ pointListSortedIdx ].y() > maxValue ) {
-                                        maxValue = histogramMaxPoint[ pointListSortedIdx ].y();
+                                    if ( histogramMaxPointLen[ pointListSortedIdx ] > maxValue ) {
+                                        maxValue = histogramMaxPointLen[ pointListSortedIdx ];
                                         maxIdx = pointListSortedIdx;
                                     }
 
@@ -4037,8 +4039,8 @@ void imgProcess::histogramAnalysis(bool colored){
                                 sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
                                 sum += histogramMaxPoint[ pointListSortedIdx ].x();
 
-                                if ( histogramMaxPoint[ pointListSortedIdx ].y() > maxValue ) {
-                                    maxValue = histogramMaxPoint[ pointListSortedIdx ].y();
+                                if ( histogramMaxPointLen[ pointListSortedIdx ] > maxValue ) {
+                                    maxValue = histogramMaxPointLen[ pointListSortedIdx ];
                                     maxIdx = pointListSortedIdx;
                                 }
 
@@ -4058,7 +4060,9 @@ void imgProcess::histogramAnalysis(bool colored){
                             sampleVar = sqrt(powSum);
                             if (sampleVar > varLimit) cont = true;
 
-                            QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                            //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                            breakPointList.append( sampleList[0] );
+                            QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
                             mainPointsList.append(p);
                             maxValue = 0; maxIdx = 0;
 
@@ -4069,6 +4073,11 @@ void imgProcess::histogramAnalysis(bool colored){
                     } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
                     // ***
 
+                    qDebug() << breakPointList;
+
+                    for (int i=0; i<mainPointsList.size(); i++){
+
+                    }
 
 
 
