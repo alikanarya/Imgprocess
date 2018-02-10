@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "math.h"
+#include <cmath>
 #include <QDebug>
 
 #include "imgprocess_msg.h"
@@ -361,6 +362,21 @@ bool imgProcess::saveMatrix(bool **matrix, int width, int height, QString fname)
 
 
 bool imgProcess::saveArray(int *array, int length, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int i = 0; i < length; i++) out << array[i] << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
+
+bool imgProcess::saveArray(double *array, int length, QString fname){
 
     QFile file(fname);
     bool saveStatus = true;
@@ -3638,20 +3654,20 @@ void imgProcess::histogramAnalysis(bool colored){
     else
         histogramAvg = -1;
 
-    double yScaleFactor = (255.0) / (histogramMax-histogramMin);
+    double yScaleFactor = (histogramSize*1.0) / (histogramMax-histogramMin);
 
     for (int x = 0; x < histogramSize; x++){
-        histogramFiltered[x] = yScaleFactor * histogramFiltered[x];
+        histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
     }
-    histogramMin = yScaleFactor * histogramMin;
-    histogramMax = yScaleFactor * histogramMax;
-    histogramAvg = yScaleFactor * histogramAvg;
+    histogramMax = yScaleFactor * (histogramMax-histogramMin);
+    histogramAvg = yScaleFactor * (histogramAvg-histogramMin);
+    histogramMin = 0;//yScaleFactor * histogramMin;
 
 // *-derivative------------------------------------------------------
     histogramDIdx.clear();
     histogramDSum.clear();
-    histogramD = new int[histogramSize]; histogramD[0]=0;
-    histogramDD = new int[histogramSize]; histogramDD[0]=0; histogramDD[1]=0;
+    histogramD = new double[histogramSize]; histogramD[0]=0;
+    histogramDD = new double[histogramSize]; histogramDD[0]=0; histogramDD[1]=0;
 
     histogramDMin = 3000, histogramDMax = -3000;
     for (int i=1; i<histogramSize; i++) {
@@ -3662,12 +3678,11 @@ void imgProcess::histogramAnalysis(bool colored){
 
     histogramDDMin = 3000, histogramDDMax = -3000;
     for (int i=2; i<histogramSize; i++) {
-        histogramDD[i] = abs(histogramD[i] - histogramD[i-1]);
+        histogramDD[i] = std::abs(histogramD[i] - histogramD[i-1]);
         if (histogramDD[i] < histogramDDMin)   histogramDDMin = histogramDD[i];
         if (histogramDD[i] > histogramDDMax)   histogramDDMax = histogramDD[i];
     }
 
-    ddPeaks.clear();
     findMaxs(histogramDD, histogramSize, ddPeaks);
 
     histogramExtremes.clear();
@@ -3680,342 +3695,459 @@ void imgProcess::histogramAnalysis(bool colored){
         }
     }
 
-/*
-    int sum = 0;
-    bool signFlag = false;
+    if (!histogramExtremes.isEmpty()) {
 
-    int pastSize = 10;
-    int pastSum;
-    double pastAvg;
-    bool dChangeFlag = false;
-    int histDThresh = abs((histDmax-histDmin)*0.2);
+        /*
+            int sum = 0;
+            bool signFlag = false;
 
-    for (int i=1; i<histogramSize; i++) {
+            int pastSize = 10;
+            int pastSum;
+            double pastAvg;
+            bool dChangeFlag = false;
+            int histDThresh = abs((histDmax-histDmin)*0.2);
 
-        if (i>=pastSize) {
-            pastSum = 0;
-            for (int j=1; j<=pastSize; j++)
-                pastSum += histogramD[i-j];
-            pastAvg = abs((1.0*pastSum)/pastSize);
-            if (pastAvg>histDThresh) {
-                if ( abs(histogramD[i]) > (pastAvg*1.5) || abs(histogramD[i]) < (pastAvg*0.5) )
-                    dChangeFlag = true;
+            for (int i=1; i<histogramSize; i++) {
+
+                if (i>=pastSize) {
+                    pastSum = 0;
+                    for (int j=1; j<=pastSize; j++)
+                        pastSum += histogramD[i-j];
+                    pastAvg = abs((1.0*pastSum)/pastSize);
+                    if (pastAvg>histDThresh) {
+                        if ( abs(histogramD[i]) > (pastAvg*1.5) || abs(histogramD[i]) < (pastAvg*0.5) )
+                            dChangeFlag = true;
+                    }
+                }
+                if ( (histogramD[i]*histogramD[i-1]) == 0 ) {
+                    if ( (histogramD[i]==0 && histogramD[i-1]!=0) || (histogramD[i]!=0 && histogramD[i-1]==0) )
+                        signFlag = true;
+                }
+                if ( (histogramD[i]*histogramD[i-1]) < 0 ) {
+                    signFlag = true;
+                }
+                if ( (histogramD[i]*histogramD[i-1]) > 0 ) {
+                    sum += histogramD[i];
+                    signFlag = false;
+                }
+                if ( signFlag || dChangeFlag) {
+                    histogramDIdx.append(i);
+                    histogramDSum.append(sum);
+                    sum = 0;
+                    signFlag = false;
+                    dChangeFlag = false;
+                }
             }
-        }
-        if ( (histogramD[i]*histogramD[i-1]) == 0 ) {
-            if ( (histogramD[i]==0 && histogramD[i-1]!=0) || (histogramD[i]!=0 && histogramD[i-1]==0) )
-                signFlag = true;
-        }
-        if ( (histogramD[i]*histogramD[i-1]) < 0 ) {
-            signFlag = true;
-        }
-        if ( (histogramD[i]*histogramD[i-1]) > 0 ) {
-            sum += histogramD[i];
-            signFlag = false;
-        }
-        if ( signFlag || dChangeFlag) {
-            histogramDIdx.append(i);
-            histogramDSum.append(sum);
-            sum = 0;
-            signFlag = false;
-            dChangeFlag = false;
-        }
-    }
 
-    histogramExtremes.clear();
-    for (int i=1; i<histogramDIdx.size(); i++) {
-        range p;
-        p.start = histogramDIdx[i];
-        p.end = histogramDIdx[i];
-        histogramExtremes.append(p);
-    }
-*/
-//-------------------------------------------------------*/
-/*
-    histogramPeaks.clear();
-    findMaxs(histogramFiltered, histogramSize, histogramPeaks);
-
-    histogramMins.clear();
-    findMins(histogramFiltered, histogramSize, histogramMins);
-
-    //--- MERGE PEAK AND MIN POINTS -----------------------------------------------------
-    histogramExtremes.clear();
-    int peaksIdx = 0;
-    int minsIdx = 0;
-    int x = 0;
-    do {
-        if (peaksIdx < histogramPeaks.size()){
-            if ( histogramPeaks[peaksIdx].start <= x && x <= histogramPeaks[peaksIdx].end ){
-                x = histogramPeaks[peaksIdx].end;
+            histogramExtremes.clear();
+            for (int i=1; i<histogramDIdx.size(); i++) {
                 range p;
-                p.start = histogramPeaks[peaksIdx].start;
-                p.end = histogramPeaks[peaksIdx].end;
-                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                p.start = histogramDIdx[i];
+                p.end = histogramDIdx[i];
                 histogramExtremes.append(p);
-                peaksIdx++;
             }
-        }
+        */
+        //-------------------------------------------------------*/
+        /*
+            findMaxs(histogramFiltered, histogramSize, histogramPeaks);
 
-        if (minsIdx < histogramMins.size()){
-            if ( histogramMins[minsIdx].start <= x && x <= histogramMins[minsIdx].end ){
-                range p;
-                p.start = histogramMins[minsIdx].start;
-                p.end = histogramMins[minsIdx].end;
-                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
-                histogramExtremes.append(p);
-                x = histogramMins[minsIdx].end;
-                minsIdx++;
+            findMins(histogramFiltered, histogramSize, histogramMins);
+
+            //--- MERGE PEAK AND MIN POINTS -----------------------------------------------------
+            histogramExtremes.clear();
+            int peaksIdx = 0;
+            int minsIdx = 0;
+            int x = 0;
+            do {
+                if (peaksIdx < histogramPeaks.size()){
+                    if ( histogramPeaks[peaksIdx].start <= x && x <= histogramPeaks[peaksIdx].end ){
+                        x = histogramPeaks[peaksIdx].end;
+                        range p;
+                        p.start = histogramPeaks[peaksIdx].start;
+                        p.end = histogramPeaks[peaksIdx].end;
+                        //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                        histogramExtremes.append(p);
+                        peaksIdx++;
+                    }
+                }
+
+                if (minsIdx < histogramMins.size()){
+                    if ( histogramMins[minsIdx].start <= x && x <= histogramMins[minsIdx].end ){
+                        range p;
+                        p.start = histogramMins[minsIdx].start;
+                        p.end = histogramMins[minsIdx].end;
+                        //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                        histogramExtremes.append(p);
+                        x = histogramMins[minsIdx].end;
+                        minsIdx++;
+                    }
+                }
+                x++;
+            } while (x < histogramSize);
+            //-----------------------------------------------------------------------------------
+        */
+            //--- MERGE CLOSE POINTS ------------------------------------------------------------
+            int deltaXThreshold = histogramSize * 0.02;
+            int deltaYThreshold = histogramSize * 0.02;
+            int deltaX, deltaY, lenX;
+            histogramExtremesFiltered.clear();
+
+            range zeroPoint;
+            zeroPoint.start = histogramExtremes[0].start;
+            zeroPoint.end = histogramExtremes[0].end;
+            histogramExtremesFiltered.append(zeroPoint);
+            int hisExtFltIndex = 0;
+
+            for (int i=0; i<histogramExtremes.size()-1; i++) {
+                deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
+                deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
+
+                if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
+
+                    lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
+                    histogramExtremesFiltered[hisExtFltIndex].end = histogramExtremes[i].end;
+
+                    range nextPoint;
+                    nextPoint.start = histogramExtremes[i+1].start;
+                    nextPoint.end = histogramExtremes[i+1].end;
+                    histogramExtremesFiltered.append(nextPoint);
+                    hisExtFltIndex++;
+                }
+                //qDebug() << deltaX << " " << deltaY;
             }
-        }
-        x++;
-    } while (x < histogramSize);
-    //-----------------------------------------------------------------------------------
-*/
-    //--- MERGE CLOSE POINTS ------------------------------------------------------------
-    int deltaXThreshold = 10;
-    int deltaYThreshold = 10;
-    int deltaX, deltaY, lenX;
-    histogramExtremesFiltered.clear();
+            //-----------------------------------------------------------------------------------
 
-    range zeroPoint;
-    zeroPoint.start = histogramExtremes[0].start;
-    zeroPoint.end = histogramExtremes[0].end;
-    histogramExtremesFiltered.append(zeroPoint);
-    int hisExtFltIndex = 0;
+            /*
+            int max = -1000;
+            for (int i=0; i<histogramExtremes.size(); i++) {
+                if ( histogramFiltered[ histogramExtremes[i].start ] > max )
+                    max = histogramFiltered[ histogramExtremes[i].start ];
+            }
+            float maxThreshold = max * histogramMaxThreshold;
+            */
 
-    for (int i=0; i<histogramExtremes.size()-1; i++) {
-        deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
-        deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
-
-        if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
-
-            lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
-            histogramExtremesFiltered[hisExtFltIndex].end = histogramExtremes[i].end;
-
-            range nextPoint;
-            nextPoint.start = histogramExtremes[i+1].start;
-            nextPoint.end = histogramExtremes[i+1].end;
-            histogramExtremesFiltered.append(nextPoint);
-            hisExtFltIndex++;
-        }
-        //qDebug() << deltaX << " " << deltaY;
-    }
-    //-----------------------------------------------------------------------------------
-
-    /*
-    int max = -1000;
-    for (int i=0; i<histogramExtremes.size(); i++) {
-        if ( histogramFiltered[ histogramExtremes[i].start ] > max )
-            max = histogramFiltered[ histogramExtremes[i].start ];
-    }
-    float maxThreshold = max * histogramMaxThreshold;
-    */
-
-    //--- FIND THE PEAKS ABOVE AVERAGE --------------------------------------------------
-    float maxThreshold = histogramAvg;
-    histogramMaxPeaksList.clear();
-    for (int i=0; i<histogramExtremesFiltered.size(); i++) {
-        if ( histogramFiltered[ histogramExtremesFiltered[i].start ] > maxThreshold )
-            histogramMaxPeaksList.append(i);
-    }
-    /*for (int i=0; i<histogramExtremes.size(); i++) {
-        if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
-            histogramMaxPeaksList.append(i);
-    }*/
-    //-----------------------------------------------------------------------------------
+            //--- FIND THE PEAKS ABOVE AVERAGE --------------------------------------------------
+            float maxThreshold = histogramAvg;
+            histogramMaxPeaksList.clear();
+            for (int i=0; i<histogramExtremesFiltered.size(); i++) {
+                if ( histogramFiltered[ histogramExtremesFiltered[i].start ] > maxThreshold )
+                    histogramMaxPeaksList.append(i);
+            }
+            /*for (int i=0; i<histogramExtremes.size(); i++) {
+                if ( histogramFiltered[ histogramExtremes[i].start ] > maxThreshold )
+                    histogramMaxPeaksList.append(i);
+            }*/
+            //-----------------------------------------------------------------------------------
 
 
-    //--- CALCULATE THE ANGLE(TANGENT) BETWEEN PEAK POINTS TO FIND THE STEEPEST DECENTS -
-    histogramMaxPointLen.clear();
-    histogramMaxPointAng.clear();
-    int startIndex, index;
-    int maxPoint, pairPoint;
-    double angThresh = abs( tan(histogramAngleThreshold*R2D) );
-    double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
-    double tangent = 0, tangentMax = 0;
-    double len = 0, lenMax = 0;
-    bool loopFlag;
+            //--- CALCULATE THE ANGLE(TANGENT) BETWEEN PEAK POINTS TO FIND THE STEEPEST DECENTS -
+            histogramMaxPointLen.clear();
+            histogramMaxPointAng.clear();
+            int startIndex, index;
+            int maxPoint, pairPoint;
+            double angThresh = abs( tan(histogramAngleThreshold*R2D) );
+            double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
+            double tangent = 0, tangentMax = 0;
+            double len = 0, lenMax = 0;
+            bool loopFlag;
 
-    for (int i=0; i<histogramMaxPeaksList.size(); i++) {
-        startIndex = histogramMaxPeaksList[i];
-        yRef = histogramFiltered[ histogramExtremesFiltered[startIndex].start ];
+            for (int i=0; i<histogramMaxPeaksList.size(); i++) {
+                startIndex = histogramMaxPeaksList[i];
+                yRef = histogramFiltered[ histogramExtremesFiltered[startIndex].start ];
 
-        lenMax = 0, tangentMax = 0; maxPoint = 0;
+                lenMax = 0, tangentMax = 0; maxPoint = 0;
 
-        xRef = histogramExtremesFiltered[startIndex].end;
-        index = startIndex;
-        loopFlag = true;
-        // right direction
-        do {
-            index++;
-            if (index < histogramExtremesFiltered.size()) {
-                yNext = histogramFiltered[ histogramExtremesFiltered[index].start ];
-                if ( yNext < yRef) {
-                    xNext = histogramExtremesFiltered[index].start;
-                    tangent = (xNext - xRef) / (yRef - yNext);
-                    if ( abs(tangent) < angThresh ) {
-                        len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
+                xRef = histogramExtremesFiltered[startIndex].end;
+                index = startIndex;
+                loopFlag = true;
+                // right direction
+                do {
+                    index++;
+                    if (index < histogramExtremesFiltered.size()) {
+                        yNext = histogramFiltered[ histogramExtremesFiltered[index].start ];
+                        if ( yNext < yRef) {
+                            xNext = histogramExtremesFiltered[index].start;
+                            tangent = (xNext - xRef) / (yRef - yNext);
+                            if ( abs(tangent) < angThresh ) {
+                                len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
-                        if (len > lenMax) {
-                            maxPoint = startIndex;
-                            pairPoint = index;
-                            lenMax = len;
-                            tangentMax = tangent;
+                                if (len > lenMax) {
+                                    maxPoint = startIndex;
+                                    pairPoint = index;
+                                    lenMax = len;
+                                    tangentMax = tangent;
+                                }
+                            } else {
+                                loopFlag = false;
+                            }
+                        } else {
+                            loopFlag = false;
                         }
                     } else {
                         loopFlag = false;
                     }
-                } else {
-                    loopFlag = false;
-                }
-            } else {
-                loopFlag = false;
-            }
-        } while(loopFlag);
+                } while(loopFlag);
 
-        xRef = histogramExtremesFiltered[startIndex].start;
-        index = startIndex;
-        loopFlag = true;
-        // left direction
-        do {
-            index--;
-            if (index >= 0) {
-                yNext = histogramFiltered[ histogramExtremesFiltered[index].end ];
-                if ( yNext < yRef) {
-                    xNext = histogramExtremesFiltered[index].end;
-                    tangent = (xNext - xRef) / (yRef - yNext);
-                    if ( abs(tangent) < angThresh ) {
-                        len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
+                xRef = histogramExtremesFiltered[startIndex].start;
+                index = startIndex;
+                loopFlag = true;
+                // left direction
+                do {
+                    index--;
+                    if (index >= 0) {
+                        yNext = histogramFiltered[ histogramExtremesFiltered[index].end ];
+                        if ( yNext < yRef) {
+                            xNext = histogramExtremesFiltered[index].end;
+                            tangent = (xNext - xRef) / (yRef - yNext);
+                            if ( abs(tangent) < angThresh ) {
+                                len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
-                        if (len > lenMax) {
-                            maxPoint = startIndex;
-                            pairPoint = index;
-                            lenMax = len;
-                            tangentMax = tangent;
+                                if (len > lenMax) {
+                                    maxPoint = startIndex;
+                                    pairPoint = index;
+                                    lenMax = len;
+                                    tangentMax = tangent;
+                                }
+                            } else {
+                                loopFlag = false;
+                            }
+                        } else {
+                            loopFlag = false;
                         }
                     } else {
                         loopFlag = false;
                     }
-                } else {
-                    loopFlag = false;
-                }
-            } else {
-                loopFlag = false;
-            }
-        } while(loopFlag);
+                } while(loopFlag);
 
-        if (lenMax != 0) {
-            if (tangentMax>=0) {
-                histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].end, histogramFiltered[ histogramExtremesFiltered[maxPoint].end ]) );
-                histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].start, histogramFiltered[ histogramExtremesFiltered[pairPoint].start ]) );
-            } else {
-                histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].start, histogramFiltered[ histogramExtremesFiltered[maxPoint].start ]) );
-                histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].end, histogramFiltered[ histogramExtremesFiltered[pairPoint].end ]) );
-            }
-
-            histogramMaxPointLen.append(lenMax);
-            histogramMaxPointAng.append(tangentMax);
-        }
-
-    } // for
-    //-----------------------------------------------------------------------------------
-
-    bandCheck_errorState = 0;
-    bool state = true;
-    double histRange = histogramMax - histogramMin;
-
-    // ** MAX POINT NUMBER SHOULD BE >=2
-    if ( histogramMaxPointLen.size() < 2 ) {
-        state = false;
-        bandCheck_errorState = 1;
-    } else {
-        QList<double> lenRate;
-        double rate;
-        int cnt = 0;
-        for (int i=0; i<histogramMaxPointLen.size(); i++){
-            rate = histogramMaxPointLen[i]/histRange;
-            lenRate.append( rate );
-            //qDebug() << rate;
-            if ( rate > lenRateThr ) cnt++;
-        }
-
-        // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
-        if (cnt < 2) {
-            state = false;
-            bandCheck_errorState = 2;
-        } else {
-            QList<int> lenRateSorted;
-            double max = 0;
-            int index;
-
-            for (int i=0; i<lenRate.size(); i++) {
-                max = 0;
-                for (int j=0; j<lenRate.size(); j++) {
-                    if (lenRate[j] > max) {
-                        max = lenRate[j];
-                        index = j;
-                    }
-                }
-                lenRateSorted.append( index );
-                lenRate[index] = 0;
-                //qDebug() << index;
-            }
-
-            int x0 = histogramMaxPoint[ lenRateSorted[0] ].x();
-            int x1 = histogramMaxPoint[ lenRateSorted[1] ].x();
-            int leftIndex = 0, rightIndex = 0;
-            if (x0 < x1) {
-                leftIndex = lenRateSorted[0];
-                rightIndex = lenRateSorted[1];
-            } else {
-                leftIndex = lenRateSorted[1];
-                rightIndex = lenRateSorted[0];
-            }
-
-            // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
-            if ( histogramMaxPointAng[ leftIndex ] >=0 &&
-                 histogramMaxPointAng[ rightIndex ] <= 0 ) {
-
-                bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
-                bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
-                int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
-                bandShape = (1.0*bottomWidth) / bandWidth;
-                /*
-                qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
-                            histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
-                            " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
-                            */
-
-                // ** BAND WIDTH SHOULD BE WIDE ENOUGH
-                if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
-                    state = false;
-                    bandCheck_errorState = 4;
-                } else {
-                    // ** BAND CENTER SHOULD BE CLOSE ENOUGH TO CENTER (CONSTANT)
-                    if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
-                        state = false;
-                        bandCheck_errorState = 5;
+                if (lenMax != 0) {
+                    if (tangentMax>=0) {
+                        histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].end, histogramFiltered[ histogramExtremesFiltered[maxPoint].end ]) );
+                        histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].start, histogramFiltered[ histogramExtremesFiltered[pairPoint].start ]) );
                     } else {
-                        // ** BAND SHAPE SHOULD NOT BE TRIANGULAR, SHOULD BE CLOSE TO RECTANGLE
-                        if ( bandShape < bandShapeMin ) {
-                            state = false;
-                            bandCheck_errorState = 6;
-                        }
+                        histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].start, histogramFiltered[ histogramExtremesFiltered[maxPoint].start ]) );
+                        histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].end, histogramFiltered[ histogramExtremesFiltered[pairPoint].end ]) );
                     }
+
+                    histogramMaxPointLen.append(lenMax);
+                    histogramMaxPointAng.append(tangentMax);
                 }
-            } else {
+
+            } // for
+            //-----------------------------------------------------------------------------------
+
+            bandCheck_errorState = 0;
+            bool state = true;
+            double histRange = histogramMax - histogramMin;
+
+            // ** MAX POINT NUMBER SHOULD BE >=2
+            if ( histogramMaxPointLen.size() < 2 ) {
                 state = false;
-                bandCheck_errorState = 3;
+                bandCheck_errorState = 1;
+            } else {
+                QList<double> lenRate;
+                double rate;
+                int cnt = 0;
+                for (int i=0; i<histogramMaxPointLen.size(); i++){
+                    rate = histogramMaxPointLen[i]/histRange;
+                    lenRate.append( rate );
+                    //qDebug() << rate;
+                    if ( rate > lenRateThr ) cnt++;
+                }
+
+                // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+                if (cnt < 2) {
+                    state = false;
+                    bandCheck_errorState = 2;
+                } else {
+
+                    const int n = histogramMaxPoint.size();
+
+                    // *** Preparation for Natural Breaks Algorithm
+                    std::vector<double> values;
+                    values.reserve(n);
+
+                    for (int i=0; i!=n; ++i)
+                        values.push_back( histogramMaxPoint[i].x() );
+
+                    assert(values.size() == n);
+                    // ***
+
+                    // *** Automatic scan to find optimum breaks (k) number (size)
+                    // *** using standard deviations of the regions > mainPointsList
+                    naturalBreaksNumber = 2;
+                    bool cont;
+                    double varLimit = 10;
+                    int maxValue, maxIdx;
+
+                    do {
+                        cont = false;
+                        mainPointsList.clear();
+                        ValueCountPairContainer sortedUniqueValueCounts;
+                        GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+
+                        LimitsContainer resultingbreaksArray;
+                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
+
+                        int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
+                        double sum = 0, sampleAve = 0, sampleVar = 0;
+
+                        // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
+
+                        QList<int> sampleList;
+                        maxValue = 0; maxIdx = 0;
+                        do {
+                            if ( breaksArrayIdx < resultingbreaksArray.size() ) {
+
+                                if ( histogramMaxPoint[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
+
+                                    breaksArrayIdx++;
+                                    //qDebug() << sum << " " << sampleNo;
+                                    if (sampleNo != 0) {
+                                        sampleAve = sum / sampleNo;
+                                        double powSum = 0;
+                                        for (int c=0; c<sampleList.size(); c++)
+                                            powSum += pow(sampleAve-sampleList[c], 2);
+                                        powSum /= sampleNo;
+                                        sampleVar = sqrt(powSum);
+                                        if (sampleVar > varLimit) cont = true;
+
+                                        QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                                        mainPointsList.append(p);
+                                        maxValue = 0; maxIdx = 0;
+
+                                        //qDebug() << sampleVar;
+                                    }
+                                    sampleList.clear();
+                                    sum = 0;
+                                    sampleNo = 0;
+                                } else {
+                                    sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
+                                    sum += histogramMaxPoint[ pointListSortedIdx ].x();
+
+                                    if ( histogramMaxPoint[ pointListSortedIdx ].y() > maxValue ) {
+                                        maxValue = histogramMaxPoint[ pointListSortedIdx ].y();
+                                        maxIdx = pointListSortedIdx;
+                                    }
+
+                                    sampleNo++;
+                                    pointListSortedIdx++;
+                                }
+                            } else {
+                                // for last break
+                                sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
+                                sum += histogramMaxPoint[ pointListSortedIdx ].x();
+
+                                if ( histogramMaxPoint[ pointListSortedIdx ].y() > maxValue ) {
+                                    maxValue = histogramMaxPoint[ pointListSortedIdx ].y();
+                                    maxIdx = pointListSortedIdx;
+                                }
+
+                                sampleNo++;
+                                pointListSortedIdx++;
+                            }
+
+                        } while( pointListSortedIdx < histogramMaxPoint.size() );
+
+                        //qDebug() << sum << " " << sampleNo;
+                        if (sampleNo != 0) {
+                            sampleAve = sum / sampleNo;
+                            double powSum = 0;
+                            for (int c=0; c<sampleList.size(); c++)
+                                powSum += pow(sampleAve-sampleList[c], 2);
+                            powSum /= sampleNo;
+                            sampleVar = sqrt(powSum);
+                            if (sampleVar > varLimit) cont = true;
+
+                            QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                            mainPointsList.append(p);
+                            maxValue = 0; maxIdx = 0;
+
+                            //qDebug() << sampleVar;
+                        }
+                        naturalBreaksNumber++;
+
+                    } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
+                    // ***
+
+
+
+
+
+
+
+
+
+
+                    QList<int> lenRateSorted;
+                    double max = 0;
+                    int index;
+
+                    for (int i=0; i<lenRate.size(); i++) {
+                        max = 0;
+                        for (int j=0; j<lenRate.size(); j++) {
+                            if (lenRate[j] > max) {
+                                max = lenRate[j];
+                                index = j;
+                            }
+                        }
+                        lenRateSorted.append( index );
+                        lenRate[index] = 0;
+                        //qDebug() << index;
+                    }
+
+                    int x0 = histogramMaxPoint[ lenRateSorted[0] ].x();
+                    int x1 = histogramMaxPoint[ lenRateSorted[1] ].x();
+                    int leftIndex = 0, rightIndex = 0;
+                    if (x0 < x1) {
+                        leftIndex = lenRateSorted[0];
+                        rightIndex = lenRateSorted[1];
+                    } else {
+                        leftIndex = lenRateSorted[1];
+                        rightIndex = lenRateSorted[0];
+                    }
+
+                    // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
+                    if ( histogramMaxPointAng[ leftIndex ] >=0 &&
+                         histogramMaxPointAng[ rightIndex ] <= 0 ) {
+
+                        bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
+                        bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
+                        int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
+                        bandShape = (1.0*bottomWidth) / bandWidth;
+                        /*
+                        qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
+                                    histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
+                                    " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
+                                    */
+
+                        // ** BAND WIDTH SHOULD BE WIDE ENOUGH
+                        if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
+                            state = false;
+                            bandCheck_errorState = 4;
+                        } else {
+                            // ** BAND CENTER SHOULD BE CLOSE ENOUGH TO CENTER (CONSTANT)
+                            if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
+                                state = false;
+                                bandCheck_errorState = 5;
+                            } else {
+                                // ** BAND SHAPE SHOULD NOT BE TRIANGULAR, SHOULD BE CLOSE TO RECTANGLE
+                                if ( bandShape < bandShapeMin ) {
+                                    state = false;
+                                    bandCheck_errorState = 6;
+                                }
+                            }
+                        }
+                    } else {
+                        state = false;
+                        bandCheck_errorState = 3;
+                    }
+                }
             }
-        }
+
+
+    } else {
+        bandCheck_errorState = 10;
     }
-
-    //qDebug() << "fail code: " << bandCheck_errorState << " state: " << state;
-
-
-    //for (int i=0; i<histogramExtremes.size(); i++)
-        //qDebug() << QString::number(histogramExtremes[i].start) << ", " << QString::number(histogramExtremes[i].end) << ", " << QString::number(histogramFiltered[ histogramExtremes[i].start ]);
-
 }
 
 void imgProcess::detectScanHorizontal(int y){
@@ -4833,6 +4965,58 @@ void imgProcess::findMaxs(int *array, int array_size, QList<range> &list){
     } // main for
 }
 
+void imgProcess::findMaxs(double *array, int array_size, QList<range> &list){
+    list.empty();
+
+    int startIndex = 0;
+    double refPoint, prevPoint;
+
+    for (int i = 0; i < array_size; i++){
+
+        if (i == 0){
+            refPoint =  array[i];
+            prevPoint = 0;
+        } else {
+            refPoint =  array[i];
+            prevPoint =  array[i-1];
+        }
+
+        if ( refPoint > prevPoint ){
+            startIndex = i;
+
+            if (i == (array_size - 1)){
+                range x;
+                x.start = startIndex;
+                x.end = startIndex;
+                list.append(x);
+            }
+
+            for (int j = startIndex + 1; j < array_size; j++){
+                if ( array[i] < array[j] ){  // < next, not maximum point
+                    break;
+                }
+                else
+                if ( array[i] > array[j] ){  // > next, maximum point
+
+                    i = j;
+
+                    range x;
+                    x.start = startIndex;
+                    x.end = j - 1;
+                    list.append(x);
+                    break;
+                } else if (j == (array_size - 1)) {
+                    range x;
+                    x.start = startIndex;
+                    x.end = j;
+                    list.append(x);
+                    break;
+                }
+            }
+        }
+    } // main for
+}
+
 void imgProcess::findMins(int *array, int array_size, QList<range> &list){
     list.empty();
 
@@ -4885,6 +5069,57 @@ void imgProcess::findMins(int *array, int array_size, QList<range> &list){
     } // main for
 }
 
+void imgProcess::findMins(double *array, int array_size, QList<range> &list){
+    list.empty();
+
+    int startIndex = 0;
+    double refPoint, prevPoint;
+
+    for (int i = 0; i < array_size; i++){
+
+        if (i == 0){
+            refPoint =  array[i];
+            prevPoint = 0;
+        } else {
+            refPoint =  array[i];
+            prevPoint =  array[i-1];
+        }
+
+        if ( refPoint < prevPoint ){
+            startIndex = i;
+
+            if (i == (array_size - 1)){
+                range x;
+                x.start = startIndex;
+                x.end = startIndex;
+                list.append(x);
+            }
+
+            for (int j = startIndex + 1; j < array_size; j++){
+                if ( array[i] > array[j] ){  // < next, not maximum point
+                    break;
+                }
+                else
+                if ( array[i] < array[j] ){  // > next, maximum point
+
+                    i = j;
+
+                    range x;
+                    x.start = startIndex;
+                    x.end = j - 1;
+                    list.append(x);
+                    break;
+                } else if (j == (array_size - 1)) {
+                    range x;
+                    x.start = startIndex;
+                    x.end = j;
+                    list.append(x);
+                    break;
+                }
+            }
+        }
+    } // main for
+}
 
 imgProcess::~imgProcess(){
 

@@ -246,15 +246,15 @@ class imgProcess{
 
         int *histogram;                     // histogram array
         int *histogramFiltered;             // histogram array after noise reduction
-        int *histogramD;                    // histogram derivative
-        int *histogramDD;                   // histogram 2nd derivative
+        double *histogramD;                    // histogram derivative
+        double *histogramDD;                   // histogram 2nd derivative
         int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramFilteredInitSwitch = false;           // to delete in destructor
         double histogramAvg;
         int histogramMin, histogramMax;
-        int histogramDMin, histogramDMax;
-        int histogramDDMin, histogramDDMax;
+        double histogramDMin, histogramDMax;
+        double histogramDDMin, histogramDDMax;
         QList<range> histogramPeaks;
         QList<range> histogramMins;
         QList<range> histogramExtremes;
@@ -262,7 +262,7 @@ class imgProcess{
         QList<int> histogramDIdx;
         QList<int> histogramDSum;
         QList<range> ddPeaks;
-        int histDDLimit = 1;
+        double histDDLimit = 0;
 
         double histogramMaxThreshold = 0.75;
         double histogramAngleThreshold = 11;
@@ -410,7 +410,8 @@ class imgProcess{
         bool saveMatrix(float **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
         bool saveMatrix(double **matrix, int width, int height, QString fname);  // saves a float matrix with given filename
         bool saveMatrix(bool **matrix, int width, int height, QString fname);  // saves a boolean matrix with given filename
-        bool saveArray(int *array, int length, QString fname);  // saves a int array with given filename
+        bool saveArray(int *array, int length, QString fname);  // saves an int array with given filename
+        bool saveArray(double *array, int length, QString fname);  // saves a double array with given filename
         bool saveList(QList<int> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
         bool saveList(QList<solidLine> array, QString fname);
@@ -519,8 +520,11 @@ class imgProcess{
         double membershipFn(double in, double k);
         double entropyFn(double in);
         double calcEntropyMatrix(int windowSize);
+
         void findMaxs(int *array, int array_size, QList<range> &list);
+        void findMaxs(double *array, int array_size, QList<range> &list);
         void findMins(int *array, int array_size, QList<range> &list);
+        void findMins(double *array, int array_size, QList<range> &list);
 
         ~imgProcess();                                      // destructor
 };
