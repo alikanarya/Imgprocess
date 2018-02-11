@@ -3648,20 +3648,33 @@ void imgProcess::histogramAnalysis(bool colored){
             histogramMax = histogramFiltered[x];
     }
 
-
     if (histogramSize != 0)
         histogramAvg /= (1.0*histogramSize);
     else
         histogramAvg = -1;
+
 
     double yScaleFactor = (histogramSize*1.0) / (histogramMax-histogramMin);
 
     for (int x = 0; x < histogramSize; x++){
         histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
     }
-    histogramMax = yScaleFactor * (histogramMax-histogramMin);
-    histogramAvg = yScaleFactor * (histogramAvg-histogramMin);
-    histogramMin = 0;//yScaleFactor * histogramMin;
+
+    histogramAvg = 0;
+    histogramMin = 2000, histogramMax = 0;
+
+    for (int x = 0; x < histogramSize; x++){
+        histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
+    }
+
+    if (histogramSize != 0)
+        histogramAvg /= (1.0*histogramSize);
+    else
+        histogramAvg = -1;
 
 // *-derivative------------------------------------------------------
     histogramDIdx.clear();
@@ -3846,28 +3859,29 @@ void imgProcess::histogramAnalysis(bool colored){
             int startIndex, index;
             int maxPoint, pairPoint;
             double angThresh = abs( tan(histogramAngleThreshold*R2D) );
-            double yRef = 0, yNext = 0, xRef = 0, xNext = 0;
+            int yRef = 0, yNext = 0, xRef = 0, xNext = 0;
             double tangent = 0, tangentMax = 0;
             double len = 0, lenMax = 0;
             bool loopFlag;
 
             for (int i=0; i<histogramMaxPeaksList.size(); i++) {
+
                 startIndex = histogramMaxPeaksList[i];
-                yRef = histogramFiltered[ histogramExtremesFiltered[startIndex].start ];
 
                 lenMax = 0, tangentMax = 0; maxPoint = 0;
 
+                // RIGHT direction
                 xRef = histogramExtremesFiltered[startIndex].end;
+                yRef = histogramFiltered[ xRef ];
                 index = startIndex;
                 loopFlag = true;
-                // right direction
                 do {
                     index++;
                     if (index < histogramExtremesFiltered.size()) {
-                        yNext = histogramFiltered[ histogramExtremesFiltered[index].start ];
+                        xNext = histogramExtremesFiltered[index].start;
+                        yNext = histogramFiltered[ xNext ];
                         if ( yNext < yRef) {
-                            xNext = histogramExtremesFiltered[index].start;
-                            tangent = (xNext - xRef) / (yRef - yNext);
+                            tangent = (1.0*(xNext - xRef)) / (yRef - yNext);
                             if ( abs(tangent) < angThresh ) {
                                 len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
@@ -3888,17 +3902,18 @@ void imgProcess::histogramAnalysis(bool colored){
                     }
                 } while(loopFlag);
 
+                // LEFT direction
                 xRef = histogramExtremesFiltered[startIndex].start;
+                yRef = histogramFiltered[ xRef ];
                 index = startIndex;
                 loopFlag = true;
-                // left direction
                 do {
                     index--;
                     if (index >= 0) {
-                        yNext = histogramFiltered[ histogramExtremesFiltered[index].end ];
+                        xNext = histogramExtremesFiltered[index].end;
+                        yNext = histogramFiltered[ xNext ];
                         if ( yNext < yRef) {
-                            xNext = histogramExtremesFiltered[index].end;
-                            tangent = (xNext - xRef) / (yRef - yNext);
+                            tangent = (1.0*(xNext - xRef)) / (yRef - yNext);
                             if ( abs(tangent) < angThresh ) {
                                 len = sqrt( pow(yRef - yNext , 2) + pow(xNext - xRef , 2) );
 
@@ -3977,6 +3992,7 @@ void imgProcess::histogramAnalysis(bool colored){
                     bool cont;
                     double varLimit = 10;
                     int maxValue, maxIdx;
+                    QList<int> mainPointToHistMaxIndx;
 
                     breakPointList.clear();
                     do {
@@ -4016,6 +4032,7 @@ void imgProcess::histogramAnalysis(bool colored){
                                         breakPointList.append( sampleList[0] );
                                         QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
                                         mainPointsList.append(p);
+                                        mainPointToHistMaxIndx.append( maxIdx );
                                         maxValue = 0; maxIdx = 0;
                                         //qDebug() << sampleVar;
                                     }
@@ -4064,6 +4081,7 @@ void imgProcess::histogramAnalysis(bool colored){
                             breakPointList.append( sampleList[0] );
                             QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
                             mainPointsList.append(p);
+                            mainPointToHistMaxIndx.append( maxIdx );
                             maxValue = 0; maxIdx = 0;
 
                             //qDebug() << sampleVar;
@@ -4073,46 +4091,41 @@ void imgProcess::histogramAnalysis(bool colored){
                     } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
                     // ***
 
-                    qDebug() << breakPointList;
+                    //qDebug() << breakPointList;
 
-                    for (int i=0; i<mainPointsList.size(); i++){
-
+                    int *lengthArr = new int[mainPointsList.size()];
+                    for (int i=0; i<mainPointsList.size(); i++) {
+                        lengthArr[i] = mainPointsList[i].y();
                     }
-
-
-
-
-
-
-
-
 
                     QList<int> lenRateSorted;
                     double max = 0;
                     int index;
 
-                    for (int i=0; i<lenRate.size(); i++) {
+                    for (int i=0; i<mainPointsList.size(); i++) {
                         max = 0;
-                        for (int j=0; j<lenRate.size(); j++) {
+                        for (int j=0; j<mainPointsList.size(); j++) {
                             if (lenRate[j] > max) {
-                                max = lenRate[j];
+                                max = lengthArr[j];
                                 index = j;
                             }
                         }
                         lenRateSorted.append( index );
-                        lenRate[index] = 0;
+                        lengthArr[index] = 0;
                         //qDebug() << index;
                     }
 
-                    int x0 = histogramMaxPoint[ lenRateSorted[0] ].x();
-                    int x1 = histogramMaxPoint[ lenRateSorted[1] ].x();
+                    delete lengthArr;
+
+                    int x0 = mainPointsList[ lenRateSorted[0] ].x();
+                    int x1 = mainPointsList[ lenRateSorted[1] ].x();
                     int leftIndex = 0, rightIndex = 0;
                     if (x0 < x1) {
-                        leftIndex = lenRateSorted[0];
-                        rightIndex = lenRateSorted[1];
+                        leftIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
+                        rightIndex = mainPointToHistMaxIndx[ lenRateSorted[1] ];
                     } else {
-                        leftIndex = lenRateSorted[1];
-                        rightIndex = lenRateSorted[0];
+                        leftIndex = mainPointToHistMaxIndx[ lenRateSorted[1] ];
+                        rightIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
                     }
 
                     // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
