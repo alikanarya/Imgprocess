@@ -6,6 +6,7 @@
 #include "math.h"
 #include <cmath>
 #include <QDebug>
+#include <QtCore/qmath.h>
 
 #include "imgprocess_msg.h"
 #include "../_Modules/Algo/localMinimum.h"
@@ -3861,8 +3862,9 @@ void imgProcess::histogramAnalysis(bool colored){
             double angThresh = abs( tan(histogramAngleThreshold*R2D) );
             int yRef = 0, yNext = 0, xRef = 0, xNext = 0;
             double tangent = 0, tangentMax = 0;
-            double len = 0, lenMax = 0;
+            double len = 0, lenMax = 0, rate = 0;
             bool loopFlag;
+            double histRange = histogramMax - histogramMin;
 
             for (int i=0; i<histogramMaxPeaksList.size(); i++) {
 
@@ -3934,7 +3936,8 @@ void imgProcess::histogramAnalysis(bool colored){
                     }
                 } while(loopFlag);
 
-                if (lenMax != 0) {
+                rate = lenMax / histRange;
+                if (rate > lenRateThr) {
                     if (tangentMax>=0) {
                         histogramMaxPoint.append( QPoint( histogramExtremesFiltered[maxPoint].end, histogramFiltered[ histogramExtremesFiltered[maxPoint].end ]) );
                         histogramMaxPointPair.append( QPoint( histogramExtremesFiltered[pairPoint].start, histogramFiltered[ histogramExtremesFiltered[pairPoint].start ]) );
@@ -3950,109 +3953,99 @@ void imgProcess::histogramAnalysis(bool colored){
             } // for
             //-----------------------------------------------------------------------------------
 
+
+
+
+            //--- EVALUATION -
+
             bandCheck_errorState = 0;
             bool state = true;
-            double histRange = histogramMax - histogramMin;
+            //double histRange = histogramMax - histogramMin;
 
             // ** MAX POINT NUMBER SHOULD BE >=2
-            if ( histogramMaxPointLen.size() < 2 ) {
+            if ( histogramMaxPoint.size() < 2 ) {
                 state = false;
                 bandCheck_errorState = 1;
             } else {
+                /*
                 QList<double> lenRate;
                 double rate;
                 int cnt = 0;
-                for (int i=0; i<histogramMaxPointLen.size(); i++){
-                    rate = histogramMaxPointLen[i]/histRange;
+                for (int i=0; i<mainPointsList.size(); i++){
+                    rate = (1.0*mainPointsList[i].y())/histRange;
                     lenRate.append( rate );
                     //qDebug() << rate;
                     if ( rate > lenRateThr ) cnt++;
                 }
+                */
 
-                // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
-                if (cnt < 2) {
-                    state = false;
-                    bandCheck_errorState = 2;
-                } else {
+                //--- NATURAL BREAKS ALGORITHM -
+                const int n = histogramMaxPoint.size();
 
-                    const int n = histogramMaxPoint.size();
+                // *** Preparation for Natural Breaks Algorithm
+                std::vector<double> values;
+                values.reserve(n);
 
-                    // *** Preparation for Natural Breaks Algorithm
-                    std::vector<double> values;
-                    values.reserve(n);
+                for (int i=0; i!=n; ++i)
+                    values.push_back( histogramMaxPoint[i].x() );
 
-                    for (int i=0; i!=n; ++i)
-                        values.push_back( histogramMaxPoint[i].x() );
+                assert(values.size() == n);
 
-                    assert(values.size() == n);
+                // *** Automatic scan to find optimum breaks (k) number (size)
+                // *** using standard deviations of the regions > mainPointsList
+                naturalBreaksNumber = 2;
+                bool cont;
+                double varLimit = 10;
+                int maxValue, maxIdx;
+                QList<int> mainPointToHistMaxIndx;
 
-                    // *** Automatic scan to find optimum breaks (k) number (size)
-                    // *** using standard deviations of the regions > mainPointsList
-                    naturalBreaksNumber = 2;
-                    bool cont;
-                    double varLimit = 10;
-                    int maxValue, maxIdx;
-                    QList<int> mainPointToHistMaxIndx;
+                breakPointList.clear();
+                do {
+                    cont = false;
+                    mainPointsList.clear();
+                    ValueCountPairContainer sortedUniqueValueCounts;
+                    GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+
+                    LimitsContainer resultingbreaksArray;
+                    ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
+
+                    int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
+                    double sum = 0, sampleAve = 0, sampleVar = 0;
+
+                    // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
                     breakPointList.clear();
+                    mainPointToHistMaxIndx.clear();
+                    QList<int> sampleList;
+                    maxValue = 0; maxIdx = 0;
                     do {
-                        cont = false;
-                        mainPointsList.clear();
-                        ValueCountPairContainer sortedUniqueValueCounts;
-                        GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+                        if ( breaksArrayIdx < resultingbreaksArray.size() ) {
 
-                        LimitsContainer resultingbreaksArray;
-                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
+                            if ( histogramMaxPoint[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
 
-                        int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
-                        double sum = 0, sampleAve = 0, sampleVar = 0;
+                                breaksArrayIdx++;
+                                //qDebug() << sum << " " << sampleNo;
+                                if (sampleNo != 0) {
+                                    sampleAve = sum / sampleNo;
+                                    double powSum = 0;
+                                    for (int c=0; c<sampleList.size(); c++)
+                                        powSum += pow(sampleAve-sampleList[c], 2);
+                                    powSum /= sampleNo;
+                                    sampleVar = sqrt(powSum);
+                                    if (sampleVar > varLimit) cont = true;
 
-                        // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
-
-                        breakPointList.clear();
-                        QList<int> sampleList;
-                        maxValue = 0; maxIdx = 0;
-                        do {
-                            if ( breaksArrayIdx < resultingbreaksArray.size() ) {
-
-                                if ( histogramMaxPoint[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
-
-                                    breaksArrayIdx++;
-                                    //qDebug() << sum << " " << sampleNo;
-                                    if (sampleNo != 0) {
-                                        sampleAve = sum / sampleNo;
-                                        double powSum = 0;
-                                        for (int c=0; c<sampleList.size(); c++)
-                                            powSum += pow(sampleAve-sampleList[c], 2);
-                                        powSum /= sampleNo;
-                                        sampleVar = sqrt(powSum);
-                                        if (sampleVar > varLimit) cont = true;
-
-                                        //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
-                                        breakPointList.append( sampleList[0] );
-                                        QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
-                                        mainPointsList.append(p);
-                                        mainPointToHistMaxIndx.append( maxIdx );
-                                        maxValue = 0; maxIdx = 0;
-                                        //qDebug() << sampleVar;
-                                    }
-                                    sampleList.clear();
-                                    sum = 0;
-                                    sampleNo = 0;
-                                } else {
-                                    sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
-                                    sum += histogramMaxPoint[ pointListSortedIdx ].x();
-
-                                    if ( histogramMaxPointLen[ pointListSortedIdx ] > maxValue ) {
-                                        maxValue = histogramMaxPointLen[ pointListSortedIdx ];
-                                        maxIdx = pointListSortedIdx;
-                                    }
-
-                                    sampleNo++;
-                                    pointListSortedIdx++;
+                                    //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                                    breakPointList.append( sampleList[0] );
+                                    QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
+                                    mainPointsList.append(p);
+                                    mainPointToHistMaxIndx.append( maxIdx );
+                                    maxValue = 0; maxIdx = 0;
+                                    //qDebug() << sampleVar;
                                 }
+                                sampleList.clear();
+                                sum = 0;
+                                sampleNo = 0;
                             } else {
-                                // for last break
                                 sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
                                 sum += histogramMaxPoint[ pointListSortedIdx ].x();
 
@@ -4064,61 +4057,91 @@ void imgProcess::histogramAnalysis(bool colored){
                                 sampleNo++;
                                 pointListSortedIdx++;
                             }
+                        } else {
+                            // for last break
+                            sampleList.append( histogramMaxPoint[ pointListSortedIdx ].x() );
+                            sum += histogramMaxPoint[ pointListSortedIdx ].x();
 
-                        } while( pointListSortedIdx < histogramMaxPoint.size() );
+                            if ( histogramMaxPointLen[ pointListSortedIdx ] > maxValue ) {
+                                maxValue = histogramMaxPointLen[ pointListSortedIdx ];
+                                maxIdx = pointListSortedIdx;
+                            }
 
-                        //qDebug() << sum << " " << sampleNo;
-                        if (sampleNo != 0) {
-                            sampleAve = sum / sampleNo;
-                            double powSum = 0;
-                            for (int c=0; c<sampleList.size(); c++)
-                                powSum += pow(sampleAve-sampleList[c], 2);
-                            powSum /= sampleNo;
-                            sampleVar = sqrt(powSum);
-                            if (sampleVar > varLimit) cont = true;
-
-                            //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
-                            breakPointList.append( sampleList[0] );
-                            QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
-                            mainPointsList.append(p);
-                            mainPointToHistMaxIndx.append( maxIdx );
-                            maxValue = 0; maxIdx = 0;
-
-                            //qDebug() << sampleVar;
+                            sampleNo++;
+                            pointListSortedIdx++;
                         }
-                        naturalBreaksNumber++;
 
-                    } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
-                    // ***
+                    } while( pointListSortedIdx < histogramMaxPoint.size() );
 
-                    //qDebug() << breakPointList;
+                    //qDebug() << sum << " " << sampleNo;
+                    if (sampleNo != 0) {
+                        sampleAve = sum / sampleNo;
+                        double powSum = 0;
+                        for (int c=0; c<sampleList.size(); c++)
+                            powSum += pow(sampleAve-sampleList[c], 2);
+                        powSum /= sampleNo;
+                        sampleVar = sqrt(powSum);
+                        if (sampleVar > varLimit) cont = true;
+
+                        //QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPoint[ maxIdx ].y() );
+                        breakPointList.append( sampleList[0] );
+                        QPoint p( histogramMaxPoint[ maxIdx ].x(), histogramMaxPointLen[ maxIdx ] );
+                        mainPointsList.append(p);
+                        mainPointToHistMaxIndx.append( maxIdx );
+                        maxValue = 0; maxIdx = 0;
+
+                        //qDebug() << sampleVar;
+                    }
+                    naturalBreaksNumber++;
+
+                } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
+
+                //qDebug() << breakPointList;
+                //-----------------------------------------------------------------------------------
+
+                // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+                if (histogramMaxPointLen.size() < 2) {
+                    state = false;
+                    bandCheck_errorState = 2;
+                } else {
 
                     int *lengthArr = new int[mainPointsList.size()];
-                    for (int i=0; i<mainPointsList.size(); i++) {
+                    for (int i=0; i<mainPointsList.size(); i++)
                         lengthArr[i] = mainPointsList[i].y();
-                    }
+
+                    // *** Sort from max to min length
 
                     QList<int> lenRateSorted;
-                    double max = 0;
+                    int max = 0;
                     int index;
 
                     for (int i=0; i<mainPointsList.size(); i++) {
                         max = 0;
                         for (int j=0; j<mainPointsList.size(); j++) {
-                            if (lenRate[j] > max) {
+                            if (lengthArr[j] > max) {
                                 max = lengthArr[j];
                                 index = j;
                             }
                         }
                         lenRateSorted.append( index );
                         lengthArr[index] = 0;
-                        //qDebug() << index;
                     }
-
+                    /*
+                    qDebug() << "-----------------------";
+                    qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
+                    qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
+                    qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
+                    qDebug() << "mainPointsList: " << mainPointsList;
+                    qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
+                    qDebug() << "lenRateSorted: " << lenRateSorted;
+                    */
                     delete lengthArr;
 
                     int x0 = mainPointsList[ lenRateSorted[0] ].x();
                     int x1 = mainPointsList[ lenRateSorted[1] ].x();
+                    natBreaksMax1.setX( mainPointsList[lenRateSorted[0]].x() );
+                    natBreaksMax2.setX( mainPointsList[lenRateSorted[1]].x() );
+
                     int leftIndex = 0, rightIndex = 0;
                     if (x0 < x1) {
                         leftIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
@@ -4128,9 +4151,10 @@ void imgProcess::histogramAnalysis(bool colored){
                         rightIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
                     }
 
+                    //qDebug() << leftIndex << " " << QString::number(qRadiansToDegrees(qAtan(histogramMaxPointAng[leftIndex])),'f',2) << " " << rightIndex << " " << QString::number(qRadiansToDegrees(qAtan(histogramMaxPointAng[rightIndex])),'f',2);
+
                     // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
-                    if ( histogramMaxPointAng[ leftIndex ] >=0 &&
-                         histogramMaxPointAng[ rightIndex ] <= 0 ) {
+                    if ( histogramMaxPointAng[ leftIndex ] >= 0 && histogramMaxPointAng[ rightIndex ] <= 0 ) {
 
                         bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
                         bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
