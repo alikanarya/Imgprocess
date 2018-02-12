@@ -4105,6 +4105,35 @@ void imgProcess::histogramAnalysis(bool colored){
                     bandCheck_errorState = 2;
                 } else {
 
+                    QList<int> segmentLength;
+                    QList<int> segmentAvg;
+                    double angle1 = 0, angle2 = 0;
+                    int xFirst = 0, xNext = 0;
+                    double range;
+                    int sum;
+                    for (int i=0; i<mainPointsList.size()-1; i++) {
+                        angle1 = histogramMaxPointAng[ mainPointToHistMaxIndx[i] ];
+                        angle2 = histogramMaxPointAng[ mainPointToHistMaxIndx[i+1] ];
+                        if (angle1 >= 0)
+                            xFirst = histogramMaxPointPair[ mainPointToHistMaxIndx[i] ].x();
+                        else
+                            xFirst = histogramMaxPoint[ mainPointToHistMaxIndx[i] ].x();
+
+                        if (angle2 >= 0)
+                            xNext = histogramMaxPoint[ mainPointToHistMaxIndx[i+1] ].x();
+                        else
+                            xNext = histogramMaxPointPair[ mainPointToHistMaxIndx[i+1] ].x();
+                        range = xNext-xFirst;
+                        segmentLength.append(range);
+
+                        sum = 0;
+                        for (int j=xFirst+1; j<xNext; j++)
+                            sum += histogramFiltered[j];
+                        segmentAvg.append(sum/range);
+                    }
+
+
+
                     int *lengthArr = new int[mainPointsList.size()];
                     for (int i=0; i<mainPointsList.size(); i++)
                         lengthArr[i] = mainPointsList[i].y();
@@ -4126,15 +4155,17 @@ void imgProcess::histogramAnalysis(bool colored){
                         lenRateSorted.append( index );
                         lengthArr[index] = 0;
                     }
-                    /*
+
                     qDebug() << "-----------------------";
                     qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
-                    qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
-                    qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
+                    qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
+                    //qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
+                    //qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
                     qDebug() << "mainPointsList: " << mainPointsList;
-                    qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
-                    qDebug() << "lenRateSorted: " << lenRateSorted;
-                    */
+                    //qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
+                    //qDebug() << "lenRateSorted: " << lenRateSorted;
+                    qDebug() << "mean: " << histogramAvg << "len: " << segmentLength << "avg: " << segmentAvg;
+
                     delete lengthArr;
 
                     int x0 = mainPointsList[ lenRateSorted[0] ].x();
