@@ -414,6 +414,7 @@ class imgProcess{
         bool saveArray(int *array, int length, QString fname);  // saves an int array with given filename
         bool saveArray(double *array, int length, QString fname);  // saves a double array with given filename
         bool saveList(QList<int> array, QString fname);
+        bool saveList(QList<double> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
         bool saveList(QList<solidLine> array, QString fname);
 

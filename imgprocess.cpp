@@ -424,6 +424,20 @@ bool imgProcess::saveList(QList<int> array, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveList(QList<double> array, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int i = 0; i < array.size(); i++) out << array[i] << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
 
 bool imgProcess::saveList(QList<solidLine *> array, QString fname){
 
@@ -3691,11 +3705,19 @@ void imgProcess::histogramAnalysis(bool colored){
     }
 
     histogramDDMin = 3000, histogramDDMax = -3000;
+    double ddSum = 0;
+    int ddCnt = 0;
     for (int i=2; i<histogramSize; i++) {
         histogramDD[i] = std::abs(histogramD[i] - histogramD[i-1]);
         if (histogramDD[i] < histogramDDMin)   histogramDDMin = histogramDD[i];
         if (histogramDD[i] > histogramDDMax)   histogramDDMax = histogramDD[i];
+        ddSum += histogramDD[i];
+        if (histogramDD[i]>0)   ddCnt++;
     }
+    if (ddCnt != 0)
+        histDDLimit = ddSum / ddCnt;
+    else
+        histDDLimit = 0;
 
     findMaxs(histogramDD, histogramSize, ddPeaks);
 
@@ -3813,6 +3835,7 @@ void imgProcess::histogramAnalysis(bool colored){
             int hisExtFltIndex = 0;
 
             for (int i=0; i<histogramExtremes.size()-1; i++) {
+                /*
                 deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
                 deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
 
@@ -3827,7 +3850,12 @@ void imgProcess::histogramAnalysis(bool colored){
                     histogramExtremesFiltered.append(nextPoint);
                     hisExtFltIndex++;
                 }
+                */
                 //qDebug() << deltaX << " " << deltaY;
+                range nextPoint;
+                nextPoint.start = histogramExtremes[i].start;
+                nextPoint.end = histogramExtremes[i].end;
+                histogramExtremesFiltered.append(nextPoint);
             }
             //-----------------------------------------------------------------------------------
 
@@ -4132,6 +4160,25 @@ void imgProcess::histogramAnalysis(bool colored){
                         segmentAvg.append(sum/range);
                     }
 
+                    QList<QPoint> edgeList;
+
+                    for (int i=0; i<mainPointsList.size(); i++) {
+                        angle1 = histogramMaxPointAng[ mainPointToHistMaxIndx[i] ];
+                        if (angle1 >=0) {
+                            for (int j=i+1; j<mainPointsList.size(); j++) {
+                                angle2 = histogramMaxPointAng[ mainPointToHistMaxIndx[j] ];
+                                if (angle2 <= 0){
+                                    edgeList.append(QPoint(i,j));
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+
+
 
 
                     int *lengthArr = new int[mainPointsList.size()];
@@ -4158,13 +4205,14 @@ void imgProcess::histogramAnalysis(bool colored){
 
                     qDebug() << "-----------------------";
                     qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
-                    qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
+                    //qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
                     //qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
-                    //qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
+                    qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
                     qDebug() << "mainPointsList: " << mainPointsList;
                     //qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
                     //qDebug() << "lenRateSorted: " << lenRateSorted;
                     qDebug() << "mean: " << histogramAvg << "len: " << segmentLength << "avg: " << segmentAvg;
+                    qDebug() << "edgeList: " << edgeList;
 
                     delete lengthArr;
 
