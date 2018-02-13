@@ -87,6 +87,30 @@ void imgProcess::constructValueMatrix(QImage image, int selection){
 }
 
 
+void imgProcess::constructValueBlackMatrix(QImage image){
+
+    QRgb rgbValue;
+    QColor *color;
+    int colorValue;
+    int c, m, yy, k, al;
+
+    for (int y = 0; y < image.height(); y++)
+        for (int x = 0; x < image.width(); x++){
+            rgbValue = image.pixel(x,y);
+            color = new QColor(rgbValue);
+            color->getCmyk(&c,&m,&yy,&k,&al);
+            colorValue = k;
+
+            if ( colorValue > 255) colorValue = 255;
+            else if (colorValue < 0)  colorValue = 0;
+
+            valueMatrix[y][x] = colorValue;
+            valueMatrixOrg[y][x] = colorValue;
+            delete color;
+        }
+}
+
+
 void imgProcess::constructValueHueMatrix(QImage image, bool scale){
 
     QRgb rgbValue;
@@ -3977,35 +4001,25 @@ void imgProcess::histogramAnalysis(bool colored){
                     histogramMaxPointLen.append(lenMax);
                     histogramMaxPointAng.append(tangentMax);
                 }
-
             } // for
+            qDebug() << "-----------------------";
+            qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
+            //qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
+            //qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
+            //qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
             //-----------------------------------------------------------------------------------
-
-
 
 
             //--- EVALUATION -
 
             bandCheck_errorState = 0;
             bool state = true;
-            //double histRange = histogramMax - histogramMin;
 
             // ** MAX POINT NUMBER SHOULD BE >=2
             if ( histogramMaxPoint.size() < 2 ) {
                 state = false;
                 bandCheck_errorState = 1;
             } else {
-                /*
-                QList<double> lenRate;
-                double rate;
-                int cnt = 0;
-                for (int i=0; i<mainPointsList.size(); i++){
-                    rate = (1.0*mainPointsList[i].y())/histRange;
-                    lenRate.append( rate );
-                    //qDebug() << rate;
-                    if ( rate > lenRateThr ) cnt++;
-                }
-                */
 
                 //--- NATURAL BREAKS ALGORITHM -
                 const int n = histogramMaxPoint.size();
@@ -4125,20 +4139,25 @@ void imgProcess::histogramAnalysis(bool colored){
                 } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
 
                 //qDebug() << breakPointList;
+                qDebug() << "mainPointsList: " << mainPointsList;
+                //qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
+
                 //-----------------------------------------------------------------------------------
 
-                // ** LENGTH RATE>THRESH NUMBER SHOULD BE >=2
+                // ** LENGTH RATE>THRESH NUMBER (MAIN POINTS LIST) SHOULD BE >=2
                 if (histogramMaxPointLen.size() < 2) {
                     state = false;
                     bandCheck_errorState = 2;
                 } else {
 
+                    // ** ANGLE TRACING
+                    // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
+                    double angle1 = 0, angle2 = 0, range;
+                    int xFirst = 0, xNext = 0, sum;
+
+                    // CALCULATE SEGMENT AVERAGES
                     QList<int> segmentLength;
                     QList<int> segmentAvg;
-                    double angle1 = 0, angle2 = 0;
-                    int xFirst = 0, xNext = 0;
-                    double range;
-                    int sum;
                     for (int i=0; i<mainPointsList.size()-1; i++) {
                         angle1 = histogramMaxPointAng[ mainPointToHistMaxIndx[i] ];
                         angle2 = histogramMaxPointAng[ mainPointToHistMaxIndx[i+1] ];
@@ -4159,108 +4178,96 @@ void imgProcess::histogramAnalysis(bool colored){
                             sum += histogramFiltered[j];
                         segmentAvg.append(sum/range);
                     }
-
-                    QList<QPoint> edgeList;
-
-                    for (int i=0; i<mainPointsList.size(); i++) {
-                        angle1 = histogramMaxPointAng[ mainPointToHistMaxIndx[i] ];
-                        if (angle1 >=0) {
-                            for (int j=i+1; j<mainPointsList.size(); j++) {
-                                angle2 = histogramMaxPointAng[ mainPointToHistMaxIndx[j] ];
-                                if (angle2 <= 0){
-                                    edgeList.append(QPoint(i,j));
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-
-
-
-
-                    int *lengthArr = new int[mainPointsList.size()];
-                    for (int i=0; i<mainPointsList.size(); i++)
-                        lengthArr[i] = mainPointsList[i].y();
-
-                    // *** Sort from max to min length
-
-                    QList<int> lenRateSorted;
-                    int max = 0;
-                    int index;
-
-                    for (int i=0; i<mainPointsList.size(); i++) {
-                        max = 0;
-                        for (int j=0; j<mainPointsList.size(); j++) {
-                            if (lengthArr[j] > max) {
-                                max = lengthArr[j];
-                                index = j;
-                            }
-                        }
-                        lenRateSorted.append( index );
-                        lengthArr[index] = 0;
-                    }
-
-                    qDebug() << "-----------------------";
-                    qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
-                    //qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
-                    //qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
-                    qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
-                    qDebug() << "mainPointsList: " << mainPointsList;
-                    //qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
-                    //qDebug() << "lenRateSorted: " << lenRateSorted;
                     qDebug() << "mean: " << histogramAvg << "len: " << segmentLength << "avg: " << segmentAvg;
-                    qDebug() << "edgeList: " << edgeList;
 
-                    delete lengthArr;
 
-                    int x0 = mainPointsList[ lenRateSorted[0] ].x();
-                    int x1 = mainPointsList[ lenRateSorted[1] ].x();
-                    natBreaksMax1.setX( mainPointsList[lenRateSorted[0]].x() );
-                    natBreaksMax2.setX( mainPointsList[lenRateSorted[1]].x() );
+                    if (!segmentAvg.isEmpty()) {
 
-                    int leftIndex = 0, rightIndex = 0;
-                    if (x0 < x1) {
-                        leftIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
-                        rightIndex = mainPointToHistMaxIndx[ lenRateSorted[1] ];
-                    } else {
-                        leftIndex = mainPointToHistMaxIndx[ lenRateSorted[1] ];
-                        rightIndex = mainPointToHistMaxIndx[ lenRateSorted[0] ];
-                    }
+                        // IF FIRST OR LAST SEGMENT IS ABOVE THE AVERGE DONT TAKE THIS POINT INTO ACCOUNT
+                        QList<QPoint> edgeList;
+                        QList<int> segmentLength2;
+                        QList<int> segmentAvg2;
 
-                    //qDebug() << leftIndex << " " << QString::number(qRadiansToDegrees(qAtan(histogramMaxPointAng[leftIndex])),'f',2) << " " << rightIndex << " " << QString::number(qRadiansToDegrees(qAtan(histogramMaxPointAng[rightIndex])),'f',2);
+                        for (int i=0; i<mainPointsList.size()-1; i++) {
+                            angle1 = histogramMaxPointAng[ mainPointToHistMaxIndx[i] ];
+                            xFirst = histogramMaxPointPair[ mainPointToHistMaxIndx[i] ].x();
 
-                    // ** 1st (LEFT) ANGLE SHOULD EXTENDS TO RIGHT, 2nd (RIGHT) ANGLE SHOULD EXTENDS TO LEFT  { SHAPE: \  / }
-                    if ( histogramMaxPointAng[ leftIndex ] >= 0 && histogramMaxPointAng[ rightIndex ] <= 0 ) {
+                            if (angle1 >=0 && segmentAvg[i] < histogramAvg) {
 
-                        bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
-                        bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
-                        int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
-                        bandShape = (1.0*bottomWidth) / bandWidth;
-                        /*
-                        qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
-                                    histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
-                                    " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;
-                                    */
+                                for (int j=i+1; j<mainPointsList.size(); j++) {
 
-                        // ** BAND WIDTH SHOULD BE WIDE ENOUGH
-                        if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
-                            state = false;
-                            bandCheck_errorState = 4;
-                        } else {
-                            // ** BAND CENTER SHOULD BE CLOSE ENOUGH TO CENTER (CONSTANT)
-                            if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
-                                state = false;
-                                bandCheck_errorState = 5;
-                            } else {
-                                // ** BAND SHAPE SHOULD NOT BE TRIANGULAR, SHOULD BE CLOSE TO RECTANGLE
-                                if ( bandShape < bandShapeMin ) {
-                                    state = false;
-                                    bandCheck_errorState = 6;
+                                    angle2 = histogramMaxPointAng[ mainPointToHistMaxIndx[j] ];
+                                    xNext = histogramMaxPointPair[ mainPointToHistMaxIndx[j] ].x();
+
+                                    if (angle2 <= 0 && segmentAvg[j-1] < histogramAvg){
+
+                                        edgeList.append(QPoint(i,j));
+
+                                        range = xNext-xFirst;
+                                        segmentLength2.append(range);
+
+                                        sum = 0;
+                                        for (int j=xFirst+1; j<xNext; j++)
+                                            sum += histogramFiltered[j];
+                                        segmentAvg2.append(sum/range);
+                                    }
                                 }
                             }
+                        }
+                        qDebug() << "edgeList: " << edgeList;
+                        qDebug() << "len2: " << segmentLength2 << "avg2: " << segmentAvg2;
+
+                        // FIND THE PAIR; BELOW HIST AVG AND MAX WIDTH
+                        if (!edgeList.isEmpty()) {
+                            int maxWidth = 0, maxIdx = -1;
+                            for (int i=0; i<edgeList.size(); i++) {
+                                if (segmentAvg2[i] < histogramAvg/2){
+                                    if (segmentLength2[i] > maxWidth){
+                                        maxWidth = segmentLength2[i];
+                                        maxIdx = i;
+                                    }
+                                }
+                            }
+
+                            if (maxIdx >=0) {
+                                int leftIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].x() ];
+                                int rightIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].y() ];
+
+                                natBreaksMax1.setX( mainPointsList[edgeList[maxIdx].x()].x() );
+                                natBreaksMax2.setX( mainPointsList[edgeList[maxIdx].y()].x() );
+
+                                bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
+                                bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
+                                int bottomWidth = abs( histogramMaxPointPair[leftIndex].x() - histogramMaxPointPair[rightIndex].x() );
+                                bandShape = (1.0*bottomWidth) / bandWidth;
+                                /*qDebug() << histogramMaxPoint[leftIndex].x() << "," << histogramMaxPoint[rightIndex].x() << " " <<
+                                            histogramMaxPointPair[leftIndex].x() << "," << histogramMaxPointPair[rightIndex].x() <<
+                                            " topD: " << bandWidth << " btmD: " << bottomWidth  << " shape: " << bandShape << " center: " << bandCenter;    */
+
+                                // ** BAND WIDTH SHOULD BE WIDE ENOUGH
+                                if ( ((1.0*bandWidth)/imageWidth) < bandWidthMin) {
+                                    state = false;
+                                    bandCheck_errorState = 4;
+                                } else {
+                                    // ** BAND CENTER SHOULD BE CLOSE ENOUGH TO CENTER (CONSTANT)
+                                    if ( ((1.0*abs(bandCenter))/imageWidth) > bandCenterMax ) {
+                                        state = false;
+                                        bandCheck_errorState = 5;
+                                    } else {
+                                        // ** BAND SHAPE SHOULD NOT BE TRIANGULAR, SHOULD BE CLOSE TO RECTANGLE
+                                        if ( bandShape < bandShapeMin ) {
+                                            state = false;
+                                            bandCheck_errorState = 6;
+                                        }
+                                    }
+                                }
+                            } else {
+                                state = false;
+                                bandCheck_errorState = 7;
+                            }
+                        } else {
+                            state = false;
+                            bandCheck_errorState = 1;
                         }
                     } else {
                         state = false;
@@ -4268,8 +4275,6 @@ void imgProcess::histogramAnalysis(bool colored){
                     }
                 }
             }
-
-
     } else {
         bandCheck_errorState = 10;
     }

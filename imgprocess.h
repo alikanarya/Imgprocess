@@ -398,6 +398,7 @@ class imgProcess{
         void toMono();      // produce mono image
         void constructValueMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
         void constructValueMatrix(QImage image, int selection);    // construct pixel value matrix of an image according to single color value
+        void constructValueBlackMatrix(QImage image);    // construct pixel value matrix of an image according to black color value
         void constructValueHueMatrix(QImage image, bool scale = false);
         void constructValueMaxMatrix(QImage image);    // construct pixel value matrix of an image according to single color value
         int getMatrixPoint(int *matrix, int width, int x, int y);   // returns value of a matrix
