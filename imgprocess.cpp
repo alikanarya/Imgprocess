@@ -98,8 +98,8 @@ void imgProcess::constructValueBlackMatrix(QImage image){
         for (int x = 0; x < image.width(); x++){
             rgbValue = image.pixel(x,y);
             color = new QColor(rgbValue);
-            color->getCmyk(&c,&m,&yy,&k,&al);
-            colorValue = k;
+            //color->getCmyk(&c,&m,&yy,&k,&al);
+            colorValue = color->black();
 
             if ( colorValue > 255) colorValue = 255;
             else if (colorValue < 0)  colorValue = 0;
@@ -3631,7 +3631,7 @@ void imgProcess::histogramAnalysis(bool colored){
 
 
     histogramFiltered = new int[histogramSize];
-    histogramFilteredInitSwitch = true;
+    histogramAnlysInitSwitch = true;
 
     int noiseDia = (maFilterKernelSize-1)/2;
     histogramAvg = 0;
@@ -3711,7 +3711,7 @@ void imgProcess::histogramAnalysis(bool colored){
     }
 
     if (histogramSize != 0)
-        histogramAvg /= (1.0*histogramSize);
+        histogramAvg /= histogramSize;
     else
         histogramAvg = -1;
 
@@ -3728,25 +3728,45 @@ void imgProcess::histogramAnalysis(bool colored){
         if (histogramD[i] > histogramDMax)   histogramDMax = histogramD[i];
     }
 
-    histogramDDMin = 3000, histogramDDMax = -3000;
     double ddSum = 0;
     int ddCnt = 0;
+    histogramDDMin = 3000, histogramDDMax = -3000;
     for (int i=2; i<histogramSize; i++) {
         histogramDD[i] = std::abs(histogramD[i] - histogramD[i-1]);
         if (histogramDD[i] < histogramDDMin)   histogramDDMin = histogramDD[i];
         if (histogramDD[i] > histogramDDMax)   histogramDDMax = histogramDD[i];
-        ddSum += histogramDD[i];
-        if (histogramDD[i]>0)   ddCnt++;
+        /*if (histogramDD[i]>0) {
+            ddSum += histogramDD[i];
+            ddCnt++;
+        }*/
+    }
+
+    findMaxs(histogramDD, histogramSize, ddPeaks);
+    /*QString s="";
+    for (int i=0; i<ddPeaks.size(); i++)
+        s+="("+QString::number(ddPeaks[i].start)+","+QString::number(ddPeaks[i].end)+") ";
+    qDebug() << s;*/
+
+    for (int i=0; i<ddPeaks.size(); i++) {
+        /*for (int j=ddPeaks[i].start; j<=ddPeaks[i].end; j++) {
+            if (histogramDD[j]>0) {
+                ddSum += histogramDD[j];
+                ddCnt++;
+            }
+        }*/
+        if (histogramDD[ddPeaks[i].start]>0) {
+            ddSum += histogramDD[ddPeaks[i].start];
+            ddCnt++;
+        }
     }
     if (ddCnt != 0)
         histDDLimit = ddSum / ddCnt;
     else
         histDDLimit = 0;
-
-    findMaxs(histogramDD, histogramSize, ddPeaks);
+    //qDebug()<<"histDDLimit " << histDDLimit;
 
     histogramExtremes.clear();
-    for (int i=1; i<ddPeaks.size(); i++) {
+    for (int i=0; i<ddPeaks.size(); i++) {
         if (histogramDD[ddPeaks[i].start] > histDDLimit) {
             range p;
             p.start = ddPeaks[i].start;
@@ -3757,7 +3777,7 @@ void imgProcess::histogramAnalysis(bool colored){
 
     if (!histogramExtremes.isEmpty()) {
 
-        /*
+        /* CORNER FINDING ALGO BASED ON DERIVATIVE SIGN
             int sum = 0;
             bool signFlag = false;
 
@@ -3807,8 +3827,7 @@ void imgProcess::histogramAnalysis(bool colored){
                 histogramExtremes.append(p);
             }
         */
-        //-------------------------------------------------------*/
-        /*
+        /* CORNER FINDING ALGO BASED ON MAX AND MIN PEAK POINTS
             findMaxs(histogramFiltered, histogramSize, histogramPeaks);
 
             findMins(histogramFiltered, histogramSize, histogramMins);
@@ -3845,11 +3864,12 @@ void imgProcess::histogramAnalysis(bool colored){
                 x++;
             } while (x < histogramSize);
             //-----------------------------------------------------------------------------------
-        */
+*/
+
             //--- MERGE CLOSE POINTS ------------------------------------------------------------
             int deltaXThreshold = histogramSize * 0.02;
             int deltaYThreshold = histogramSize * 0.02;
-            int deltaX, deltaY, lenX;
+            int deltaX, deltaY;
             histogramExtremesFiltered.clear();
 
             range zeroPoint;
@@ -3859,13 +3879,13 @@ void imgProcess::histogramAnalysis(bool colored){
             int hisExtFltIndex = 0;
 
             for (int i=0; i<histogramExtremes.size()-1; i++) {
-                /*
+
                 deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
                 deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
 
                 if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
 
-                    lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
+                    //lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
                     histogramExtremesFiltered[hisExtFltIndex].end = histogramExtremes[i].end;
 
                     range nextPoint;
@@ -3874,12 +3894,13 @@ void imgProcess::histogramAnalysis(bool colored){
                     histogramExtremesFiltered.append(nextPoint);
                     hisExtFltIndex++;
                 }
-                */
+
                 //qDebug() << deltaX << " " << deltaY;
+                /*
                 range nextPoint;
                 nextPoint.start = histogramExtremes[i].start;
                 nextPoint.end = histogramExtremes[i].end;
-                histogramExtremesFiltered.append(nextPoint);
+                histogramExtremesFiltered.append(nextPoint);*/
             }
             //-----------------------------------------------------------------------------------
 
@@ -3893,7 +3914,7 @@ void imgProcess::histogramAnalysis(bool colored){
             */
 
             //--- FIND THE PEAKS ABOVE AVERAGE --------------------------------------------------
-            float maxThreshold = histogramAvg;
+            double maxThreshold = histogramAvg;
             histogramMaxPeaksList.clear();
             for (int i=0; i<histogramExtremesFiltered.size(); i++) {
                 if ( histogramFiltered[ histogramExtremesFiltered[i].start ] > maxThreshold )
@@ -4002,8 +4023,8 @@ void imgProcess::histogramAnalysis(bool colored){
                     histogramMaxPointAng.append(tangentMax);
                 }
             } // for
-            qDebug() << "-----------------------";
-            qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
+            //qDebug() << "-----------------------";
+            //qDebug() << "histogramMaxPoint: " << histogramMaxPoint;
             //qDebug() << "histogramMaxPointPair: " << histogramMaxPointPair;
             //qDebug() << "histogramMaxPointLen: " << histogramMaxPointLen;
             //qDebug() << "histogramMaxPointAng: " << histogramMaxPointAng;
@@ -4015,10 +4036,10 @@ void imgProcess::histogramAnalysis(bool colored){
             bandCheck_errorState = 0;
             bool state = true;
 
-            // ** MAX POINT NUMBER SHOULD BE >=2
+            // ** MAX POINT NUMBER (LENGTH RATE>THRESH) SHOULD BE >=2
             if ( histogramMaxPoint.size() < 2 ) {
                 state = false;
-                bandCheck_errorState = 1;
+                bandCheck_errorState = 2;
             } else {
 
                 //--- NATURAL BREAKS ALGORITHM -
@@ -4037,14 +4058,14 @@ void imgProcess::histogramAnalysis(bool colored){
                 // *** using standard deviations of the regions > mainPointsList
                 naturalBreaksNumber = 2;
                 bool cont;
-                double varLimit = 10;
+                double varLimit = 10;   // variance limit to identify closeness
                 int maxValue, maxIdx;
                 QList<int> mainPointToHistMaxIndx;
 
                 breakPointList.clear();
                 do {
                     cont = false;
-                    mainPointsList.clear();
+                    mainPointsList.clear(); // holds x & length values
                     ValueCountPairContainer sortedUniqueValueCounts;
                     GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
 
@@ -4136,18 +4157,18 @@ void imgProcess::histogramAnalysis(bool colored){
                     }
                     naturalBreaksNumber++;
 
-                } while (cont && naturalBreaksNumber<histogramMaxPoint.size() );
+                } while (cont && naturalBreaksNumber < histogramMaxPoint.size() );
 
                 //qDebug() << breakPointList;
-                qDebug() << "mainPointsList: " << mainPointsList;
+                //qDebug() << "mainPointsList(x/len): " << mainPointsList;
                 //qDebug() << "mainPointToHistMaxIndx: " << mainPointToHistMaxIndx;
 
                 //-----------------------------------------------------------------------------------
 
-                // ** LENGTH RATE>THRESH NUMBER (MAIN POINTS LIST) SHOULD BE >=2
-                if (histogramMaxPointLen.size() < 2) {
+                // ** MAIN POINTS LIST SHOULD BE >=2
+                if (mainPointsList.size() < 2) {
                     state = false;
-                    bandCheck_errorState = 2;
+                    bandCheck_errorState = 1;
                 } else {
 
                     // ** ANGLE TRACING
@@ -4173,12 +4194,16 @@ void imgProcess::histogramAnalysis(bool colored){
                         range = xNext-xFirst;
                         segmentLength.append(range);
 
-                        sum = 0;
-                        for (int j=xFirst+1; j<xNext; j++)
-                            sum += histogramFiltered[j];
-                        segmentAvg.append(sum/range);
+                        if (range > 0) {
+                            sum = 0;
+                            for (int j=xFirst+1; j<xNext; j++)
+                                sum += histogramFiltered[j];
+                            segmentAvg.append(sum/range);
+                        } else
+                            segmentAvg.append( histogramFiltered[xFirst]);
+
                     }
-                    qDebug() << "mean: " << histogramAvg << "len: " << segmentLength << "avg: " << segmentAvg;
+                    //qDebug() << "mean: " << histogramAvg << "len: " << segmentLength << "avg: " << segmentAvg;
 
 
                     if (!segmentAvg.isEmpty()) {
@@ -4206,22 +4231,25 @@ void imgProcess::histogramAnalysis(bool colored){
                                         range = xNext-xFirst;
                                         segmentLength2.append(range);
 
-                                        sum = 0;
-                                        for (int j=xFirst+1; j<xNext; j++)
-                                            sum += histogramFiltered[j];
-                                        segmentAvg2.append(sum/range);
+                                        if (range > 0) {
+                                            sum = 0;
+                                            for (int j=xFirst+1; j<xNext; j++)
+                                                sum += histogramFiltered[j];
+                                            segmentAvg2.append(sum/range);
+                                        } else
+                                            segmentAvg2.append( histogramFiltered[xFirst]);
                                     }
                                 }
                             }
                         }
-                        qDebug() << "edgeList: " << edgeList;
-                        qDebug() << "len2: " << segmentLength2 << "avg2: " << segmentAvg2;
+                        //qDebug() << "edgeList: " << edgeList;
+                        //qDebug() << "len2: " << segmentLength2 << "avg2: " << segmentAvg2;
 
-                        // FIND THE PAIR; BELOW HIST AVG AND MAX WIDTH
+                        // FIND THE PAIR; BELOW HIST AVG AND HAS THE MAX WIDTH
                         if (!edgeList.isEmpty()) {
-                            int maxWidth = 0, maxIdx = -1;
+                            int maxWidth = -1, maxIdx = -1;
                             for (int i=0; i<edgeList.size(); i++) {
-                                if (segmentAvg2[i] < histogramAvg/2){
+                                if (segmentAvg2[i] < histogramAvg){
                                     if (segmentLength2[i] > maxWidth){
                                         maxWidth = segmentLength2[i];
                                         maxIdx = i;
@@ -4229,6 +4257,7 @@ void imgProcess::histogramAnalysis(bool colored){
                                 }
                             }
 
+                            // ** THERE SHOULD BE SEGMENT(S) BELOW HIST AVG
                             if (maxIdx >=0) {
                                 int leftIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].x() ];
                                 int rightIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].y() ];
@@ -5285,8 +5314,10 @@ imgProcess::~imgProcess(){
         delete []histogram;
     }
 
-    if ( histogramFilteredInitSwitch ) {
+    if ( histogramAnlysInitSwitch ) {
         delete []histogramFiltered;
+        delete []histogramD;
+        delete []histogramDD;
     }
 
     if ( voidSpace.size() > 0 ) {
