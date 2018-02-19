@@ -3623,6 +3623,8 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
 
 void imgProcess::histogramAnalysis(bool colored){
 
+    bool state = true;
+
     // CALCULATE HISTOGRAM
     if (colored)
         valueHistogram(false);
@@ -3747,6 +3749,7 @@ void imgProcess::histogramAnalysis(bool colored){
         s+="("+QString::number(ddPeaks[i].start)+","+QString::number(ddPeaks[i].end)+") ";
     qDebug() << s;*/
 
+    // FIND AVERAGE OF NON-ZERO VALUES
     for (int i=0; i<ddPeaks.size(); i++) {
         /*for (int j=ddPeaks[i].start; j<=ddPeaks[i].end; j++) {
             if (histogramDD[j]>0) {
@@ -4034,7 +4037,6 @@ void imgProcess::histogramAnalysis(bool colored){
             //--- EVALUATION -
 
             bandCheck_errorState = 0;
-            bool state = true;
 
             // ** MAX POINT NUMBER (LENGTH RATE>THRESH) SHOULD BE >=2
             if ( histogramMaxPoint.size() < 2 ) {
@@ -4305,8 +4307,11 @@ void imgProcess::histogramAnalysis(bool colored){
                 }
             }
     } else {
+        state = false;
         bandCheck_errorState = 10;
     }
+
+    detected = state;
 }
 
 void imgProcess::detectScanHorizontal(int y){
