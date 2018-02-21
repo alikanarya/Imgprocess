@@ -4246,7 +4246,7 @@ void imgProcess::histogramAnalysis(bool colored){
                         }
                         //qDebug() << "edgeList: " << edgeList;
                         //qDebug() << "len2: " << segmentLength2 << "avg2: " << segmentAvg2;
-                        if (edgeList.size()<1) qDebug() << mainPointsList.size() << " " << edgeList.size();
+                        //if (edgeList.size()<1) qDebug() << mainPointsList.size() << " " << edgeList.size();
 
                         // FIND THE PAIR; BELOW HIST AVG AND HAS THE MAX WIDTH
                         if (!edgeList.isEmpty()) {
