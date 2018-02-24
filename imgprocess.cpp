@@ -3242,7 +3242,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                     // *** using standard deviations of the regions > mainPointsList
                     naturalBreaksNumber = 2;
                     bool cont;
-                    double varLimit = 10;
+                    double varLimit = imageWidth*0.1;
                     int maxValue, maxIdx;
 
                     do {
@@ -3698,7 +3698,8 @@ void imgProcess::histogramAnalysis(bool colored){
     double yScaleFactor = (histogramSize*1.0) / (histogramMax-histogramMin);
 
     for (int x = 0; x < histogramSize; x++){
-        histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
+        //histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
+/**********/    histogramFiltered[x] = histogramMax - yScaleFactor * (histogramFiltered[x]-histogramMin);
     }
 
     histogramAvg = 0;
@@ -4251,22 +4252,30 @@ void imgProcess::histogramAnalysis(bool colored){
                         // FIND THE PAIR; BELOW HIST AVG AND HAS THE MAX WIDTH
                         if (!edgeList.isEmpty()) {
                             int maxWidth = -1, maxIdx = -1;
+                            int minWidth = 2000, minIdx = -1;
                             for (int i=0; i<edgeList.size(); i++) {
                                 if (segmentAvg2[i] < histogramAvg){
                                     if (segmentLength2[i] > maxWidth){
                                         maxWidth = segmentLength2[i];
                                         maxIdx = i;
                                     }
+                                    if (segmentLength2[i] < minWidth){
+                                        minWidth = segmentLength2[i];
+                                        minIdx = i;
+                                    }
                                 }
                             }
 
-                            // ** THERE SHOULD BE SEGMENT(S) BELOW HIST AVG
-                            if (maxIdx >=0) {
-                                int leftIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].x() ];
-                                int rightIndex = mainPointToHistMaxIndx[ edgeList[maxIdx].y() ];
+                            //int selectionId = maxIdx;   // for maximum width
+/**********/                int selectionId = minIdx;   // for minimum width
 
-                                natBreaksMax1.setX( mainPointsList[edgeList[maxIdx].x()].x() );
-                                natBreaksMax2.setX( mainPointsList[edgeList[maxIdx].y()].x() );
+                            // ** THERE SHOULD BE SEGMENT(S) BELOW HIST AVG
+                            if (selectionId >=0) {
+                                int leftIndex = mainPointToHistMaxIndx[ edgeList[selectionId].x() ];
+                                int rightIndex = mainPointToHistMaxIndx[ edgeList[selectionId].y() ];
+
+                                natBreaksMax1.setX( mainPointsList[edgeList[selectionId].x()].x() );
+                                natBreaksMax2.setX( mainPointsList[edgeList[selectionId].y()].x() );
 
                                 bandWidth = abs( histogramMaxPoint[leftIndex].x() - histogramMaxPoint[rightIndex].x() );
                                 bandCenter = histogramMaxPoint[leftIndex].x() + bandWidth/2 - imageWidth/2;
