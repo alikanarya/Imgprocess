@@ -3220,6 +3220,9 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                                 idx = j;
                             }
                         }
+                        //int lengthVal = detectLongestSolidLineVert( listHoughData2ndArray[pointListMap[idx]][0], listHoughData2ndArray[pointListMap[idx]][1], 0, edgeHeight-1 ).length;
+                        //QPoint p( pointList[idx].x(), lengthVal );
+
                         QPoint p( pointList[idx].x(), pointList[idx].y() );
                         pointListSorted.append(p);
                         pointListMap.append(idx);
@@ -3588,11 +3591,14 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
 
     mainEdgesList.clear();
 
+    QList<int> lengthList;
+
     houghData hd;
     hd.distance = -1, hd.angle = -1, hd.voteValue = -1;
     int max = -1, length, index = 0;
     for (int i = 0; i < listHoughData2ndSize; i++) {
         length = detectLongestSolidLineVert( listHoughData2ndArray[i][0], listHoughData2ndArray[i][1], 0, edgeHeight-1 ).length;
+        lengthList.append(length);
         if ( length > max ) {
             max = length;
             index = i;
@@ -3605,7 +3611,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
         hd.distance = centerLine.distance = listHoughData2ndArray[index][0];
         hd.angle = centerLine.angle = listHoughData2ndArray[index][1];
         hd.voteValue = centerLine.voteValue = listHoughData2ndArray[index][2];
-        mainEdgesList.append(hd);
+        //mainEdgesList.append(hd);
 
         detected = true;
         int yCoor = edgeHeight/2;
@@ -3616,6 +3622,29 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
     } else {
         detected = false;
         trackCenterX = rightCornerX = leftCornerX = 0;
+    }
+
+    QList<int> lengthSortedIndex;
+
+    for (int i = 0; i < lengthList.size(); i++) {
+        max = -1; index = 0;
+        for (int j = 0; j < lengthList.size(); j++) {
+            if ( lengthList[j] > max ) {
+                index = j;
+            }
+        }
+        lengthSortedIndex.append(index);
+        lengthList[index] = -1;
+    }
+
+    for (int i=0; i<thinCornerNum; i++) {
+        if (i < lengthSortedIndex.size()) {
+            houghData hdx;
+            hdx.distance = listHoughData2ndArray[ lengthSortedIndex[i] ][0];
+            hdx.angle = listHoughData2ndArray[ lengthSortedIndex[i] ][1];
+            hdx.voteValue = listHoughData2ndArray[ lengthSortedIndex[i] ][2];
+            mainEdgesList.append(hdx);
+        }
     }
 
     return hd;
