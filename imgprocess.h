@@ -486,7 +486,7 @@ class imgProcess{
         void detectMainEdges(int method, bool debug = false);
         houghData detectMainEdgesSolidLine(float rate, bool debug = false);
 
-        void histogramAnalysis(bool colored);
+        void histogramAnalysis(bool colored, bool invertHist = false);
 
         // HORIZONTAL LINE SCAN WITH MAX VOTES
         void detectScanHorizontal(int y);

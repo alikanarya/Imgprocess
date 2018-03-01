@@ -3650,7 +3650,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
     return hd;
 }
 
-void imgProcess::histogramAnalysis(bool colored){
+void imgProcess::histogramAnalysis(bool colored, bool invertHist){
 
     bool state = true;
 
@@ -3727,8 +3727,10 @@ void imgProcess::histogramAnalysis(bool colored){
     double yScaleFactor = (histogramSize*1.0) / (histogramMax-histogramMin);
 
     for (int x = 0; x < histogramSize; x++){
-        //histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
-/**********/    histogramFiltered[x] = histogramMax - yScaleFactor * (histogramFiltered[x]-histogramMin);
+        if (invertHist)
+            histogramFiltered[x] = histogramMax - yScaleFactor * (histogramFiltered[x]-histogramMin);
+        else
+            histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
     }
 
     histogramAvg = 0;
