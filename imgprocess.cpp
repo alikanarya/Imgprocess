@@ -4355,6 +4355,198 @@ void imgProcess::histogramAnalysis(bool colored, bool invertHist){
     detected = state;
 }
 
+void imgProcess::histogramAnalysisDarkTracks(bool colored, bool invertHist){
+
+    bool state = true;
+
+    // CALCULATE HISTOGRAM
+    if (colored)
+        valueHistogram(false);
+    else
+        valueHistogramGray(false);
+
+
+    histogramFiltered = new int[histogramSize];
+    histogramAnlysInitSwitch = true;
+
+    int noiseDia = (maFilterKernelSize-1)/2;
+    histogramAvg = 0;
+    histogramMin = 2000, histogramMax = 0;
+
+    /* MOVING AVERAGE FILTER
+    float sum;
+    for (int x = 0; x < histogramSize; x++){
+        if (x < noiseDia || x > (histogramSize-noiseDia))
+           histogramFiltered[x] = histogram[x] ;
+        else {
+            sum = 0;
+            for (int k = x-noiseDia; k <= x+noiseDia; k++)
+                sum += histogram[k];
+            histogramFiltered[x] = (sum*1.0) /  maFilterKernelSize;
+        }
+
+        histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
+    }
+    */
+
+    // * RECURSIVE MOVING AVERAGE FILTER
+    float initialAvg = 0;
+    for (int x = 0; x < maFilterKernelSize; x++)
+        initialAvg += histogram[x];
+    initialAvg /= (1.0*maFilterKernelSize);
+
+    double value;
+    for (int x = 0; x < histogramSize; x++){
+        if ( x < noiseDia )
+           histogramFiltered[x] = histogram[x] ;
+        else if ( x == noiseDia )
+            histogramFiltered[x] = initialAvg ;
+        else if ( x > (histogramSize-noiseDia-1) )
+            histogramFiltered[x] = histogramFiltered[x-1] ;
+        else {
+            value = histogramFiltered[x-1] + histogram[x+noiseDia] - histogram[x-noiseDia-1];
+            histogramFiltered[x] = value;
+        }
+
+        histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
+    }
+
+    if (histogramSize != 0)
+        histogramAvg /= (1.0*histogramSize);
+    else
+        histogramAvg = -1;
+
+
+    double yScaleFactor = (histogramSize*1.0) / (histogramMax-histogramMin);
+
+    for (int x = 0; x < histogramSize; x++){
+        if (invertHist)
+            histogramFiltered[x] = histogramMax - yScaleFactor * (histogramFiltered[x]-histogramMin);
+        else
+            histogramFiltered[x] = yScaleFactor * (histogramFiltered[x]-histogramMin);
+    }
+
+    histogramAvg = 0;
+    histogramMin = 2000, histogramMax = 0;
+
+    for (int x = 0; x < histogramSize; x++){
+        histogramAvg += histogramFiltered[x];
+        if (histogramFiltered[x] < histogramMin)
+            histogramMin = histogramFiltered[x];
+        if (histogramFiltered[x] > histogramMax)
+            histogramMax = histogramFiltered[x];
+    }
+
+    if (histogramSize != 0)
+        histogramAvg /= histogramSize;
+    else
+        histogramAvg = -1;
+
+    // CORNER FINDING ALGO BASED ON MAX AND MIN PEAK POINTS
+    findMaxs(histogramFiltered, histogramSize, histogramPeaks);
+
+    findMins(histogramFiltered, histogramSize, histogramMins);
+
+    //--- MERGE PEAK AND MIN POINTS -----------------------------------------------------
+    histogramExtremes.clear();
+    int peaksIdx = 0;
+    int minsIdx = 0;
+    int x = 0;
+    do {
+        if (peaksIdx < histogramPeaks.size()){
+            if ( histogramPeaks[peaksIdx].start <= x && x <= histogramPeaks[peaksIdx].end ){
+                x = histogramPeaks[peaksIdx].end;
+                range p;
+                p.start = histogramPeaks[peaksIdx].start;
+                p.end = histogramPeaks[peaksIdx].end;
+                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                histogramExtremes.append(p);
+            histogramExtremesFiltered.append(p);
+                peaksIdx++;
+            }
+        }
+
+        if (minsIdx < histogramMins.size()){
+            if ( histogramMins[minsIdx].start <= x && x <= histogramMins[minsIdx].end ){
+                range p;
+                p.start = histogramMins[minsIdx].start;
+                p.end = histogramMins[minsIdx].end;
+                //qDebug() << "pp" << QString::number(p.start) << ", " << QString::number(p.end) << ", " << QString::number(histogramFiltered[ p.start ]);
+                histogramExtremes.append(p);
+            histogramExtremesFiltered.append(p);
+                x = histogramMins[minsIdx].end;
+                minsIdx++;
+            }
+        }
+        x++;
+    } while (x < histogramSize);
+    //-----------------------------------------------------------------------------------
+
+
+    if (!histogramExtremes.isEmpty()) {
+/*
+        //--- MERGE CLOSE POINTS ------------------------------------------------------------
+        int deltaXThreshold = histogramSize * 0.02;
+        int deltaYThreshold = histogramSize * 0.02;
+        int deltaX, deltaY;
+        histogramExtremesFiltered.clear();
+
+        range zeroPoint;
+        zeroPoint.start = histogramExtremes[0].start;
+        zeroPoint.end = histogramExtremes[0].end;
+        histogramExtremesFiltered.append(zeroPoint);
+        int hisExtFltIndex = 0;
+
+        for (int i=0; i<histogramExtremes.size()-1; i++) {
+
+            deltaX = histogramExtremes[i+1].start - histogramExtremes[i].end;
+            deltaY = histogramFiltered[ histogramExtremes[i+1].start ] - histogramFiltered[ histogramExtremes[i].end ];
+
+            if (deltaX > deltaXThreshold || abs(deltaY) > deltaYThreshold) {
+
+                //lenX = histogramExtremes[i].end - histogramExtremesFiltered[hisExtFltIndex].start;
+                histogramExtremesFiltered[hisExtFltIndex].end = histogramExtremes[i].end;
+
+                range nextPoint;
+                nextPoint.start = histogramExtremes[i+1].start;
+                nextPoint.end = histogramExtremes[i+1].end;
+                histogramExtremesFiltered.append(nextPoint);
+                hisExtFltIndex++;
+            }
+
+            //qDebug() << deltaX << " " << deltaY;
+            /*
+            range nextPoint;
+            nextPoint.start = histogramExtremes[i].start;
+            nextPoint.end = histogramExtremes[i].end;
+            histogramExtremesFiltered.append(nextPoint);* /
+        }
+        //-----------------------------------------------------------------------------------
+
+*/
+
+
+
+            //--- EVALUATION -
+
+            //bandCheck_errorState = 0;
+
+    } else {
+        state = false;
+        //bandCheck_errorState = 10;
+    }
+
+    detected = state;
+}
+
 void imgProcess::detectScanHorizontal(int y){
 
     horLineVotes = new float*[edgeWidth];
