@@ -3754,6 +3754,7 @@ void imgProcess::histogramAnalysis(bool colored, bool invertHist){
     histogramDSum.clear();
     histogramD = new double[histogramSize]; histogramD[0]=0;
     histogramDD = new double[histogramSize]; histogramDD[0]=0; histogramDD[1]=0;
+    histogramDDInitSwitch = true;
 
     histogramDMin = 3000, histogramDMax = -3000;
     for (int i=1; i<histogramSize; i++) {
@@ -5554,6 +5555,9 @@ imgProcess::~imgProcess(){
 
     if ( histogramAnlysInitSwitch ) {
         delete []histogramFiltered;
+    }
+
+    if ( histogramDDInitSwitch ) {
         delete []histogramD;
         delete []histogramDD;
     }

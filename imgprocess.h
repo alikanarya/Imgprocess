@@ -252,6 +252,7 @@ class imgProcess{
         int histogramSize = 0;              // histogram array size
         bool histogramInitSwitch = false;           // to delete in destructor
         bool histogramAnlysInitSwitch = false;           // to delete in destructor
+        bool histogramDDInitSwitch = false;           // to delete in destructor
         double histogramAvg;
         int histogramMin, histogramMax;
         double histogramDMin, histogramDMax;
