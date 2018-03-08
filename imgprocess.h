@@ -165,7 +165,7 @@ class imgProcess{
         int localMaxima2ndSize;
         int **rangeArray2nd;
         bool rangeArray2ndInitSwitch;
-        int listHoughData2ndSize;
+        int listHoughData2ndSize = 0;
         int **listHoughData2ndArray;
         bool listHoughData2ndArrayInitSwitch;
         QList<houghData> listHoughData2nd;

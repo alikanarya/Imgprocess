@@ -3036,7 +3036,6 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
         // ** SORTED HOUGH DATA > localMaximalist
     localMaximaSize = localMaximalist.size();
 
-
     if ( !localMaximalist.isEmpty() ){
 
         if (DEBUG) {
@@ -3623,7 +3622,7 @@ houghData imgProcess::detectMainEdgesSolidLine(float rate, bool debug){
         detected = false;
         trackCenterX = rightCornerX = leftCornerX = 0;
     }
-
+// * for multiple solid lines
     QList<int> lengthSortedIndex;
 
     for (int i = 0; i < lengthList.size(); i++) {
