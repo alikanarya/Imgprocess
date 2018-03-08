@@ -151,7 +151,7 @@ class imgProcess{
         bool contrastInitSwitch;            // to delete in destructor
 
         // EDGE DETETION ALGO
-        int tHi, tLo;
+        double tHi, tLo;
         int hiValue, loValue, medianValue;
         int thinCornerNum;
 
