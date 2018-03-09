@@ -3149,7 +3149,6 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
             }
 
             // get hough datas of 2nd iter. local maximas
-            //QList<houghData> listHoughData2nd;
             listHoughData2nd.clear();
 
             //-B----------------------------------------------------------------
@@ -3205,90 +3204,103 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                     //
 
                     const int n = listHoughData2nd.size();
-                    naturalBreaksNumber = 4;
-
-                    // ** qDebug() << "pointList:";  for (int i=0; i<n; i++) qDebug() << i << " " << pointList[i].x() << " " << pointList[i].y() ;
-
-                    // *** Sort point list wrt x position
-                    int minx, idx;
-                    for (int i=0; i<n; i++) {
-                        minx = 2000, idx = 0;
-                        for (int j=0; j<n; j++) {
-                            if ( pointList[j].x() < minx ) {
-                                minx = pointList[j].x();
-                                idx = j;
-                            }
-                        }
-                        //int lengthVal = detectLongestSolidLineVert( listHoughData2ndArray[pointListMap[idx]][0], listHoughData2ndArray[pointListMap[idx]][1], 0, edgeHeight-1 ).length;
-                        //QPoint p( pointList[idx].x(), lengthVal );
-
-                        QPoint p( pointList[idx].x(), pointList[idx].y() );
-                        pointListSorted.append(p);
-                        pointListMap.append(idx);
-                        pointList[idx].setX(2000);
-                    }
-                    // ** qDebug() << "pointListSorted:"; for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
-                    // ***
-
-                    // *** Preparation for Natural Breaks Algorithm
-                    std::vector<double> values;
-                    values.reserve(n);
-
-                    for (int i=0; i!=n; ++i)
-                        values.push_back( pointListSorted[i].x() );
-
-                    assert(values.size() == n);
-                    // ***
-
-                    // *** Automatic scan to find optimum breaks (k) number (size)
-                    // *** using standard deviations of the regions > mainPointsList
                     naturalBreaksNumber = 2;
-                    bool cont;
-                    double varLimit = imageWidth*0.1;
-                    int maxValue, maxIdx;
 
-                    do {
-                        cont = false;
-                        mainPointsList.clear();
-                        ValueCountPairContainer sortedUniqueValueCounts;
-                        GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
+                    if (n >= naturalBreaksNumber) {
+                        // ** qDebug() << "pointList:";  for (int i=0; i<n; i++) qDebug() << i << " " << pointList[i].x() << " " << pointList[i].y() ;
 
-                        LimitsContainer resultingbreaksArray;
-                        ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
+                        // *** Sort point list wrt x position
+                        int minx, idx;
+                        for (int i=0; i<n; i++) {
+                            minx = 2000, idx = 0;
+                            for (int j=0; j<n; j++) {
+                                if ( pointList[j].x() < minx ) {
+                                    minx = pointList[j].x();
+                                    idx = j;
+                                }
+                            }
+                            //int lengthVal = detectLongestSolidLineVert( listHoughData2ndArray[pointListMap[idx]][0], listHoughData2ndArray[pointListMap[idx]][1], 0, edgeHeight-1 ).length;
+                            //QPoint p( pointList[idx].x(), lengthVal );
 
-                        int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
-                        double sum = 0, sampleAve = 0, sampleVar = 0;
+                            QPoint p( pointList[idx].x(), pointList[idx].y() );
+                            pointListSorted.append(p);
+                            pointListMap.append(idx);
+                            pointList[idx].setX(2000);
+                        }
+                        // ** qDebug() << "pointListSorted:"; for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+                        // ***
 
-                        // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
+                        // *** Preparation for Natural Breaks Algorithm
+                        std::vector<double> values;
+                        values.reserve(n);
 
-                        QList<int> sampleList;
-                        maxValue = 0; maxIdx = 0;
+                        for (int i=0; i!=n; ++i)
+                            values.push_back( pointListSorted[i].x() );
+
+                        assert(values.size() == n);
+                        // ***
+
+                        // *** Automatic scan to find optimum breaks (k) number (size)
+                        // *** using standard deviations of the regions > mainPointsList
+                        bool cont;
+                        double varLimit = imageWidth*0.1;
+                        int maxValue, maxIdx;
+
                         do {
-                            if ( breaksArrayIdx < resultingbreaksArray.size() ) {
+                            cont = false;
+                            mainPointsList.clear();
+                            ValueCountPairContainer sortedUniqueValueCounts;
+                            GetValueCountPairs(sortedUniqueValueCounts, &values[0], n);
 
-                                if ( pointListSorted[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
+                            LimitsContainer resultingbreaksArray;
+                            ClassifyJenksFisherFromValueCountPairs(resultingbreaksArray, naturalBreaksNumber, sortedUniqueValueCounts);
 
-                                    breaksArrayIdx++;
-                                    //qDebug() << sum << " " << sampleNo;
-                                    if (sampleNo != 0) {
-                                        sampleAve = sum / sampleNo;
-                                        double powSum = 0;
-                                        for (int c=0; c<sampleList.size(); c++)
-                                            powSum += pow(sampleAve-sampleList[c], 2);
-                                        powSum /= sampleNo;
-                                        sampleVar = sqrt(powSum);
-                                        if (sampleVar > varLimit) cont = true;
+                            int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
+                            double sum = 0, sampleAve = 0, sampleVar = 0;
 
-                                        QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
-                                        mainPointsList.append(p);
-                                        maxValue = 0; maxIdx = 0;
+                            // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
-                                        //qDebug() << sampleVar;
+                            QList<int> sampleList;
+                            maxValue = 0; maxIdx = 0;
+                            do {
+                                if ( breaksArrayIdx < resultingbreaksArray.size() ) {
+
+                                    if ( pointListSorted[ pointListSortedIdx ].x() >= resultingbreaksArray[ breaksArrayIdx ] ) {
+
+                                        breaksArrayIdx++;
+                                        //qDebug() << sum << " " << sampleNo;
+                                        if (sampleNo != 0) {
+                                            sampleAve = sum / sampleNo;
+                                            double powSum = 0;
+                                            for (int c=0; c<sampleList.size(); c++)
+                                                powSum += pow(sampleAve-sampleList[c], 2);
+                                            powSum /= sampleNo;
+                                            sampleVar = sqrt(powSum);
+                                            if (sampleVar > varLimit) cont = true;
+
+                                            QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
+                                            mainPointsList.append(p);
+                                            maxValue = 0; maxIdx = 0;
+
+                                            //qDebug() << sampleVar;
+                                        }
+                                        sampleList.clear();
+                                        sum = 0;
+                                        sampleNo = 0;
+                                    } else {
+                                        sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
+                                        sum += pointListSorted[ pointListSortedIdx ].x();
+
+                                        if ( pointListSorted[ pointListSortedIdx ].y() > maxValue ) {
+                                            maxValue = pointListSorted[ pointListSortedIdx ].y();
+                                            maxIdx = pointListSortedIdx;
+                                        }
+
+                                        sampleNo++;
+                                        pointListSortedIdx++;
                                     }
-                                    sampleList.clear();
-                                    sum = 0;
-                                    sampleNo = 0;
                                 } else {
+                                    // for last break
                                     sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
                                     sum += pointListSorted[ pointListSortedIdx ].x();
 
@@ -3300,44 +3312,33 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                                     sampleNo++;
                                     pointListSortedIdx++;
                                 }
-                            } else {
-                                // for last break
-                                sampleList.append( pointListSorted[ pointListSortedIdx ].x() );
-                                sum += pointListSorted[ pointListSortedIdx ].x();
 
-                                if ( pointListSorted[ pointListSortedIdx ].y() > maxValue ) {
-                                    maxValue = pointListSorted[ pointListSortedIdx ].y();
-                                    maxIdx = pointListSortedIdx;
-                                }
+                            } while( pointListSortedIdx < pointListSorted.size() );
 
-                                sampleNo++;
-                                pointListSortedIdx++;
+                            //qDebug() << sum << " " << sampleNo;
+                            if (sampleNo != 0) {
+                                sampleAve = sum / sampleNo;
+                                double powSum = 0;
+                                for (int c=0; c<sampleList.size(); c++)
+                                    powSum += pow(sampleAve-sampleList[c], 2);
+                                powSum /= sampleNo;
+                                sampleVar = sqrt(powSum);
+                                if (sampleVar > varLimit) cont = true;
+
+                                QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
+                                mainPointsList.append(p);
+                                maxValue = 0; maxIdx = 0;
+
+                                //qDebug() << sampleVar;
                             }
+                            naturalBreaksNumber++;
 
-                        } while( pointListSortedIdx < pointListSorted.size() );
+                        } while (cont && naturalBreaksNumber<pointListSorted.size() );
 
-                        //qDebug() << sum << " " << sampleNo;
-                        if (sampleNo != 0) {
-                            sampleAve = sum / sampleNo;
-                            double powSum = 0;
-                            for (int c=0; c<sampleList.size(); c++)
-                                powSum += pow(sampleAve-sampleList[c], 2);
-                            powSum /= sampleNo;
-                            sampleVar = sqrt(powSum);
-                            if (sampleVar > varLimit) cont = true;
-
-                            QPoint p( pointListSorted[ maxIdx ].x(), pointListSorted[ maxIdx ].y() );
-                            mainPointsList.append(p);
-                            maxValue = 0; maxIdx = 0;
-
-                            //qDebug() << sampleVar;
-                        }
-                        naturalBreaksNumber++;
-
-                    } while (cont && naturalBreaksNumber<pointListSorted.size() );
-                    // ***
-
-
+                        naturalBreaksOK = true;
+                    } else {
+                        naturalBreaksOK = false;
+                    }
                     //------------------------------------------------------------------
                 }
 
@@ -3347,69 +3348,73 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                 bool xCoorCalcEnable = false;
 
-                if ( method == 0 ) {    // NATURAL BREAKS
+                if ( method == 0) {    // NATURAL BREAKS
 
-                    mainEdgesList.clear();
-                    for (int c=0; c<mainPointsList.size(); c++) {
-                        int refId = -1;
-                        for (int id=0; id<pointList.size(); id++) {
-                            if ( mainPointsList[c].x() == pointListSorted[id].x() && mainPointsList[c].y() == pointListSorted[id].y() )
-                                refId = pointListMap[id];
+                    if (naturalBreaksOK) {
+                        mainEdgesList.clear();
+                        for (int c=0; c<mainPointsList.size(); c++) {
+                            int refId = -1;
+                            for (int id=0; id<pointList.size(); id++) {
+                                if ( mainPointsList[c].x() == pointListSorted[id].x() && mainPointsList[c].y() == pointListSorted[id].y() )
+                                    refId = pointListMap[id];
 
+                            }
+                            houghData hd;
+                            hd.distance =  listHoughData2ndArray[refId][0];
+                            hd.angle =  listHoughData2ndArray[refId][1];
+                            hd.voteValue =  listHoughData2ndArray[refId][2];
+                            mainEdgesList.append(hd);
+                            //qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
                         }
-                        houghData hd;
-                        hd.distance =  listHoughData2ndArray[refId][0];
-                        hd.angle =  listHoughData2ndArray[refId][1];
-                        hd.voteValue =  listHoughData2ndArray[refId][2];
-                        mainEdgesList.append(hd);
-                        //qDebug() << mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId: " << refId;
-                    }
 
-                    // *** Find maximum (votes) 2 points
-                    int _idx = 0;
-                    QPoint max1(0,-1);
-                    for (int c=0; c<mainPointsList.size(); c++) {
-                        if ( mainPointsList[c].y() > max1.y() ) {
-                            max1.setY( mainPointsList[c].y() );
-                            max1.setX( mainPointsList[c].x() );
-                            _idx = c;
+                        // *** Find maximum (votes) 2 points
+                        int _idx = 0;
+                        QPoint max1(0,-1);
+                        for (int c=0; c<mainPointsList.size(); c++) {
+                            if ( mainPointsList[c].y() > max1.y() ) {
+                                max1.setY( mainPointsList[c].y() );
+                                max1.setX( mainPointsList[c].x() );
+                                _idx = c;
+                            }
                         }
-                    }
-                    natBreaksMax1.setX( mainPointsList[_idx].x() );
-                    natBreaksMax1.setY( mainPointsList[_idx].y() );
-                    mainPointsList[_idx].setY(-1);
+                        natBreaksMax1.setX( mainPointsList[_idx].x() );
+                        natBreaksMax1.setY( mainPointsList[_idx].y() );
+                        mainPointsList[_idx].setY(-1);
 
-                    _idx = 0;
-                    QPoint max2(0,-1);
-                    for (int c=0; c<mainPointsList.size(); c++) {
-                        if ( mainPointsList[c].y() > max2.y() ) {
-                            max2.setY( mainPointsList[c].y() );
-                            max2.setX( mainPointsList[c].x() );
-                            _idx = c;
+                        _idx = 0;
+                        QPoint max2(0,-1);
+                        for (int c=0; c<mainPointsList.size(); c++) {
+                            if ( mainPointsList[c].y() > max2.y() ) {
+                                max2.setY( mainPointsList[c].y() );
+                                max2.setX( mainPointsList[c].x() );
+                                _idx = c;
+                            }
                         }
-                    }
-                    natBreaksMax2.setX( mainPointsList[_idx].x() );
-                    natBreaksMax2.setY( mainPointsList[_idx].y() );
-                    mainPointsList[_idx].setY(-1);
+                        natBreaksMax2.setX( mainPointsList[_idx].x() );
+                        natBreaksMax2.setY( mainPointsList[_idx].y() );
+                        mainPointsList[_idx].setY(-1);
 
-                    //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
-                    //qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
+                        //qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
+                        //qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
 
-                    // *** Determine left & right corners
-                    if ( max1.x() > max2.x()) {
-                        leftCornerX = max2.x();
-                        rightCornerX = max1.x();
+                        // *** Determine left & right corners
+                        if ( max1.x() > max2.x()) {
+                            leftCornerX = max2.x();
+                            rightCornerX = max1.x();
+                        } else {
+                            leftCornerX = max1.x();
+                            rightCornerX = max2.x();
+                        }
+                        // ***
+
+                        trackCenterX = (leftCornerX + rightCornerX)/2.0;
+
+                        centerLine.angle = 0;
+                        centerLine.distance = trackCenterX;
+                        centerLine.voteValue = 0;
                     } else {
-                        leftCornerX = max1.x();
-                        rightCornerX = max2.x();
+                        detected = false;
                     }
-                    // ***
-
-                    trackCenterX = (leftCornerX + rightCornerX)/2.0;
-
-                    centerLine.angle = 0;
-                    centerLine.distance = trackCenterX;
-                    centerLine.voteValue = 0;
                 }
 
                 if ( method == 1 ) {    // MEAN VALUE
