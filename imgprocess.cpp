@@ -3192,6 +3192,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
             if ( !listHoughData2nd.isEmpty() && method != -1 ) { // BYPASS FOR SOLID LINE ALGO
 
                 pointListSorted.clear();
+                QList<QPoint> pointListSortedCopy;
                 QList<int> pointListMap;
                 mainPointsList.clear();
 
@@ -3224,6 +3225,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
 
                             QPoint p( pointList[idx].x(), pointList[idx].y() );
                             pointListSorted.append(p);
+                            //pointListSortedCopy.append(p);
                             pointListMap.append(idx);
                             pointList[idx].setX(2000);
                         }
@@ -3253,6 +3255,45 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             sameValueList.append( QPoint(sameStart,sameEnd) );
                         }
                         qDebug() << sameValueList;
+                        QList<int> valueList;
+                        for (int i=0; i<sameValueList.size(); i++) {
+                            int max = 0, idx = 0;
+                            for (int j=sameValueList[i].x(); j<=sameValueList[i].y(); j++){
+                                if (pointListSorted[j].y() > max) {
+                                    max = pointListSorted[j].y();
+                                    idx = j;
+                                }
+                            }
+                            valueList.append(idx);
+                        }
+                        qDebug() << valueList;
+
+                        /*
+                        int sameValueIdx = sameValueList.size() - 1;
+                        for (int i=pointListSorted.size()-1; i>=0; i--) {
+                            if( i >= sameValueList[sameValueIdx].x() && i <= sameValueList[sameValueIdx].y() ){
+                                if ( i != valueList[sameValueIdx] ) pointListSorted.removeAt(i);
+                            } else {
+                                sameValueIdx--;
+                                if (sameValueIdx<0) sameValueIdx = 0;
+                            }
+
+                        }
+                        */
+                        int sameValueIdx = 0;
+                        for (int i=0; i<pointListSorted.size(); i++) {
+                            if( i >= sameValueList[sameValueIdx].x() && i <= sameValueList[sameValueIdx].y() ){
+                                if ( i == valueList[sameValueIdx] ) {
+                                    pointListSortedCopy.append( QPoint(pointListSorted[i].x(),pointListSorted[i].y()) );
+                                    sameValueIdx++;
+                                    if (sameValueIdx==sameValueList.size()) sameValueIdx = sameValueList.size()-1;
+                                }
+                            } else {
+                                pointListSortedCopy.append( QPoint(pointListSorted[i].x(),pointListSorted[i].y()) );
+                            }
+
+                        }
+                        qDebug() << pointListSortedCopy;
                         // ***
 
                         // *** Preparation for Natural Breaks Algorithm
