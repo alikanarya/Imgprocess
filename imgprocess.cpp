@@ -3227,7 +3227,32 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             pointListMap.append(idx);
                             pointList[idx].setX(2000);
                         }
-                        // ** qDebug() << "pointListSorted:"; for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+                        /* */ qDebug() << "pointListSorted:"; for (int i=0; i<n; i++) qDebug() << i << " " << pointListSorted[i].x() << " " << pointListSorted[i].y() ;
+                        bool sameValue=false;
+                        int sameStart = 0;
+                        int sameEnd = 0;
+                        QList<QPoint> sameValueList;
+                        for (int i=0; i<n-1; i++) {
+                            if (pointListSorted[i].x() == pointListSorted[i+1].x()) {
+                                if (!sameValue){
+                                    sameValue = true;
+                                    sameStart = i;
+                                }
+                            }
+                            if (pointListSorted[i].x() != pointListSorted[i+1].x()) {
+                                if (sameValue){
+                                    sameValue = false;
+                                    sameEnd = i;
+                                    sameValueList.append( QPoint(sameStart,sameEnd) );
+                                }
+                            }
+                        }
+                        if (sameValue){
+                            sameValue = false;
+                            sameEnd = pointListSorted.size()-1;
+                            sameValueList.append( QPoint(sameStart,sameEnd) );
+                        }
+                        qDebug() << sameValueList;
                         // ***
 
                         // *** Preparation for Natural Breaks Algorithm
@@ -3258,7 +3283,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             int breaksArrayIdx = 1, pointListSortedIdx = 0, sampleNo = 0;
                             double sum = 0, sampleAve = 0, sampleVar = 0;
 
-                            // ** qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
+                            /* */ qDebug() << "-----------"; for (double breakValue: resultingbreaksArray)  qDebug() << breakValue;
 
                             QList<int> sampleList;
                             maxValue = 0; maxIdx = 0;
@@ -3332,6 +3357,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                                 //qDebug() << sampleVar;
                             }
                             naturalBreaksNumber++;
+                            if (n < naturalBreaksNumber) cont = false;
 
                         } while (cont && naturalBreaksNumber<pointListSorted.size() );
 
