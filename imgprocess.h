@@ -231,6 +231,12 @@ class imgProcess{
         bool **edgeMapBlueMatrix;
         bool edgeMapBlueMatrixInitSwitch = false;
 
+        QList<QPoint> edgeListStart;
+        QList<QPoint> edgeListEnd;
+        QPoint startPixel;
+        QPoint endPixel;
+        double distanceMax;
+
         int **edgeThickenedMatrix;          // thickened edge image data matrix
         int **houghMatrix;                  // hough image data matrix with max. voted lines coded, edge image size
         int **houghExtendedMatrix;          // hough image data matrix with max. voted lines coded, org. image size
@@ -418,6 +424,7 @@ class imgProcess{
         bool saveArray(double *array, int length, QString fname);  // saves a double array with given filename
         bool saveList(QList<int> array, QString fname);
         bool saveList(QList<double> array, QString fname);
+        bool saveList(QList<QPoint> array, QString fname);
         bool saveList(QList<solidLine *> array, QString fname);
         bool saveList(QList<solidLine> array, QString fname);
 

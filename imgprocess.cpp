@@ -463,6 +463,21 @@ bool imgProcess::saveList(QList<double> array, QString fname){
     return saveStatus;
 }
 
+bool imgProcess::saveList(QList<QPoint> array, QString fname){
+
+    QFile file(fname);
+    bool saveStatus = true;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&file);
+
+        for(int i = 0; i < array.size(); i++) out << array[i].x() << "," << array[i].y() << "\n";
+        file.close();
+    } else saveStatus = false;
+
+    return saveStatus;
+}
+
 bool imgProcess::saveList(QList<solidLine *> array, QString fname){
 
     QFile file(fname);
@@ -721,9 +736,11 @@ void imgProcess::edgeTracing(){
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             if (edgeStrongMatrix[y][x] > 0 && !edgeVisitMatrix[y][x]){
-
+                startPixel.setX(x); startPixel.setY(y); distanceMax = 0;
+edgeListStart.append(startPixel);
                 edgeVisitMatrix[y][x] = true;
                 checkContinuity(x, y, edgeGradientMatrix[y][x]);
+edgeListEnd.append(endPixel);
             }
 }
 
@@ -751,6 +768,13 @@ void imgProcess::checkContinuity(int inX, int inY, int inDir){
                         edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
 
                         checkContinuity(nextPixelX, nextPixelY, inDir);
+
+                        double dist = sqrt(pow(startPixel.x()-nextPixelX,2)+pow(startPixel.y()-nextPixelY,2));
+                        if (dist >= distanceMax) {
+                            distanceMax = dist;
+                            endPixel.setX(nextPixelX);
+                            endPixel.setY(nextPixelY);
+                        }
                     }
                 }
             }
