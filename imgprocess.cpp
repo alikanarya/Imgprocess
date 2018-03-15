@@ -711,7 +711,6 @@ void imgProcess::cannyThresholding(bool autoThresh, int loPercent, int hiPercent
 
     }
 
-
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++){
             edgeStrongMatrix[y][x] = edgeWeakMatrix[y][x] = 0;
@@ -736,11 +735,9 @@ void imgProcess::edgeTracing(){
     for (int y = 0;y < edgeHeight; y++)
         for (int x = 0; x < edgeWidth; x++)
             if (edgeStrongMatrix[y][x] > 0 && !edgeVisitMatrix[y][x]){
-                startPixel.setX(x); startPixel.setY(y); distanceMax = 0;
-edgeListStart.append(startPixel);
+
                 edgeVisitMatrix[y][x] = true;
                 checkContinuity(x, y, edgeGradientMatrix[y][x]);
-edgeListEnd.append(endPixel);
             }
 }
 
@@ -768,6 +765,62 @@ void imgProcess::checkContinuity(int inX, int inY, int inDir){
                         edgeW2SMapMatrix[nextPixelY][nextPixelX] = true;
 
                         checkContinuity(nextPixelX, nextPixelY, inDir);
+
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void imgProcess::edgeMapTracing(){
+
+    edgeMapVisitMatrix = new bool*[edgeHeight];
+    for (int i = 0; i < edgeHeight; i++)   edgeMapVisitMatrix[i] = new bool[edgeWidth];
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++){
+            edgeMapVisitMatrix[y][x] = false;
+        }
+    edgeMapVisitMatrixInitSwitch = true;
+
+    for (int y = 0;y < edgeHeight; y++)
+        for (int x = 0; x < edgeWidth; x++)
+            if (edgeMapMatrix[y][x] && !edgeMapVisitMatrix[y][x]){
+                startPixel.setX(x); startPixel.setY(y); distanceMax = 0;
+                endPixel.setX(-1);
+                edgeMapVisitMatrix[y][x] = true;
+
+                checkMapContinuity(x, y, edgeGradientMatrix[y][x]);
+
+                if (endPixel.x() != -1){
+                    edgeListStart.append(startPixel);
+                    edgeListEnd.append(endPixel);
+                }
+            }
+}
+
+
+void imgProcess::checkMapContinuity(int inX, int inY, int inDir){
+
+    int nextPixelX, nextPixelY;
+    bool coorValid;
+
+    for (int cy = -1; cy <= 1; cy++){
+        for (int cx = -1; cx <= 1; cx++){
+
+            if ( !(cy == 0 && cx == 0) ){
+                nextPixelX = inX + cx;
+                nextPixelY = inY + cy;
+
+                coorValid =  !( (nextPixelX < 0) || (nextPixelY < 0) || (nextPixelX >= edgeWidth) || (nextPixelY >= edgeHeight) );
+
+                if ( coorValid ) {
+
+                    if ( !edgeMapVisitMatrix[nextPixelY][nextPixelX] && edgeMapMatrix[nextPixelY][nextPixelX] && (edgeGradientMatrix[nextPixelY][nextPixelX] == inDir) ) {
+                        edgeMapVisitMatrix[nextPixelY][nextPixelX] = true;
+                        checkMapContinuity(nextPixelX, nextPixelY, inDir);
 
                         double dist = sqrt(pow(startPixel.x()-nextPixelX,2)+pow(startPixel.y()-nextPixelY,2));
                         if (dist >= distanceMax) {
@@ -5755,6 +5808,11 @@ imgProcess::~imgProcess(){
     if ( edgeVisitMatrixInitSwitch ) {
         for (int y = 0; y < edgeHeight; y++) delete []edgeVisitMatrix[y];
         delete []edgeVisitMatrix;
+    }
+
+    if ( edgeMapVisitMatrixInitSwitch ) {
+        for (int y = 0; y < edgeHeight; y++) delete []edgeMapVisitMatrix[y];
+        delete []edgeMapVisitMatrix;
     }
 
     if ( edgeMapMatrixInitSwitch ) {

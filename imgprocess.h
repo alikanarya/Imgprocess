@@ -220,6 +220,8 @@ class imgProcess{
         bool edgeVisitMatrixInitSwitch = false;
         bool **edgeW2SMapMatrix;
         bool edgeW2SMapMatrixInitSwitch = false;
+        bool **edgeMapVisitMatrix;
+        bool edgeMapVisitMatrixInitSwitch = false;
 
         int valueSelection;
         bool **edgeMapValueMatrix;
@@ -441,6 +443,8 @@ class imgProcess{
         void cannyThresholding(bool autoThresh, int loPercent = 20, int hiPercent = 50);
         void edgeTracing();
         void checkContinuity(int inX, int inY, int inDir);
+        void edgeMapTracing();
+        void checkMapContinuity(int inX, int inY, int inDir);
         void assignEdgeMap();
         void mergeEdgeMaps();
         void thickenEdgeMap(int diameter);
