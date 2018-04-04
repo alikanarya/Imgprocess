@@ -3252,7 +3252,10 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                     listHoughData2ndXcoor.append(lineX);
                 }
             }
-            qDebug() << "listHoughData2ndXcoor-unsorted: " << listHoughData2ndXcoor;
+
+            bool debug2 = true;
+            if (debug2) qDebug() << "listHoughData2ndXcoor-unsorted: " << listHoughData2ndXcoor;
+            if (debug2)qDebug() << "pointList: " << pointList;
 
             listHoughData2ndSize = listHoughData2nd.size();
 
@@ -3309,8 +3312,10 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             pointListMap.append(idx);
                             pointList[idx].setX(2000);
                         }
-                         qDebug() << "pointListSorted: ";  qDebug() << pointListSorted;
-                         qDebug() << "pointListMap: ";  qDebug() << pointListMap;
+                        if (debug2) qDebug() << "pointListSorted: ";
+                        if (debug2) qDebug() << pointListSorted;
+                        if (debug2) qDebug() << "pointListMap: ";
+                        if (debug2) qDebug() << pointListMap;
 
                         bool sameValue=false;
                         int sameStart = 0;
@@ -3336,7 +3341,8 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             sameEnd = pointListSorted.size()-1;
                             sameValueList.append( QPoint(sameStart,sameEnd) );
                         }
-                         qDebug() << "sameValueList: " << sameValueList;
+                        if (debug2) qDebug() << "sameValueList: " << sameValueList;
+
                         QList<int> valueList;
                         for (int i=0; i<sameValueList.size(); i++) {
                             int max = 0, idx = 0;
@@ -3348,7 +3354,8 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             }
                             valueList.append(idx);
                         }
-                         qDebug() << "valueList: " << valueList;
+
+                        if (debug2) qDebug() << "valueList: " << valueList;
 
                         int sameValueIdx = 0;
                         for (int i=0; i<pointListSorted.size(); i++) {
@@ -3374,7 +3381,10 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                                 pointListMapCopy.append(pointListMap[i]);
                             }
                         }
-                         qDebug() << "pointListSortedCopy:"; qDebug() << pointListSortedCopy;
+                        if (debug2) qDebug() << "pointListSortedCopy:";
+                        if (debug2) qDebug() << pointListSortedCopy;
+                        if (debug2) qDebug() << "pointListMapCopy:";
+                        if (debug2) qDebug() << pointListMapCopy;
 
                         pointListSorted.clear();
                         for (int i=0; i<pointListSortedCopy.size(); i++) {
@@ -3525,7 +3535,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                             hd.angle =  listHoughData2ndArray[refId][1];
                             hd.voteValue =  listHoughData2ndArray[refId][2];
                             mainEdgesList.append(hd);
-                            qDebug() << "mainPointsList " << c << " : " <<mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId of 2nd List: " << refId << " mainEdgesList ang/dist/vote: " << mainEdgesList[c].angle << " - " << mainEdgesList[c].distance << " - " << mainEdgesList[c].voteValue;
+                            if (debug2) qDebug() << "mainPointsList " << c << " : " <<mainPointsList[c].x() << " - " << mainPointsList[c].y() << " refId of 2nd List: " << refId << " mainEdgesList ang/dist/vote: " << mainEdgesList[c].angle << " - " << mainEdgesList[c].distance << " - " << mainEdgesList[c].voteValue;
                         }
 
                         // *** Find maximum (votes) 2 points
@@ -3555,8 +3565,8 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                         natBreaksMax2.setY( mainPointsList[_idx].y() );
                         mainPointsList[_idx].setY(-1);
 
-                        qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
-                        qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
+                        if (debug2) qDebug() << "max1 x/vote: " << max1.x() << " / " << max1.y();
+                        if (debug2) qDebug() << "max2 x/vote: " << max2.x() << " / " << max2.y();
 
                         // *** Determine left & right corners
                         if ( max1.x() > max2.x()) {
