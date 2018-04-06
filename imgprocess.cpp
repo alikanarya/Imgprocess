@@ -3413,7 +3413,7 @@ void imgProcess::detectMainEdges(int method, bool DEBUG){
                         // *** Automatic scan to find optimum breaks (k) number (size)
                         // *** using standard deviations of the regions > mainPointsList
                         bool cont;
-                        double varLimit = imageWidth*0.05;
+                        double varLimit = imageWidth * varianceRate;
                         int maxValue, maxIdx;
 
                         do {

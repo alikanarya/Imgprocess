@@ -199,6 +199,7 @@ class imgProcess{
         QPoint natBreaksMax2;   // x,voteValue
         QList<int> breakPointList;
         bool naturalBreaksOK = false;
+        double varianceRate = 0.05;
 
         int errorEdgeLimit;
         int errorAngleLimit;
